@@ -1,6 +1,7 @@
+// components/SigninForm.tsx
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -11,31 +12,27 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { toast } from 'sonner'
+import { useRouter } from 'next/navigation'
+import { useAppDispatch, useAppSelector } from '@/hooks/redux'
+import { loginUser, clearError } from '@/redux/slices/authSlice'
 
 const signinSchema = z.object({
-  username: z.string().min(2,'Please enter a valid username'),
+  username: z.string().min(2, 'Please enter a valid username'),
   password: z.string().min(1, 'Password is required'),
 })
 
 type SigninFormData = z.infer<typeof signinSchema>
 
-interface SigninFormProps {
-  onSuccess?: () => void
-  onSwitchToSignup?: () => void
-  className?: string
-}
-
-export function SigninForm({ onSuccess, onSwitchToSignup, className }: SigninFormProps) {
+export function SigninForm() {
   const [showPassword, setShowPassword] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const dispatch = useAppDispatch()
+  const { isLoading, error, isAuthenticated, user } = useAppSelector((state) => state.auth)
+  const router = useRouter()
 
   const {
     register,
     handleSubmit,
     formState: { errors },
-    setValue,
-    watch
   } = useForm<SigninFormData>({
     resolver: zodResolver(signinSchema),
     defaultValues: {
@@ -44,21 +41,47 @@ export function SigninForm({ onSuccess, onSwitchToSignup, className }: SigninFor
     }
   })
 
- 
+  useEffect(() => {
+    if (error) {
+      toast.error(error)
+    }
+  }, [error])
+
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      toast.success('Login successful!')
+      const redirectPath = user.role === 'admin' ? '/dashboard' : '/user/dashboard'
+      router.push(redirectPath)
+    }
+  }, [isAuthenticated, user, router])
+
+  const onSubmit = async (data: SigninFormData) => {
+    dispatch(clearError())
+    const result = await dispatch(loginUser(data))
+    
+    if (loginUser.rejected.match(result)) {
+      // Error is already handled by the slice and useEffect
+      return
+    }
+  }
+
+  const handleClearError = () => {
+    dispatch(clearError())
+  }
 
   return (
-    <Card className={className}>
+    <Card>
       <CardHeader className="space-y-1">
         <CardTitle className="text-2xl font-bold">Sign in</CardTitle>
         <CardDescription>
           Enter your username and password to access your account
         </CardDescription>
       </CardHeader>
-      
-      <form>
+
+      <form onSubmit={handleSubmit(onSubmit)}>
         <CardContent className="space-y-4">
           {error && (
-            <Alert variant="destructive">
+            <Alert variant="destructive" className="cursor-pointer" onClick={handleClearError}>
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
@@ -67,7 +90,7 @@ export function SigninForm({ onSuccess, onSwitchToSignup, className }: SigninFor
             <Label htmlFor="username">Username</Label>
             <Input
               id="username"
-              type="username"
+              type="text"
               placeholder="Enter username"
               {...register('username')}
               disabled={isLoading}
@@ -123,8 +146,6 @@ export function SigninForm({ onSuccess, onSwitchToSignup, className }: SigninFor
               'Sign in'
             )}
           </Button>
-
-        
         </CardFooter>
       </form>
     </Card>

@@ -14,22 +14,22 @@ export interface IRegister {
   role?: 'user' | 'admin';
 }
 
-export interface IToken {
-  userId: Types.ObjectId;
-  token: string;
-  expiresAt: Date;
-  type: 'refresh' | 'resetPassword' | 'verifyEmail';
-  blacklisted?: boolean;
-  createdAt?: Date;
-  updatedAt?: Date;
-}
+// export interface IToken {
+//   userId: Types.ObjectId;
+//   token: string;
+//   expiresAt: Date;
+//   type: 'refresh' | 'resetPassword' | 'verifyEmail';
+//   blacklisted?: boolean;
+//   createdAt?: Date;
+//   updatedAt?: Date;
+// }
 
 export interface CookieOptions {
   httpOnly: boolean;
   secure: boolean;
   sameSite: 'strict' | 'lax' | 'none';
   path: string;
-  maxAge?: number;
+  maxAge?: number; // Changed from string to number
 }
 
 export interface AuthTokens {

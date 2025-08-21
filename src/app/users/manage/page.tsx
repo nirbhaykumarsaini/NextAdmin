@@ -21,111 +21,43 @@ import {
   PaginationLink,
   PaginationNext,
 } from "@/components/ui/pagination";
+import { useEffect, useState } from "react";
+import axios from "axios";
 
-const usersData = [
-  {
-    id: 1,
-    name: "John Doe",
-    username: "johndoe",
-    email: "john@example.com",
-    avatar: "",
-    status: "Active",
-    role: "Admin",
-    lastActive: "2 hours ago"
-  },
-  {
-    id: 2,
-    name: "Jane Smith",
-    username: "janesmith",
-    email: "jane@example.com",
-    avatar: "",
-    status: "Active",
-    role: "Editor",
-    lastActive: "5 hours ago"
-  },
-  {
-    id: 3,
-    name: "Robert Johnson",
-    username: "robertj",
-    email: "robert@example.com",
-    avatar: "",
-    status: "Inactive",
-    role: "Viewer",
-    lastActive: "2 days ago"
-  },
-  {
-    id: 4,
-    name: "Emily Davis",
-    username: "emilyd",
-    email: "emily@example.com",
-    avatar: "",
-    status: "Active",
-    role: "Editor",
-    lastActive: "1 hour ago"
-  },
-  {
-    id: 5,
-    name: "Michael Wilson",
-    username: "michaelw",
-    email: "michael@example.com",
-    avatar: "",
-    status: "Active",
-    role: "Admin",
-    lastActive: "30 minutes ago"
-  },
-  {
-    id: 6,
-    name: "Sarah Thompson",
-    username: "sarah",
-    email: "sarah@example.com",
-    avatar: "",
-    status: "Inactive",
-    role: "Viewer",
-    lastActive: "1 week ago"
-  },
-  {
-    id: 7,
-    name: "David Lee",
-    username: "davidl",
-    email: "david@example.com",
-    avatar: "",
-    status: "Active",
-    role: "Editor",
-    lastActive: "3 hours ago"
-  },
-  {
-    id: 8,
-    name: "Jennifer Brown",
-    username: "jennifer",
-    email: "jennifer@example.com",
-    avatar: "",
-    status: "Active",
-    role: "Viewer",
-    lastActive: "Yesterday"
-  },
-  {
-    id: 9,
-    name: "Thomas Anderson",
-    username: "thomas",
-    email: "thomas@example.com",
-    avatar: "",
-    status: "Active",
-    role: "Admin",
-    lastActive: "45 minutes ago"
-  },
-  {
-    id: 10,
-    name: "Lisa Wong",
-    username: "lisaw",
-    email: "lisa@example.com",
-    avatar: "",
-    status: "Inactive",
-    role: "Viewer",
-    lastActive: "2 weeks ago"
-  }
-];
+
+
+export interface User {
+  _id: string
+  username: string,
+  role: string,
+  updatedAt: string,
+  createdAt: string
+}
 
 export default function ManageUsers() {
+
+  const [users, setUsers] = useState<User[]>([])
+
+  useEffect(() => {
+    getUsers()
+  }, [])
+
+  const getUsers = async () => {
+    try {
+      const response = await axios.get("/api/users", {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('accessToken')}`
+        }
+      })
+      setUsers(response.data.data)
+      console.log(response.data.data)
+    } catch (error: any) {
+      console.log(error)
+    }
+  }
+
+
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -145,48 +77,40 @@ export default function ManageUsers() {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead>S. No.</TableHead>
               <TableHead>User</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Status</TableHead>
+              {/* <TableHead>Status</TableHead> */}
               <TableHead>Role</TableHead>
               <TableHead>Last Active</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {usersData.map((user) => (
-              <TableRow key={user.id}>
+            {users.map((user: User, index: number) => (
+              <TableRow key={user._id}>
+                <TableCell className="text-sm">
+                  {index + 1}
+                </TableCell>
                 <TableCell>
                   <div className="flex items-center gap-4">
-                    <Avatar className="h-9 w-9">
+                    <Avatar className="h-9 w-9 capitalize">
                       <AvatarFallback>
-                        {user.name.charAt(0)}
+                        {user.username.charAt(0)}
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <div className="font-medium">{user.name}</div>
-                      <div className="text-sm text-muted-foreground">
-                        @{user.username}
+                      <div className="text-sm text-muted-foreground capitalize">
+                        {user.username}
                       </div>
                     </div>
                   </div>
                 </TableCell>
-                <TableCell className="text-sm">
-                  {user.email}
-                </TableCell>
-                <TableCell>
-                  <Badge 
-                    variant={user.status === 'Active' ? 'default' : 'secondary'}
-                    className={user.status === 'Active' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : ''}
-                  >
-                    {user.status}
-                  </Badge>
-                </TableCell>
+
                 <TableCell className="text-sm">
                   {user.role}
                 </TableCell>
                 <TableCell className="text-sm">
-                  {user.lastActive}
+                  {user.updatedAt}
                 </TableCell>
                 <TableCell className="text-right">
                   <Button variant="ghost" size="icon" className="text-primary hover:text-primary/80">

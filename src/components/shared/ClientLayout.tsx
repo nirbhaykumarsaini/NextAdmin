@@ -7,6 +7,7 @@ import {Sidebar} from "@/components/shared/Sidebar";
 import { ThemeProvider } from "@/providers/theme-provider";
 import { Breadcrumb } from '../ui/breadcrumb';
 import { Toaster } from "@/components/ui/sonner";
+import { Providers } from '@/providers/auth-provider';
 
 export function ClientLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -18,6 +19,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
       enableSystem
       disableTransitionOnChange
     >
+      <Providers>
         <div className="flex h-screen overflow-hidden">
           <Breadcrumb />
           {pathname !== "/" && <Sidebar />}
@@ -35,6 +37,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
           </div>
         </div>
         <Toaster />
+        </Providers>
     </ThemeProvider>
   );
 }

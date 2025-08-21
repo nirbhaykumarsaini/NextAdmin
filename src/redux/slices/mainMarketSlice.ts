@@ -1,0 +1,171 @@
+import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
+import { IMainMarketGame } from '@/models/MainMarketGame';
+import axios from 'axios';
+
+interface MainMarketState {
+  games: IMainMarketGame[];
+  loading: boolean;
+  error: string | null;
+  currentPage: number;
+  totalCount: number;
+}
+
+const initialState: MainMarketState = {
+  games: [],
+  loading: false,
+  error: null,
+  currentPage: 1,
+  totalCount: 0,
+};
+
+// Async thunks
+export const fetchGames = createAsyncThunk(
+  'mainMarket/fetchGames',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await axios.get('/api/mainmarket');
+      console.log(response.data)
+      return response.data;
+    } catch (error: any) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+export const createGame = createAsyncThunk(
+  'mainMarket/createGame',
+  async (gameData: Partial<IMainMarketGame>, { rejectWithValue }) => {
+    try {
+      const response = await axios.post('/api/mainmarket', gameData);
+      return response.data;
+    } catch (error: any) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+export const updateGame = createAsyncThunk(
+  'mainMarket/updateGame',
+  async ({ id, gameData }: { id: string; gameData: Partial<IMainMarketGame> }, { rejectWithValue }) => {
+    try {
+      const response = await axios.put(`/api/mainmarket?id=${id}`, gameData);
+      return response.data;
+    } catch (error: any) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+export const deleteGame = createAsyncThunk(
+  'mainMarket/deleteGame',
+  async (id: string, { rejectWithValue }) => {
+    try {
+      await axios.delete(`/api/mainmarket?id=${id}`);
+      return id;
+    } catch (error: any) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+export const updateMarketStatus = createAsyncThunk(
+  'mainMarket/updateMarketStatus',
+  async (
+    { id, days }: { id: string; days: any[] },
+    { rejectWithValue }
+  ) => {
+    try {
+      const response = await axios.patch(`/api/mainmarket?id=${id}`, {days});
+      return response.data;
+    } catch (error: any) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+export const toggleGameStatus = createAsyncThunk(
+  'mainMarket/toggleGameStatus',
+  async ({ id, is_active }: { id: string; is_active: boolean }, { rejectWithValue }) => {
+    try {
+      const response = await axios.patch(`/api/mainmarket/${id}/status`, { is_active });
+      return response.data;
+    } catch (error: any) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+const mainMarketSlice = createSlice({
+  name: 'mainMarket',
+  initialState,
+  reducers: {
+    setCurrentPage: (state, action: PayloadAction<number>) => {
+      state.currentPage = action.payload;
+    },
+    clearError: (state) => {
+      state.error = null;
+    },
+    setTotalCount: (state, action: PayloadAction<number>) => {
+      state.totalCount = action.payload;
+    },
+  },
+  extraReducers: (builder) => {
+    builder
+      // Fetch games
+      .addCase(fetchGames.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchGames.fulfilled, (state, action) => {
+        state.loading = false;
+        state.games = action.payload.data || [];
+        state.totalCount = action.payload?.totalCount || 0;
+      })
+      .addCase(fetchGames.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      })
+      // Create game
+      .addCase(createGame.fulfilled, (state, action) => {
+        if (action.payload.data) {
+          state.games.push(action.payload);
+          state.totalCount += 1;
+        }
+      })
+      // Update game
+      .addCase(updateGame.fulfilled, (state, action) => {
+        if (action.payload.data) {
+          const index = state.games.findIndex(game => game._id === action.payload?._id);
+          if (index !== -1) {
+            state.games[index] = action.payload.data;
+          }
+        }
+      })
+      // Delete game
+      .addCase(deleteGame.fulfilled, (state, action) => {
+        state.games = state.games.filter(game => game._id !== action.payload);
+        state.totalCount -= 1;
+      })
+      // Update market status
+      .addCase(updateMarketStatus.fulfilled, (state, action) => {
+        if (action.payload.data) {
+          const index = state.games.findIndex(game => game._id === action.payload?._id);
+          if (index !== -1) {
+            state.games[index] = action.payload;
+          }
+        }
+      })
+      // Toggle game status
+      .addCase(toggleGameStatus.fulfilled, (state, action) => {
+        if (action.payload.data) {
+          const index = state.games.findIndex(game => game._id === action.payload?._id);
+          if (index !== -1) {
+            state.games[index] = action.payload;
+          }
+        }
+      });
+  },
+});
+
+export const { setCurrentPage, clearError, setTotalCount } = mainMarketSlice.actions;
+export default mainMarketSlice.reducer;

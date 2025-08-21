@@ -25,7 +25,8 @@ const tokenSchema = new Schema<ITokenDocument, ITokenModel>(
     },
     token: { 
       type: String, 
-      required: true 
+      required: true ,
+      unique: true
     },
     expiresAt: { 
       type: Date, 
