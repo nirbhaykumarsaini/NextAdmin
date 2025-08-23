@@ -1,13 +1,11 @@
 "use client"
 
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import {
     Form,
     FormControl,
-    FormDescription,
     FormField,
     FormItem,
     FormLabel,
@@ -16,98 +14,177 @@ import {
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
+import axios from 'axios'
+import { toast } from 'sonner'
 
 // Define the schema for form validation
 const formSchema = z.object({
-    singleDigitPoint: z.number().min(0),
-    singleDigitAmount: z.number().min(0),
-    jodiDigitPoint: z.number().min(0),
-    jodiDigitAmount: z.number().min(0),
-    singlePannaPoint: z.number().min(0),
-    singlePannaAmount: z.number().min(0),
-    doublePannaPoint: z.number().min(0),
-    doublePannaAmount: z.number().min(0),
-    triplePannaPoint: z.number().min(0),
-    triplePannaAmount: z.number().min(0),
-    halfSangamPoint: z.number().min(0),
-    halfSangamAmount: z.number().min(0),
-    fullSangamPoint: z.number().min(0),
-    fullSangamAmount: z.number().min(0),
+    single_digit_point: z.number().min(0),
+    single_digit_amount: z.number().min(0),
+    jodi_digit_point: z.number().min(0),
+    jodi_digit_amount: z.number().min(0),
+    single_panna_point: z.number().min(0),
+    single_panna_amount: z.number().min(0),
+    double_panna_point: z.number().min(0),
+    double_panna_amount: z.number().min(0),
+    triple_panna_point: z.number().min(0),
+    triple_panna_amount: z.number().min(0),
+    half_sangam_point: z.number().min(0),
+    half_sangam_amount: z.number().min(0),
+    full_sangam_point: z.number().min(0),
+    full_sangam_amount: z.number().min(0),
 })
 
+interface RateData {
+    _id: string;
+    single_digit_point: number;
+    single_digit_amount: number;
+    jodi_digit_point: number;
+    jodi_digit_amount: number;
+    single_panna_point: number;
+    single_panna_amount: number;
+    double_panna_point: number;
+    double_panna_amount: number;
+    triple_panna_point: number;
+    triple_panna_amount: number;
+    half_sangam_point: number;
+    half_sangam_amount: number;
+    full_sangam_point: number;
+    full_sangam_amount: number;
+}
+
 const MainMarketRate = () => {
+
+    const [rateId, setRateId] = useState<string>("");
+
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: {
-            singleDigitPoint: 10,
-            singleDigitAmount: 100,
-            jodiDigitPoint: 10,
-            jodiDigitAmount: 1000,
-            singlePannaPoint: 10,
-            singlePannaAmount: 1600,
-            doublePannaPoint: 10,
-            doublePannaAmount: 3200,
-            triplePannaPoint: 10,
-            triplePannaAmount: 1000,
-            halfSangamPoint: 10,
-            halfSangamAmount: 10000,
-            fullSangamPoint: 10,
-            fullSangamAmount: 0,
+            single_digit_point: 0,
+            single_digit_amount: 0,
+            jodi_digit_point: 0,
+            jodi_digit_amount: 0,
+            single_panna_point: 0,
+            single_panna_amount: 0,
+            double_panna_point: 0,
+            double_panna_amount: 0,
+            triple_panna_point: 0,
+            triple_panna_amount: 0,
+            half_sangam_point: 0,
+            half_sangam_amount: 0,
+            full_sangam_point: 0,
+            full_sangam_amount: 0,
         },
     })
 
-    function onSubmit(values: z.infer<typeof formSchema>) {
-        console.log("Form submitted:", values)
-        // Here you would typically send the data to your API
+    useEffect(() => {
+        fetchRate()
+    }, [])
+
+    const fetchRate = async () => {
+        try {
+            const response = await axios.get('/api/mainmarketrate')
+            console.log(response.data)
+
+            if (response.data.status && response.data.data) {
+                const rateData: RateData = response.data.data;
+                setRateId(rateData._id);
+
+                // Set form values with API data
+                form.reset({
+                    single_digit_point: rateData.single_digit_point,
+                    single_digit_amount: rateData.single_digit_amount,
+                    jodi_digit_point: rateData.jodi_digit_point,
+                    jodi_digit_amount: rateData.jodi_digit_amount,
+                    single_panna_point: rateData.single_panna_point,
+                    single_panna_amount: rateData.single_panna_amount,
+                    double_panna_point: rateData.double_panna_point,
+                    double_panna_amount: rateData.double_panna_amount,
+                    triple_panna_point: rateData.triple_panna_point,
+                    triple_panna_amount: rateData.triple_panna_amount,
+                    half_sangam_point: rateData.half_sangam_point,
+                    half_sangam_amount: rateData.half_sangam_amount,
+                    full_sangam_point: rateData.full_sangam_point,
+                    full_sangam_amount: rateData.full_sangam_amount,
+                });
+            }
+        } catch (error: any) {
+            toast.error(error.message || `Failed to  fatch rate`)
+        }
+    }
+
+    const onSubmit = async (values: z.infer<typeof formSchema>) => {
+
+        try {
+            const response = await axios.post('/api/mainmarketrate', {
+                id: rateId,
+                rateData: values
+            })
+            console.log(response.data)
+            if (response.data.status === false) {
+                toast.error(response.data.message || `Failed to  ${rateId ? "update" : "add"} rate`)
+            } else {
+                toast.success(response.data.message || `Rate ${rateId ? "updated" : "added"} successfully`);
+                fetchRate()
+            }
+        } catch (error: any) {
+            toast.error(error.message || `Failed to  ${rateId ? "update" : "add"} rate`)
+        }
     }
 
     return (
         <div className="container ">
-            <h1 className="text-2xl font-bold mb-6">Main Market Game Rates</h1>
+            <div className="text-center mb-8">
+                <h1 className="text-3xl font-bold">Main Market Game Rates</h1>
+                <p className="text-gray-600 mt-2">Configure payout rates for different game types</p>
+            </div>
 
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {/* Single Digit */}
-                        <div className="border p-4 rounded-lg">
-                            <h3 className="font-semibold mb-3">Single Digit</h3>
-                            <div className="space-y-4">
+                    {/* Single Digit */}
+                    <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+                        <div className="p-6 rounded-lg shadow border ">
+                            <h2 className="text-xl font-semibold  mb-4 pb-2 border-b ">
+                                Single Digit
+                            </h2>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <FormField
                                     control={form.control}
-                                    name="singleDigitPoint"
+                                    name="single_digit_point"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <div className="flex items-center justify-between">
-                                                <FormLabel>Point</FormLabel>
-                                                <FormControl>
+                                            <FormLabel className="block text-sm font-medium ">Point Value</FormLabel>
+                                            <FormControl>
+                                                <div className="relative">
                                                     <Input
                                                         type="number"
-                                                        className="w-24"
+                                                        className="pl-3 pr-10 py-3 text-lg font-medium"
                                                         {...field}
                                                         onChange={(e) => field.onChange(parseInt(e.target.value))}
                                                     />
-                                                </FormControl>
-                                            </div>
+                                                </div>
+                                            </FormControl>
                                             <FormMessage />
                                         </FormItem>
                                     )}
                                 />
                                 <FormField
                                     control={form.control}
-                                    name="singleDigitAmount"
+                                    name="single_digit_amount"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <div className="flex items-center justify-between">
-                                                <FormLabel>Amount</FormLabel>
-                                                <FormControl>
+                                            <FormLabel className="block text-sm font-medium ">Payout Amount</FormLabel>
+                                            <FormControl>
+                                                <div className="relative">
+                                                    <span className="absolute left-3 top-2 ">₹</span>
                                                     <Input
                                                         type="number"
-                                                        className="w-24"
+                                                        className="pl-8 pr-3 py-3 text-lg font-medium"
                                                         {...field}
                                                         onChange={(e) => field.onChange(parseInt(e.target.value))}
                                                     />
-                                                </FormControl>
-                                            </div>
+                                                </div>
+                                            </FormControl>
                                             <FormMessage />
                                         </FormItem>
                                     )}
@@ -116,45 +193,46 @@ const MainMarketRate = () => {
                         </div>
 
                         {/* Jodi Digit */}
-                        <div className="border p-4 rounded-lg">
-                            <h3 className="font-semibold mb-3">Jodi Digit</h3>
-                            <div className="space-y-4">
+                        <div className="border p-6 rounded-lg">
+                            <h3 className="text-xl font-semibold  mb-4 pb-2 border-b ">Jodi Digit</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <FormField
                                     control={form.control}
-                                    name="jodiDigitPoint"
+                                    name="jodi_digit_point"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <div className="flex items-center justify-between">
-                                                <FormLabel>Point</FormLabel>
-                                                <FormControl>
+                                            <FormLabel className="block text-sm font-medium ">Point Value</FormLabel>
+                                            <FormControl>
+                                                <div className="relative">
                                                     <Input
                                                         type="number"
-                                                        className="w-24"
+                                                        className="pl-3 pr-10 py-3 text-lg font-medium"
                                                         {...field}
                                                         onChange={(e) => field.onChange(parseInt(e.target.value))}
                                                     />
-                                                </FormControl>
-                                            </div>
+                                                </div>
+                                            </FormControl>
                                             <FormMessage />
                                         </FormItem>
                                     )}
                                 />
                                 <FormField
                                     control={form.control}
-                                    name="jodiDigitAmount"
+                                    name="jodi_digit_amount"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <div className="flex items-center justify-between">
-                                                <FormLabel>Amount</FormLabel>
-                                                <FormControl>
+                                            <FormLabel className="block text-sm font-medium ">Payout Amount</FormLabel>
+                                            <FormControl>
+                                                <div className="relative">
+                                                    <span className="absolute left-3 top-2 ">₹</span>
                                                     <Input
                                                         type="number"
-                                                        className="w-24"
+                                                        className="pl-8 pr-3 py-3 text-lg font-medium"
                                                         {...field}
                                                         onChange={(e) => field.onChange(parseInt(e.target.value))}
                                                     />
-                                                </FormControl>
-                                            </div>
+                                                </div>
+                                            </FormControl>
                                             <FormMessage />
                                         </FormItem>
                                     )}
@@ -163,45 +241,46 @@ const MainMarketRate = () => {
                         </div>
 
                         {/* Single Panna */}
-                        <div className="border p-4 rounded-lg">
-                            <h3 className="font-semibold mb-3">Single Panna</h3>
-                            <div className="space-y-4">
+                        <div className="border p-6 rounded-lg">
+                            <h3 className="text-xl font-semibold  mb-4 pb-2 border-b ">Single Panna</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <FormField
                                     control={form.control}
-                                    name="singlePannaPoint"
+                                    name="single_panna_point"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <div className="flex items-center justify-between">
-                                                <FormLabel>Point</FormLabel>
-                                                <FormControl>
+                                            <FormLabel className="block text-sm font-medium ">Point Value</FormLabel>
+                                            <FormControl>
+                                                <div className="relative">
                                                     <Input
                                                         type="number"
-                                                        className="w-24"
+                                                        className="pl-3 pr-10 py-3 text-lg font-medium"
                                                         {...field}
                                                         onChange={(e) => field.onChange(parseInt(e.target.value))}
                                                     />
-                                                </FormControl>
-                                            </div>
+                                                </div>
+                                            </FormControl>
                                             <FormMessage />
                                         </FormItem>
                                     )}
                                 />
                                 <FormField
                                     control={form.control}
-                                    name="singlePannaAmount"
+                                    name="single_panna_amount"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <div className="flex items-center justify-between">
-                                                <FormLabel>Amount</FormLabel>
-                                                <FormControl>
+                                            <FormLabel className="block text-sm font-medium ">Payout Amount</FormLabel>
+                                            <FormControl>
+                                                <div className="relative">
+                                                    <span className="absolute left-3 top-2 ">₹</span>
                                                     <Input
                                                         type="number"
-                                                        className="w-24"
+                                                        className="pl-8 pr-3 py-3 text-lg font-medium"
                                                         {...field}
                                                         onChange={(e) => field.onChange(parseInt(e.target.value))}
                                                     />
-                                                </FormControl>
-                                            </div>
+                                                </div>
+                                            </FormControl>
                                             <FormMessage />
                                         </FormItem>
                                     )}
@@ -210,45 +289,46 @@ const MainMarketRate = () => {
                         </div>
 
                         {/* Double Panna */}
-                        <div className="border p-4 rounded-lg">
-                            <h3 className="font-semibold mb-3">Double Panna</h3>
-                            <div className="space-y-4">
+                        <div className="border p-6 rounded-lg">
+                            <h3 className="text-xl font-semibold  mb-4 pb-2 border-b ">Double Panna</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <FormField
                                     control={form.control}
-                                    name="doublePannaPoint"
+                                    name="double_panna_point"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <div className="flex items-center justify-between">
-                                                <FormLabel>Point</FormLabel>
-                                                <FormControl>
+                                            <FormLabel className="block text-sm font-medium ">Point Value</FormLabel>
+                                            <FormControl>
+                                                <div className="relative">
                                                     <Input
                                                         type="number"
-                                                        className="w-24"
+                                                        className="pl-3 pr-10 py-3 text-lg font-medium"
                                                         {...field}
                                                         onChange={(e) => field.onChange(parseInt(e.target.value))}
                                                     />
-                                                </FormControl>
-                                            </div>
+                                                </div>
+                                            </FormControl>
                                             <FormMessage />
                                         </FormItem>
                                     )}
                                 />
                                 <FormField
                                     control={form.control}
-                                    name="doublePannaAmount"
+                                    name="double_panna_amount"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <div className="flex items-center justify-between">
-                                                <FormLabel>Amount</FormLabel>
-                                                <FormControl>
+                                            <FormLabel className="block text-sm font-medium ">Payout Amount</FormLabel>
+                                            <FormControl>
+                                                <div className="relative">
+                                                    <span className="absolute left-3 top-2 ">₹</span>
                                                     <Input
                                                         type="number"
-                                                        className="w-24"
+                                                        className="pl-8 pr-3 py-3 text-lg font-medium"
                                                         {...field}
                                                         onChange={(e) => field.onChange(parseInt(e.target.value))}
                                                     />
-                                                </FormControl>
-                                            </div>
+                                                </div>
+                                            </FormControl>
                                             <FormMessage />
                                         </FormItem>
                                     )}
@@ -257,45 +337,46 @@ const MainMarketRate = () => {
                         </div>
 
                         {/* Triple Panna */}
-                        <div className="border p-4 rounded-lg">
-                            <h3 className="font-semibold mb-3">Triple Panna</h3>
-                            <div className="space-y-4">
+                        <div className="border p-6 rounded-lg">
+                            <h3 className="text-xl font-semibold  mb-4 pb-2 border-b ">Triple Panna</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <FormField
                                     control={form.control}
-                                    name="triplePannaPoint"
+                                    name="triple_panna_point"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <div className="flex items-center justify-between">
-                                                <FormLabel>Point</FormLabel>
-                                                <FormControl>
+                                            <FormLabel className="block text-sm font-medium ">Point Value</FormLabel>
+                                            <FormControl>
+                                                <div className="relative">
                                                     <Input
                                                         type="number"
-                                                        className="w-24"
+                                                        className="pl-3 pr-10 py-3 text-lg font-medium"
                                                         {...field}
                                                         onChange={(e) => field.onChange(parseInt(e.target.value))}
                                                     />
-                                                </FormControl>
-                                            </div>
+                                                </div>
+                                            </FormControl>
                                             <FormMessage />
                                         </FormItem>
                                     )}
                                 />
                                 <FormField
                                     control={form.control}
-                                    name="triplePannaAmount"
+                                    name="triple_panna_amount"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <div className="flex items-center justify-between">
-                                                <FormLabel>Amount</FormLabel>
-                                                <FormControl>
+                                            <FormLabel className="block text-sm font-medium ">Payout Amount</FormLabel>
+                                            <FormControl>
+                                                <div className="relative">
+                                                    <span className="absolute left-3 top-2 ">₹</span>
                                                     <Input
                                                         type="number"
-                                                        className="w-24"
+                                                        className="pl-8 pr-3 py-3 text-lg font-medium"
                                                         {...field}
                                                         onChange={(e) => field.onChange(parseInt(e.target.value))}
                                                     />
-                                                </FormControl>
-                                            </div>
+                                                </div>
+                                            </FormControl>
                                             <FormMessage />
                                         </FormItem>
                                     )}
@@ -304,45 +385,46 @@ const MainMarketRate = () => {
                         </div>
 
                         {/* Half Sangam */}
-                        <div className="border p-4 rounded-lg">
-                            <h3 className="font-semibold mb-3">Half Sangam</h3>
-                            <div className="space-y-4">
+                        <div className="border p-6 rounded-lg">
+                            <h3 className="text-xl font-semibold  mb-4 pb-2 border-b ">Half Sangam</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <FormField
                                     control={form.control}
-                                    name="halfSangamPoint"
+                                    name="full_sangam_point"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <div className="flex items-center justify-between">
-                                                <FormLabel>Point</FormLabel>
-                                                <FormControl>
+                                            <FormLabel className="block text-sm font-medium ">Point Value</FormLabel>
+                                            <FormControl>
+                                                <div className="relative">
                                                     <Input
                                                         type="number"
-                                                        className="w-24"
+                                                        className="pl-3 pr-10 py-3 text-lg font-medium"
                                                         {...field}
                                                         onChange={(e) => field.onChange(parseInt(e.target.value))}
                                                     />
-                                                </FormControl>
-                                            </div>
+                                                </div>
+                                            </FormControl>
                                             <FormMessage />
                                         </FormItem>
                                     )}
                                 />
                                 <FormField
                                     control={form.control}
-                                    name="halfSangamAmount"
+                                    name="full_sangam_amount"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <div className="flex items-center justify-between">
-                                                <FormLabel>Amount</FormLabel>
-                                                <FormControl>
+                                            <FormLabel className="block text-sm font-medium ">Payout Amount</FormLabel>
+                                            <FormControl>
+                                                <div className="relative">
+                                                    <span className="absolute left-3 top-2 ">₹</span>
                                                     <Input
                                                         type="number"
-                                                        className="w-24"
+                                                        className="pl-8 pr-3 py-3 text-lg font-medium"
                                                         {...field}
                                                         onChange={(e) => field.onChange(parseInt(e.target.value))}
                                                     />
-                                                </FormControl>
-                                            </div>
+                                                </div>
+                                            </FormControl>
                                             <FormMessage />
                                         </FormItem>
                                     )}
@@ -351,45 +433,46 @@ const MainMarketRate = () => {
                         </div>
 
                         {/* Full Sangam */}
-                        <div className="border p-4 rounded-lg">
-                            <h3 className="font-semibold mb-3">Full Sangam</h3>
-                            <div className="space-y-4">
+                        <div className="border p-6 rounded-lg">
+                            <h3 className="text-xl font-semibold  mb-4 pb-2 border-b ">Full Sangam</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <FormField
                                     control={form.control}
-                                    name="fullSangamPoint"
+                                    name="half_sangam_point"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <div className="flex items-center justify-between">
-                                                <FormLabel>Point</FormLabel>
-                                                <FormControl>
+                                            <FormLabel className="block text-sm font-medium ">Point Value</FormLabel>
+                                            <FormControl>
+                                                <div className="relative">
                                                     <Input
                                                         type="number"
-                                                        className="w-24"
+                                                        className="pl-3 pr-10 py-3 text-lg font-medium"
                                                         {...field}
                                                         onChange={(e) => field.onChange(parseInt(e.target.value))}
                                                     />
-                                                </FormControl>
-                                            </div>
+                                                </div>
+                                            </FormControl>
                                             <FormMessage />
                                         </FormItem>
                                     )}
                                 />
                                 <FormField
                                     control={form.control}
-                                    name="fullSangamAmount"
+                                    name="half_sangam_amount"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <div className="flex items-center justify-between">
-                                                <FormLabel>Amount</FormLabel>
-                                                <FormControl>
+                                            <FormLabel className="block text-sm font-medium ">Payout Amount</FormLabel>
+                                            <FormControl>
+                                                <div className="relative">
+                                                    <span className="absolute left-3 top-2 ">₹</span>
                                                     <Input
                                                         type="number"
-                                                        className="w-24"
+                                                        className="pl-8 pr-3 py-3 text-lg font-medium"
                                                         {...field}
                                                         onChange={(e) => field.onChange(parseInt(e.target.value))}
                                                     />
-                                                </FormControl>
-                                            </div>
+                                                </div>
+                                            </FormControl>
                                             <FormMessage />
                                         </FormItem>
                                     )}

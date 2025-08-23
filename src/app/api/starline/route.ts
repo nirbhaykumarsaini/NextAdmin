@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import StarlineGame, { IStarlineGame } from '@/models/StarlineGame';
+import StarlineGame from '@/models/StarlineGame';
 import connectDB from '@/config/db';
 import ApiError from '@/lib/errors/APiError';
 import logger from '@/config/logger';

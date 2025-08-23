@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import {
@@ -13,7 +13,6 @@ import {
 import {
     Table,
     TableBody,
-    TableCaption,
     TableCell,
     TableHead,
     TableHeader,
@@ -34,70 +33,242 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog"
+import { useAppDispatch, useAppSelector } from '@/hooks/redux'
+import { fetchGames } from '@/redux/slices/mainMarketSlice'
+import { toast } from 'sonner'
+import { IMainMarketGame } from '@/models/MainMarketGame'
 
-type GameResult = {
-    id: string
-    date: string
-    gameName: string
-    session: string
-    panna: string
-    digit: string
+interface Panna {
+    _id: string;
+    digit: string;
+}
+
+interface Winner {
+    userId: string;
+    userName: string;
+    bidAmount: number;
+    winningAmount: number;
+    gameType: string;
+    bidDate: string;
+}
+
+interface SessionResult {
+    _id: string;
+    panna: string;
+    digit: string;
+}
+
+interface GroupedResult {
+    result_date: string;
+    game_name: string;
+    openSession?: SessionResult;
+    closeSession?: SessionResult;
 }
 
 const MainMarketResult = () => {
-    const [date, setDate] = useState<Date | undefined>(new Date())
-    const [gameName, setGameName] = useState("")
+    const [result_date, setDate] = useState<Date | undefined>(new Date())
+    const [game_name, setGameName] = useState("")
     const [session, setSession] = useState("")
     const [panna, setPanna] = useState("")
     const [digit, setDigit] = useState("")
-    const [results, setResults] = useState<GameResult[]>([
-        {
-            id: "1",
-            date: "12-08-2025",
-            gameName: "Milan Day",
-            session: "Open",
-            panna: "123",
-            digit: "3"
-        },
-        {
-            id: "2",
-            date: "12-08-2025",
-            gameName: "Milan Day",
-            session: "Close",
-            panna: "456",
-            digit: "6"
-        },
-        {
-            id: "3",
-            date: "11-08-2025",
-            gameName: "Rajdhani Night",
-            session: "Close",
-            panna: "789",
-            digit: "9"
-        }
-    ])
+    const [results, setResults] = useState<GroupedResult[]>([])
     const [showWinnerDialog, setShowWinnerDialog] = useState(false)
+    const [winners, setWinners] = useState<Winner[]>([])
+    const [totalBidAmount, setTotalBidAmount] = useState(0)
+    const [totalWinningAmount, setTotalWinningAmount] = useState(0)
 
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault()
-        const newResult: GameResult = {
-            id: Date.now().toString(),
-            date: date ? format(date, "dd-MM-yyyy") : "",
-            gameName,
-            session,
-            panna,
-            digit
+    const dispatch = useAppDispatch();
+    const { games, loading, error, currentPage, totalCount } = useAppSelector(
+        (state) => state.mainMarket
+    );
+
+    const [allPanna, setAllPanna] = useState<Panna[] | null>(null)
+
+    useEffect(() => {
+        dispatch(fetchGames() as any);
+        fetchAllPanna();
+        fetchResults();
+    }, [dispatch]);
+
+    const fetchAllPanna = async () => {
+        try {
+            const response = await fetch('/api/panna/all');
+            const result = await response.json();
+
+            if (result.status === false) {
+                toast.error(result.message || "Failed to fetch panna data")
+            } else {
+                setAllPanna(result.data);
+            }
+        } catch (error) {
+            console.error('Error fetching panna data:', error);
+            toast.error('Failed to fetch panna data')
         }
-        setResults([...results, newResult])
-        // Show the winner dialog
-        setShowWinnerDialog(true)
-        // Reset form
-        setDate(new Date())
-        setGameName("")
-        setSession("")
-        setPanna("")
-        setDigit("")
-    }
+    };
+
+    const fetchResults = async () => {
+        try {
+            const response = await fetch('/api/mainmarket/results');
+            const result = await response.json();
+
+            if (result.status) {
+                setResults(result.data);
+            } else {
+                toast.error(result.message || "Failed to fetch results")
+            }
+        } catch (error) {
+            console.error('Error fetching results:', error);
+            toast.error('Failed to fetch results')
+        }
+    };
+
+    const handlePannaChange = (selectedPanna: string) => {
+        setPanna(selectedPanna);
+
+        // Calculate digit from panna
+        if (selectedPanna) {
+            const digits = selectedPanna.split('').map(Number);
+            let sum = digits.reduce((total, digit) => total + digit, 0);
+
+            // If sum is greater than 9, take the last digit
+            if (sum > 9) {
+                sum = Number(sum.toString().slice(-1));
+            }
+
+            setDigit(sum.toString());
+        }
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+
+        try {
+            const formattedDate = result_date ? format(result_date, "dd-MM-yyyy") : "";
+
+            // First, show winners
+            const winnersResponse = await fetch('/api/mainmarket/winners', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    result_date: formattedDate,
+                    game_name,
+                    session,
+                    panna,
+                    digit
+                }),
+            });
+
+            const winnersResult = await winnersResponse.json();
+
+            if (winnersResult.status) {
+                setWinners(winnersResult.data.winners);
+                setTotalBidAmount(winnersResult.data.totalBidAmount);
+                setTotalWinningAmount(winnersResult.data.totalWinningAmount);
+                setShowWinnerDialog(true);
+            } else {
+                toast.error(winnersResult.message || "Failed to fetch winners");
+            }
+
+        } catch (error) {
+            console.error('Error showing winners:', error);
+            toast.error('Failed to show winners');
+        }
+    };
+
+    const handleDeclareResult = async () => {
+        try {
+            const formattedDate = result_date ? format(result_date, "dd-MM-yyyy") : "";
+            // Save the result
+            const saveResponse = await fetch('/api/mainmarket/results', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    result_date: formattedDate,
+                    game_name,
+                    session,
+                    panna,
+                    digit
+                }),
+            });
+
+            const saveResult = await saveResponse.json();
+
+            if (saveResult.status) {
+                toast.success("Result saved successfully");
+                setShowWinnerDialog(false);
+
+                // Reset form
+                setDate(new Date());
+                setGameName("");
+                setSession("");
+                setPanna("");
+                setDigit("");
+
+                // Refresh results
+                fetchResults();
+                fetchAllPanna();
+            } else {
+                toast.error(saveResult.message || "Failed to save result");
+            }
+
+        } catch (error) {
+            console.error('Error declaring result:', error);
+            toast.error('Failed to declare result');
+        }
+    };
+
+    const handleDeleteResult = async (resultId: string, sessionType: 'openSession' | 'closeSession') => {
+        if (!resultId) {
+            toast.error("Invalid result ID");
+            return;
+        }
+
+        if (!window.confirm(`Are you sure you want to delete this ${sessionType === 'openSession' ? 'Open' : 'Close'} session result?`)) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/mainmarket/results?id=${resultId}`, {
+                method: 'DELETE',
+            });
+
+            const result = await response.json();
+
+            if (result.status) {
+                toast.success("Result deleted successfully");
+                // Update the results with the new grouped data
+                setResults(result.groupedResults);
+                fetchResults();
+                fetchAllPanna();
+            } else {
+                toast.error(result.message || "Failed to delete result");
+            }
+        } catch (error) {
+            console.error('Error deleting result:', error);
+            toast.error('Failed to delete result');
+        }
+    };
+
+    // Filter games that have both open and close session results declared
+    const getAvailableGames = () => {
+        const gameOptions = games.map((game: IMainMarketGame) => ({
+            _id: game._id,
+            name: game.game_name
+        }));
+
+        // Filter out games that already have both open and close session results
+        return gameOptions.filter(game => {
+            const gameResults = results?.find(r => r?.game_name === game?.name);
+            // Only show games that don't have both sessions declared
+            return !gameResults || !(gameResults.openSession && gameResults.closeSession);
+        });
+    };
+
+    const availableGames = getAvailableGames();
 
     return (
         <div className="container mx-auto space-y-8">
@@ -116,13 +287,13 @@ const MainMarketResult = () => {
                                     className="w-full justify-start text-left font-normal"
                                 >
                                     <FiCalendar className="mr-2 h-4 w-4" />
-                                    {date ? format(date, "PPP") : <span>Pick a date</span>}
+                                    {result_date ? format(result_date, "PPP") : <span>Pick a date</span>}
                                 </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0 bg-white dark:bg-gray-900">
                                 <Calendar
                                     mode="single"
-                                    selected={date}
+                                    selected={result_date}
                                     onSelect={setDate}
                                     initialFocus
                                 />
@@ -133,17 +304,16 @@ const MainMarketResult = () => {
                     {/* Game Name Select */}
                     <div className="space-y-2">
                         <Label>Game Name</Label>
-                        <Select onValueChange={setGameName} value={gameName}>
+                        <Select onValueChange={setGameName} value={game_name}>
                             <SelectTrigger className='w-full'>
                                 <SelectValue placeholder="Select Game" />
                             </SelectTrigger>
                             <SelectContent className='bg-white dark:bg-gray-900'>
-                                <SelectItem value="Milan Day">Milan Day</SelectItem>
-                                <SelectItem value="Milan Night">Milan Night</SelectItem>
-                                <SelectItem value="Rajdhani Day">Rajdhani Day</SelectItem>
-                                <SelectItem value="Rajdhani Night">Rajdhani Night</SelectItem>
-                                <SelectItem value="Kalyan Morning">Kalyan Morning</SelectItem>
-                                <SelectItem value="Kalyan Day">Kalyan Day</SelectItem>
+                                {availableGames.map((game) => (
+                                    <SelectItem key={game._id} value={game.name}>
+                                        {game.name}
+                                    </SelectItem>
+                                ))}
                             </SelectContent>
                         </Select>
                     </div>
@@ -165,29 +335,29 @@ const MainMarketResult = () => {
                     {/* Panna Select */}
                     <div className="space-y-2">
                         <Label>Panna</Label>
-                        <Select onValueChange={setPanna} value={panna}>
+                        <Select onValueChange={handlePannaChange} value={panna}>
                             <SelectTrigger className='w-full'>
                                 <SelectValue placeholder="Select Panna" />
                             </SelectTrigger>
-                            <SelectContent className='bg-white dark:bg-gray-900'>
-                                <SelectItem value="123">123</SelectItem>
-                                <SelectItem value="456">456</SelectItem>
-                                <SelectItem value="789">789</SelectItem>
-                                <SelectItem value="012">012</SelectItem>
-                                <SelectItem value="345">345</SelectItem>
-                                <SelectItem value="678">678</SelectItem>
+                            <SelectContent className='bg-white dark:bg-gray-900 max-h-60 overflow-y-auto'>
+                                {allPanna?.map((panna) => (
+                                    <SelectItem key={panna._id} value={panna.digit}>
+                                        {panna.digit}
+                                    </SelectItem>
+                                ))}
                             </SelectContent>
                         </Select>
                     </div>
 
                     {/* Digit Input */}
                     <div className="space-y-2">
-                        <Label>Digit</Label>
+                        <Label>Digit (Auto-calculated)</Label>
                         <Input
                             type="text"
                             placeholder="Digit"
                             value={digit}
-                            onChange={(e) => setDigit(e.target.value)}
+                            readOnly
+                            className="bg-gray-100"
                         />
                     </div>
 
@@ -200,100 +370,93 @@ const MainMarketResult = () => {
                 </form>
             </div>
 
-            <div className='grid grid-cols-1 md:grid-cols-2'>
-                <div className="space-y-2">
-                    <Label>Result Date</Label>
-                    <Popover>
-                        <PopoverTrigger asChild>
-                            <Button
-                                variant={"outline"}
-                                className=" justify-start text-left font-normal"
-                            >
-                                <FiCalendar className="mr-2 h-4 w-4" />
-                                {date ? format(date, "PPP") : <span>Pick a date</span>}
-                            </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0 bg-white dark:bg-gray-900">
-                            <Calendar
-                                mode="single"
-                                selected={date}
-                                onSelect={setDate}
-                                initialFocus
-                            />
-                        </PopoverContent>
-                    </Popover>
-                </div>
-
-                <div className="space-y-2">
-                    <Label>Search</Label>
-                    <Input
-                    className='w-fit'
-                        type="text"
-                        placeholder="Search..."
-                        value={digit}
-                        onChange={(e) => setDigit(e.target.value)}
-                    />
-                </div>
-            </div>
-
             {/* Results Table */}
-            <div className=" rounded-lg border shadow-md overflow-hidden">
+            <div className="rounded-lg border shadow-md overflow-hidden">
                 <Table>
                     <TableHeader>
                         <TableRow>
                             <TableHead>S. No.</TableHead>
                             <TableHead>Date</TableHead>
                             <TableHead>Game Name</TableHead>
-                            <TableHead>Session</TableHead>
-                            <TableHead>Panna</TableHead>
-                            <TableHead>Digit</TableHead>
-                            <TableHead>Actions</TableHead>
+                            <TableHead>Open Session Result</TableHead>
+                            <TableHead>Close Session Result</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {results.map((result) => (
-                            <TableRow key={result.id}>
-                                <TableCell>{result.id}</TableCell>
-                                <TableCell>{result.date}</TableCell>
-                                <TableCell>{result.gameName}</TableCell>
-                                <TableCell>{result.session}</TableCell>
-                                <TableCell>{result.panna}</TableCell>
-                                <TableCell>{result.digit}</TableCell>
-                                <TableCell>
-                                    <Button variant="ghost" className="">
-                                        <FiEdit />
-                                    </Button>
-                                    <Button variant="ghost" className="text-red-600 hover:text-red-800">
-                                        <FiTrash2 />
-                                    </Button>
+                        {results?.length > 0 ? (
+                            results?.map((result, index) => (
+                                <TableRow key={`${result?.result_date}-${result?.game_name}`}>
+                                    <TableCell>{index + 1}</TableCell>
+                                    <TableCell>{result?.result_date}</TableCell>
+                                    <TableCell>{result?.game_name}</TableCell>
+                                    <TableCell>
+                                        {result?.openSession ? (
+                                            <div className="flex items-center gap-2">
+                                                <span>{result?.openSession?.panna} - {result?.openSession?.digit}</span>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="text-red-600 hover:text-red-800 hover:bg-red-100"
+                                                    onClick={() => handleDeleteResult(result?.openSession?._id || '', 'openSession')}
+                                                >
+                                                    <FiTrash2 size={16} />
+                                                </Button>
+                                            </div>
+                                        ) : (
+                                            <span className="text-gray-400">Not declared</span>
+                                        )}
+                                    </TableCell>
+                                    <TableCell>
+                                        {result?.closeSession ? (
+                                            <div className="flex items-center gap-2">
+                                                <span>{result?.closeSession?.panna} - {result?.closeSession?.digit}</span>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="text-red-600 hover:text-red-800 hover:bg-red-100"
+                                                    onClick={() => handleDeleteResult(result?.closeSession?._id || '', 'closeSession')}
+                                                >
+                                                    <FiTrash2 size={16} />
+                                                </Button>
+                                            </div>
+                                        ) : (
+                                            <span className="text-gray-400">Not declared</span>
+                                        )}
+                                    </TableCell>
+                                </TableRow>
+                            ))
+                        ) : (
+                            <TableRow>
+                                <TableCell colSpan={5} className="text-center py-4">
+                                    No result found
                                 </TableCell>
                             </TableRow>
-                        ))}
+                        )}
                     </TableBody>
                 </Table>
             </div>
 
             {/* Winner Dialog */}
             <Dialog open={showWinnerDialog} onOpenChange={setShowWinnerDialog}>
-                <DialogContent className="sm:max-w-2xl bg-white dark:bg-gray-950">
+                <DialogContent className="sm:max-w-4xl bg-white dark:bg-gray-950">
                     <DialogHeader>
-                        <DialogTitle>Winners</DialogTitle>
+                        <DialogTitle>Winners - {game_name} {session} Session</DialogTitle>
                     </DialogHeader>
                     <div className="space-y-6">
                         <div className="flex justify-between items-center rounded-lg">
                             <div>
-                                <p className="font-medium">Panna: {panna || "124"} | Digit: {digit || "7"}</p>
+                                <p className="font-medium">Panna: {panna} | Digit: {digit}</p>
                             </div>
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
-                            <div className=" p-4 rounded-lg border">
-                                <p className="text-xs ">Total Bid Amount</p>
-                                <p className="text-xl font-bold">₹0</p>
+                            <div className="p-4 rounded-lg border">
+                                <p className="text-xs">Total Bid Amount</p>
+                                <p className="text-xl font-bold">₹{totalBidAmount}</p>
                             </div>
-                            <div className=" p-4 rounded-lg border">
-                                <p className="text-xs ">Total Winning Amount</p>
-                                <p className="text-xl font-bold">₹0</p>
+                            <div className="p-4 rounded-lg border">
+                                <p className="text-xs">Total Winning Amount</p>
+                                <p className="text-xl font-bold">₹{totalWinningAmount}</p>
                             </div>
                         </div>
 
@@ -309,11 +472,23 @@ const MainMarketResult = () => {
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    <TableRow>
-                                        <TableCell colSpan={5} className="text-center py-4 ">
-                                            No winning bids found
-                                        </TableCell>
-                                    </TableRow>
+                                    {winners?.length > 0 ? (
+                                        winners.map((winner, index) => (
+                                            <TableRow key={index}>
+                                                <TableCell>{winner?.userName}</TableCell>
+                                                <TableCell>₹{winner?.bidAmount}</TableCell>
+                                                <TableCell>₹{winner?.winningAmount}</TableCell>
+                                                <TableCell>{winner?.gameType}</TableCell>
+                                                <TableCell>{new Date(winner?.bidDate).toLocaleDateString()}</TableCell>
+                                            </TableRow>
+                                        ))
+                                    ) : (
+                                        <TableRow>
+                                            <TableCell colSpan={5} className="text-center py-4">
+                                                No winning bids found
+                                            </TableCell>
+                                        </TableRow>
+                                    )}
                                 </TableBody>
                             </Table>
                         </div>
@@ -322,8 +497,8 @@ const MainMarketResult = () => {
                             <Button variant="outline" onClick={() => setShowWinnerDialog(false)}>
                                 Close
                             </Button>
-                            <Button>
-                                Declare
+                            <Button onClick={handleDeclareResult}>
+                                Declare Result
                             </Button>
                         </div>
                     </div>

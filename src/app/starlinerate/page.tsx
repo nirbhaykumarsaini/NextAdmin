@@ -1,6 +1,6 @@
 "use client"
 
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import {
@@ -14,36 +14,97 @@ import {
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
+import { toast } from 'sonner'
+import axios from 'axios'
 
 const formSchema = z.object({
-  singleDigitPoint: z.number().min(0),
-  singleDigitAmount: z.number().min(0),
-  singlePannaPoint: z.number().min(0),
-  singlePannaAmount: z.number().min(0),
-  doublePannaPoint: z.number().min(0),
-  doublePannaAmount: z.number().min(0),
-  triplePannaPoint: z.number().min(0),
-  triplePannaAmount: z.number().min(0),
-})
+  single_digit_point: z.number().min(0),
+  single_digit_amount: z.number().min(0),
+  single_panna_point: z.number().min(0),
+  single_panna_amount: z.number().min(0),
+  double_panna_point: z.number().min(0),
+  double_panna_amount: z.number().min(0),
+  triple_panna_point: z.number().min(0),
+  triple_panna_amount: z.number().min(0),
+});
+
+interface RateData {
+  _id: string;
+  single_digit_point: number;
+  single_digit_amount: number;
+  single_panna_point: number;
+  single_panna_amount: number;
+  double_panna_point: number;
+  double_panna_amount: number;
+  triple_panna_point: number;
+  triple_panna_amount: number;
+}
 
 const StarlineRate = () => {
+
+  const [rateId, setRateId] = useState<string>("");
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      singleDigitPoint: 100,
-      singleDigitAmount: 950,
-      singlePannaPoint: 100,
-      singlePannaAmount: 14000,
-      doublePannaPoint: 100,
-      doublePannaAmount: 28000,
-      triplePannaPoint: 100,
-      triplePannaAmount: 70000,
+      single_digit_point: 0,
+      single_digit_amount: 0,
+      single_panna_point: 0,
+      single_panna_amount: 0,
+      double_panna_point: 0,
+      double_panna_amount: 0,
+      triple_panna_point: 0,
+      triple_panna_amount: 0,
     },
   })
 
-  const onSubmit = (values: z.infer<typeof formSchema>) => {
-    console.log("Starline rates submitted:", values)
-    // Add your submission logic here
+  useEffect(() => {
+    fetchRate()
+  }, [])
+
+  const fetchRate = async () => {
+    try {
+      const response = await axios.get('/api/starlinerate')
+      console.log(response.data)
+
+      if (response.data.status && response.data.data) {
+        const rateData: RateData = response.data.data;
+        setRateId(rateData._id);
+
+        // Set form values with API data
+        form.reset({
+          single_digit_point: rateData.single_digit_point,
+          single_digit_amount: rateData.single_digit_amount,
+          single_panna_point: rateData.single_panna_point,
+          single_panna_amount: rateData.single_panna_amount,
+          double_panna_point: rateData.double_panna_point,
+          double_panna_amount: rateData.double_panna_amount,
+          triple_panna_point: rateData.triple_panna_point,
+          triple_panna_amount: rateData.triple_panna_amount
+        });
+      }
+    } catch (error: any) {
+      toast.error(error.message || `Failed to  fatch rate`)
+    }
+  }
+
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+
+    try {
+      const response = await axios.post('/api/starlinerate', {
+        id: rateId,
+        rateData: values
+      })
+      console.log(response.data)
+      if (response.data.status === false) {
+        toast.error(response.data.message || `Failed to  ${rateId ? "update" : "add"} rate`)
+      } else {
+        toast.success(response.data.message || `Rate ${rateId ? "updated" : "added"} successfully`);
+        fetchRate()
+      }
+    } catch (error: any) {
+      toast.error(error.message || `Failed to  ${rateId ? "update" : "add"} rate`)
+    }
   }
 
   return (
@@ -58,208 +119,208 @@ const StarlineRate = () => {
           {/* Single Digit Section */}
           <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
             <div className="p-6 rounded-lg shadow border ">
-            <h2 className="text-xl font-semibold  mb-4 pb-2 border-b ">
-              Single Digit
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <FormField
-                control={form.control}
-                name="singleDigitPoint"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="block text-sm font-medium ">Point Value</FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <Input
-                          type="number"
-                          className="pl-3 pr-10 py-3 text-lg font-medium"
-                          {...field}
-                          onChange={(e) => field.onChange(parseInt(e.target.value))}
-                        />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="singleDigitAmount"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="block text-sm font-medium ">Payout Amount</FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <span className="absolute left-3 top-2 ">₹</span>
-                        <Input
-                          type="number"
-                          className="pl-8 pr-3 py-3 text-lg font-medium"
-                          {...field}
-                          onChange={(e) => field.onChange(parseInt(e.target.value))}
-                        />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <h2 className="text-xl font-semibold  mb-4 pb-2 border-b ">
+                Single Digit
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField
+                  control={form.control}
+                  name="single_digit_point"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="block text-sm font-medium ">Point Value</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Input
+                            type="number"
+                            className="pl-3 pr-10 py-3 text-lg font-medium"
+                            {...field}
+                            onChange={(e) => field.onChange(parseInt(e.target.value))}
+                          />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="single_digit_amount"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="block text-sm font-medium ">Payout Amount</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <span className="absolute left-3 top-2 ">₹</span>
+                          <Input
+                            type="number"
+                            className="pl-8 pr-3 py-3 text-lg font-medium"
+                            {...field}
+                            onChange={(e) => field.onChange(parseInt(e.target.value))}
+                          />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
             </div>
-          </div>
 
-          {/* Single Panna Section */}
-          <div className=" p-6 rounded-lg shadow border ">
-            <h2 className="text-xl font-semibold  mb-4 pb-2 border-b">
-              Single Panna
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <FormField
-                control={form.control}
-                name="singlePannaPoint"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="block text-sm font-medium">Point Value</FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <Input
-                          type="number"
-                          className="pl-3 pr-10 py-3 text-lg font-medium"
-                          {...field}
-                          onChange={(e) => field.onChange(parseInt(e.target.value))}
-                        />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="singlePannaAmount"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="block text-sm font-medium ">Payout Amount</FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <span className="absolute left-3 top-2 ">₹</span>
-                        <Input
-                          type="number"
-                          className="pl-8 pr-3 py-3 text-lg font-medium"
-                          {...field}
-                          onChange={(e) => field.onChange(parseInt(e.target.value))}
-                        />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            {/* Single Panna Section */}
+            <div className=" p-6 rounded-lg shadow border ">
+              <h2 className="text-xl font-semibold  mb-4 pb-2 border-b">
+                Single Panna
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField
+                  control={form.control}
+                  name="single_panna_point"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="block text-sm font-medium">Point Value</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Input
+                            type="number"
+                            className="pl-3 pr-10 py-3 text-lg font-medium"
+                            {...field}
+                            onChange={(e) => field.onChange(parseInt(e.target.value))}
+                          />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="single_panna_amount"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="block text-sm font-medium ">Payout Amount</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <span className="absolute left-3 top-2 ">₹</span>
+                          <Input
+                            type="number"
+                            className="pl-8 pr-3 py-3 text-lg font-medium"
+                            {...field}
+                            onChange={(e) => field.onChange(parseInt(e.target.value))}
+                          />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
             </div>
-          </div>
 
-          {/* Double Panna Section */}
-          <div className=" p-6 rounded-lg shadow border ">
-            <h2 className="text-xl font-semibold  mb-4 pb-2 border-b">
-              Double Panna
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <FormField
-                control={form.control}
-                name="doublePannaPoint"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="block text-sm font-medium ">Point Value</FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <Input
-                          type="number"
-                          className="pl-3 pr-10 py-3 text-lg font-medium"
-                          {...field}
-                          onChange={(e) => field.onChange(parseInt(e.target.value))}
-                        />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="doublePannaAmount"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="block text-sm font-medium ">Payout Amount</FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <span className="absolute left-3 top-2">₹</span>
-                        <Input
-                          type="number"
-                          className="pl-8 pr-3 py-3 text-lg font-medium"
-                          {...field}
-                          onChange={(e) => field.onChange(parseInt(e.target.value))}
-                        />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            {/* Double Panna Section */}
+            <div className=" p-6 rounded-lg shadow border ">
+              <h2 className="text-xl font-semibold  mb-4 pb-2 border-b">
+                Double Panna
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField
+                  control={form.control}
+                  name="double_panna_point"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="block text-sm font-medium ">Point Value</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Input
+                            type="number"
+                            className="pl-3 pr-10 py-3 text-lg font-medium"
+                            {...field}
+                            onChange={(e) => field.onChange(parseInt(e.target.value))}
+                          />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="double_panna_amount"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="block text-sm font-medium ">Payout Amount</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <span className="absolute left-3 top-2">₹</span>
+                          <Input
+                            type="number"
+                            className="pl-8 pr-3 py-3 text-lg font-medium"
+                            {...field}
+                            onChange={(e) => field.onChange(parseInt(e.target.value))}
+                          />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
             </div>
-          </div>
 
-          {/* Triple Panna Section */}
-          <div className=" p-6 rounded-lg shadow border ">
-            <h2 className="text-xl font-semibold  mb-4 pb-2 border-b ">
-              Triple Panna
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <FormField
-                control={form.control}
-                name="triplePannaPoint"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="block text-sm font-medium ">Point Value</FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <Input
-                          type="number"
-                          className="pl-3 pr-10 py-3 text-lg font-medium"
-                          {...field}
-                          onChange={(e) => field.onChange(parseInt(e.target.value))}
-                        />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="triplePannaAmount"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="block text-sm font-medium">Payout Amount</FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <span className="absolute left-3 top-2">₹</span>
-                        <Input
-                          type="number"
-                          className="pl-8 pr-3 py-3 text-lg font-medium"
-                          {...field}
-                          onChange={(e) => field.onChange(parseInt(e.target.value))}
-                        />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            {/* Triple Panna Section */}
+            <div className=" p-6 rounded-lg shadow border ">
+              <h2 className="text-xl font-semibold  mb-4 pb-2 border-b ">
+                Triple Panna
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField
+                  control={form.control}
+                  name="triple_panna_point"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="block text-sm font-medium ">Point Value</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Input
+                            type="number"
+                            className="pl-3 pr-10 py-3 text-lg font-medium"
+                            {...field}
+                            onChange={(e) => field.onChange(parseInt(e.target.value))}
+                          />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="triple_panna_amount"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="block text-sm font-medium">Payout Amount</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <span className="absolute left-3 top-2">₹</span>
+                          <Input
+                            type="number"
+                            className="pl-8 pr-3 py-3 text-lg font-medium"
+                            {...field}
+                            onChange={(e) => field.onChange(parseInt(e.target.value))}
+                          />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
             </div>
-          </div>
           </div>
 
           <div className="flex justify-end">
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               className="w-full md:w-auto"
             >
               Save Starline Rates

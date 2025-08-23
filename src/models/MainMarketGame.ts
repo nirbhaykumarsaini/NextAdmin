@@ -1,4 +1,4 @@
-import mongoose, { Document, Model, Schema } from 'mongoose';
+import mongoose, { Document, Schema } from 'mongoose';
 
 export interface IMainMarketGameDay {
   day: string;
@@ -8,6 +8,7 @@ export interface IMainMarketGameDay {
 }
 
 export interface IMainMarketGame extends Document {
+  _id:string,
   game_name: string;
   is_active: boolean;
   days: IMainMarketGameDay[];

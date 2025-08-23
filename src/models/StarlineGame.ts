@@ -1,4 +1,4 @@
-import mongoose, { Document, Model, Schema } from 'mongoose';
+import mongoose, { Document, Schema } from 'mongoose';
 
 export interface IStarlineGameDay {
   day: string;
@@ -7,6 +7,7 @@ export interface IStarlineGameDay {
 }
 
 export interface IStarlineGame extends Document {
+  _id:string;
   game_name: string;
   is_active: boolean;
   days: IStarlineGameDay[];

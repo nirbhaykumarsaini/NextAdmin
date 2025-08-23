@@ -20,14 +20,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationPrevious,
-  PaginationLink,
-  PaginationNext,
-} from "@/components/ui/pagination";
+
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -42,7 +35,6 @@ import {
   deleteGame,
   updateMarketStatus,
   toggleGameStatus,
-  setCurrentPage,
   clearError,
 } from "@/redux/slices/starlineSlice";
 import { IStarlineGame } from "@/models/StarlineGame";
@@ -54,7 +46,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Checkbox } from "@/components/ui/checkbox";
 
 // ---------------- Schema ----------------
 const formSchema = z.object({
@@ -105,7 +96,9 @@ const StarlineGame = () => {
     defaultValues: {
       game_name: "",
       days: DAYS_OF_WEEK.map((day) => ({
-        day
+        day,
+        open_time:"",
+        market_status:false
       })),
     },
   });

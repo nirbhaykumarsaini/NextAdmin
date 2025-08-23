@@ -131,7 +131,7 @@ export function Sidebar() {
       icon: <FiWind className="h-5 w-5" />,
       label: "Delete Bid Report",
     },
-     {
+    {
       label: "App Setting",
       icon: <FiGlobe className="h-5 w-5" />,
       submenu: [
@@ -139,21 +139,32 @@ export function Sidebar() {
         { href: "/footerlinks", label: "Footer Links" },
         { href: "/contactinfo", label: "Contact Info" },
         { href: "/manageupi", label: "Manage Upi" },
-         { href: "/accountsettings", label: "Account Rules & Limits" },
+        { href: "/accountsettings", label: "Account Rules & Limits" },
       ],
     },
-
+    {
+      label: "Games Type",
+      icon: <FiSettings className="h-5 w-5" />,
+      submenu: [
+        { href: "/singledigit", label: "Single Digit" },
+        { href: "/jodidigit", label: "Jodi Digit" },
+        { href: "/singlepanna", label: "Single Panna" },
+        { href: "/doublepanna", label: "Double Panna" },
+        { href: "/triplepanna", label: "Triple Panna" },
+        { href: "/halfsangam", label: "Half Sangam" },
+        { href: "/fullsangam", label: "Full Sangam" },
+      ],
+    },
     {
       label: "Advanced System",
       icon: <FiSettings className="h-5 w-5" />,
       submenu: [
-        { href: "/gametype", label: "Game Type" },
         { href: "/slider", label: "Slider" },
         { href: "/notice", label: "Notice" },
         { href: "/howtoplay", label: "How to Play" },
         { href: "/maintenance", label: "Maintenance" },
         { href: "/notification", label: "Notification" },
-         { href: "/referrals", label: "Referrals" },
+        { href: "/referrals", label: "Referrals" },
       ],
     },
 
@@ -161,12 +172,12 @@ export function Sidebar() {
   ];
 
   return (
-   <div
-  className={cn(
-    "relative h-screen overflow-y-auto border-r bg-white dark:bg-gray-900 z-50 transition-all duration-300 ease-in-out scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent",
-    isCollapsed ? "w-16" : "w-64"
-  )}
->
+    <div
+      className={cn(
+        "relative h-screen overflow-y-auto border-r bg-white dark:bg-gray-900 z-50 transition-all duration-300 ease-in-out scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent",
+        isCollapsed ? "w-16" : "w-64"
+      )}
+    >
       <div className="flex h-full flex-col p-2">
         <div className={cn(
           "flex items-center justify-between p-2 mb-4",

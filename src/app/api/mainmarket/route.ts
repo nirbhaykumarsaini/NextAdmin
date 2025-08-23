@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import MainMarketGame, { IMainMarketGame } from '@/models/MainMarketGame';
+import MainMarketGame from '@/models/MainMarketGame';
 import connectDB from '@/config/db';
 import ApiError from '@/lib/errors/APiError';
 import logger from '@/config/logger';

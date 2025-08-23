@@ -1,14 +1,7 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { IMainMarketGame } from '@/models/MainMarketGame';
 import axios from 'axios';
-
-interface MainMarketState {
-  games: IMainMarketGame[];
-  loading: boolean;
-  error: string | null;
-  currentPage: number;
-  totalCount: number;
-}
+import { MainMarketState } from '@/types/game';
 
 const initialState: MainMarketState = {
   games: [],
@@ -24,7 +17,6 @@ export const fetchGames = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const response = await axios.get('/api/mainmarket');
-      console.log(response.data)
       return response.data;
     } catch (error: any) {
       return rejectWithValue(error.message);
