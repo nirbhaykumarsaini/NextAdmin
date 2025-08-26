@@ -1,3 +1,5 @@
+export const runtime = "nodejs"; 
+
 import { NextResponse } from 'next/server';
 import dbConnect from '@/config/db';
 import User from '@/models/User';
@@ -11,7 +13,6 @@ import logger from '@/config/logger';
 export async function POST(request: Request) {
     try {
         await dbConnect();
-        const { pathname } = new URL(request.url);
 
         // Helper function to handle successful authentication
         const handleSuccessfulAuth = async (user: any) => {
