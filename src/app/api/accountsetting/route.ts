@@ -80,9 +80,12 @@ export async function GET() {
             data: accountSetting || {}
         });
 
-    } catch (error: any) {
-        return NextResponse.json(
-            { status: false, message: error.message || 'Failed to fetch account setting information' },
-        );
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            return NextResponse.json(
+                { status: false, message: error.message || 'Failed to fetch account setting information' },
+            );
+        }
+
     }
 }

@@ -40,7 +40,7 @@ const defaultFormData: AccountSettingsData = {
 const AccountSettings = () => {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<AccountSettingsData>(defaultFormData);
-  const [isDataLoaded, setIsDataLoaded] = useState(false);
+  // const [isDataLoaded, setIsDataLoaded] = useState(false);
 
   // Fetch existing settings on component mount
   useEffect(() => {
@@ -67,11 +67,11 @@ const AccountSettings = () => {
           withdrawal_close_time: apiData.withdrawal_close_time || defaultFormData.withdrawal_close_time,
         });
       }
-      setIsDataLoaded(true);
+      // setIsDataLoaded(true);
     } catch (error) {
       console.error('Error fetching settings:', error);
       toast.error('Failed to load account settings');
-      setIsDataLoaded(true);
+      // setIsDataLoaded(true);
     }
   };
 
