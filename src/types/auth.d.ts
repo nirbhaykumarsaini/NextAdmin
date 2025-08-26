@@ -14,15 +14,6 @@ export interface IRegister {
   role?: 'user' | 'admin';
 }
 
-// export interface IToken {
-//   userId: Types.ObjectId;
-//   token: string;
-//   expiresAt: Date;
-//   type: 'refresh' | 'resetPassword' | 'verifyEmail';
-//   blacklisted?: boolean;
-//   createdAt?: Date;
-//   updatedAt?: Date;
-// }
 
 export interface CookieOptions {
   httpOnly: boolean;

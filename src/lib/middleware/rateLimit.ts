@@ -13,8 +13,7 @@ export const rateLimitMiddleware = async (request: Request) => {
     return null;
   } catch (error) {
     return NextResponse.json(
-      { message: 'Too many requests' },
-      // { status: false }
+      { status: false, message: 'Too many requests' },
     );
   }
 };

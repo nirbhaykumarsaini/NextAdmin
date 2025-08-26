@@ -166,3 +166,7 @@
 {"level":"error","status":false,"statusCode":409,"timestamp":"2025-08-25T09:39:48.489Z"}
 {"level":"error","status":false,"statusCode":401,"timestamp":"2025-08-25T09:42:31.422Z"}
 {"level":"error","status":false,"statusCode":401,"timestamp":"2025-08-25T09:42:51.992Z"}
+{"level":"error","status":false,"statusCode":400,"timestamp":"2025-08-26T09:28:10.607Z"}
+{"_message":"User validation failed","errors":{"role":{"kind":"enum","message":"`user` is not a valid enum value for path `role`.","name":"ValidatorError","path":"role","properties":{"enumValues":["admin"],"message":"`user` is not a valid enum value for path `role`.","path":"role","type":"enum","value":"user"},"value":"user"}},"level":"error","message":"User validation failed: role: `user` is not a valid enum value for path `role`.","name":"ValidationError","timestamp":"2025-08-26T09:31:02.913Z"}
+{"level":"error","status":false,"statusCode":400,"timestamp":"2025-08-26T09:31:23.992Z"}
+{"level":"error","timestamp":"2025-08-26T09:36:51.315Z"}

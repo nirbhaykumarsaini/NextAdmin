@@ -1,5 +1,5 @@
 import jwt, { JwtPayload } from 'jsonwebtoken';
-import { JWT_SECRET, JWT_ACCESS_EXPIRATION, JWT_REFRESH_EXPIRATION } from '@/constants/index';
+import { JWT_SECRET } from '@/constants/index';
 
 export const generateToken = (userId: string | JwtPayload | undefined) => {
   const secret = JWT_SECRET;
