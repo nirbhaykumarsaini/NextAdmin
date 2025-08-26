@@ -19,7 +19,7 @@ export async function POST(request: Request) {
 
             const response = NextResponse.json({
                 status: true,
-                message: 'Authentication successful',
+                message: 'Registration successful',
                 user: {
                     _id: user._id,
                     username: user.username,
