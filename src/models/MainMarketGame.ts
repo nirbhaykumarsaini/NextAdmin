@@ -3,7 +3,7 @@ import mongoose, { Document, Schema } from 'mongoose';
 export interface IMainMarketGameDay {
   day: string;
   open_time: string;
-  close_time?: string;
+  close_time: string;
   market_status: boolean;
 }
 

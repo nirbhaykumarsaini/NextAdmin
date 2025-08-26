@@ -56,7 +56,7 @@ const formSchema = z.object({
     z.object({
       day: z.string(),
       open_time: z.string(),
-      market_status: z.boolean().default(false),
+      market_status: z.boolean(),
     })
   ),
 });

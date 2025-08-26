@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import axios from 'axios';
 import { GalidisawarGameState } from '@/types/game';
+import { IGalidisawarGame } from '@/models/GalidisawarGame';
 
 
 const initialState: GalidisawarGameState = {
@@ -26,7 +27,7 @@ export const fetchGames = createAsyncThunk(
 
 export const createGame = createAsyncThunk(
   'galidisawar/createGame',
-  async (gameData: Partial<GalidisawarGameState>, { rejectWithValue }) => {
+  async (gameData: Partial<IGalidisawarGame>, { rejectWithValue }) => {
     try {
       const response = await axios.post('/api/galidisawar', gameData);
       return response.data;
@@ -38,7 +39,7 @@ export const createGame = createAsyncThunk(
 
 export const updateGame = createAsyncThunk(
   'galidisawar/updateGame',
-  async ({ id, gameData }: { id: string; gameData: Partial<GalidisawarGameState> }, { rejectWithValue }) => {
+  async ({ id, gameData }: { id: string; gameData: Partial<IGalidisawarGame> }, { rejectWithValue }) => {
     try {
       const response = await axios.put(`/api/galidisawar?id=${id}`, gameData);
       return response.data;
