@@ -13,9 +13,8 @@ export interface IUserDocument extends IUser, Document {
   comparePassword(candidatePassword: string): Promise<boolean>;
 }
 
-interface IUserModel extends Model<IUserDocument> {}
 
-const userSchema = new Schema<IUserDocument, IUserModel>(
+const userSchema = new Schema<IUserDocument, Model<IUserDocument>>(
   {
     username: { 
       type: String, 
@@ -50,6 +49,6 @@ userSchema.methods.comparePassword = async function (
   return await bcrypt.compare(candidatePassword, this.password);
 };
 
-const User = mongoose.models.User || mongoose.model<IUserDocument, IUserModel>('User', userSchema);
+const User = mongoose.models.User || mongoose.model<IUserDocument>('User', userSchema);
 
 export default User;

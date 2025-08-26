@@ -11,13 +11,11 @@ export interface IAppUser {
   updatedAt?: Date;
 }
 
-export interface IUserDocument extends IAppUser, Document {
+export interface IAppUserDocument extends IAppUser, Document {
   comparePassword(candidatePassword: string): Promise<boolean>;
 }
 
-interface IUserModel extends Model<IUserDocument> {}
-
-const appUserSchema = new Schema<IUserDocument, IUserModel>(
+const appUserSchema = new Schema<IAppUserDocument, Model<IAppUserDocument>>(
   {
     name: {
       type: String,
@@ -48,7 +46,7 @@ const appUserSchema = new Schema<IUserDocument, IUserModel>(
   { timestamps: true }
 );
 
-appUserSchema.pre<IUserDocument>('save', async function (next) {
+appUserSchema.pre<IAppUserDocument>('save', async function (next) {
   if (!this.isModified('password')) return next();
   this.password = await bcrypt.hash(this.password, 12);
   next();
@@ -60,5 +58,5 @@ appUserSchema.methods.comparePassword = async function (
   return await bcrypt.compare(candidatePassword, this.password);
 };
 
-const AppUser = mongoose.models.AppUser || mongoose.model<IUserDocument, IUserModel>('AppUser', appUserSchema);
+const AppUser = mongoose.models.AppUser || mongoose.model<IAppUserDocument>('AppUser', appUserSchema);
 export default AppUser;

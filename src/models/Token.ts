@@ -13,10 +13,7 @@ export interface IToken {
 // Document interface that extends IToken and Mongoose Document
 export interface ITokenDocument extends IToken, Document {}
 
-// Model interface
-interface ITokenModel extends Model<ITokenDocument> {}
-
-const tokenSchema = new Schema<ITokenDocument, ITokenModel>(
+const tokenSchema = new Schema<ITokenDocument, Model<ITokenDocument>>(
   {
     userId: { 
       type: Schema.Types.ObjectId, 
@@ -48,5 +45,5 @@ const tokenSchema = new Schema<ITokenDocument, ITokenModel>(
   }
 );
 
-const Token = mongoose.models.User || mongoose.model<ITokenDocument, ITokenModel>('Token', tokenSchema);
+const Token = mongoose.models.User || mongoose.model<ITokenDocument>('Token', tokenSchema);
 export default Token;
