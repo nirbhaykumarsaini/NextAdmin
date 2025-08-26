@@ -60,13 +60,11 @@ export async function POST(request: NextRequest) {
             message: 'Account Setting information saved successfully',
         });
 
-    } catch (error: unknown) {
+    } catch (error: any) {
         console.error('Error saving account settings:', error);
-        if (error instanceof Error) {
-            return NextResponse.json(
-                { status: false, message: error.message || 'Failed to save account setting information' },
-            );
-        }
+        return NextResponse.json(
+            { status: false, message: error.message || 'Failed to save account setting information' },
+        );
     }
 }
 
@@ -82,12 +80,9 @@ export async function GET() {
             data: accountSetting || {}
         });
 
-    } catch (error: unknown) {
-        if (error instanceof Error) {
-            return NextResponse.json(
-                { status: false, message: error.message || 'Failed to fetch account setting information' },
-            );
-        }
-
+    } catch (error: any) {
+        return NextResponse.json(
+            { status: false, message: error.message || 'Failed to fetch account setting information' },
+        );
     }
 }
