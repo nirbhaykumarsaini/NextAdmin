@@ -1,37 +1,25 @@
-import js from '@eslint/js';
-import typescriptEslint from '@typescript-eslint/eslint-plugin';
-import typescriptParser from '@typescript-eslint/parser';
-import next from 'eslint-config-next';
+import { dirname } from "path";
+import { fileURLToPath } from "url";
+import { FlatCompat } from "@eslint/eslintrc";
 
-export default [
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+const compat = new FlatCompat({
+  baseDirectory: __dirname,
+});
+
+const eslintConfig = [
+  // Next.js configs
+  ...compat.extends("next/core-web-vitals"),
+  ...compat.extends("next/typescript"),
+  
+  // Custom rules
   {
-    // Base configuration
-    ignores: ['.next/', 'node_modules/'],
-  },
-  {
-    // Next.js configuration
-    files: ['**/*.{js,jsx,ts,tsx}'],
-    ...next,
-  },
-  {
-    // TypeScript-specific rules
-    files: ['**/*.{ts,tsx}'],
-    languageOptions: {
-      parser: typescriptParser,
-      parserOptions: {
-        ecmaVersion: 'latest',
-        sourceType: 'module',
-        ecmaFeatures: {
-          jsx: true,
-        },
-      },
-    },
-    plugins: {
-      '@typescript-eslint': typescriptEslint,
-    },
     rules: {
-      '@typescript-eslint/no-explicit-any': 'off',
-      // Add other TypeScript-specific rules here
-    },
-  },
+      "@typescript-eslint/no-explicit-any": "off"
+    }
+  }
 ];
+
+export default eslintConfig;
