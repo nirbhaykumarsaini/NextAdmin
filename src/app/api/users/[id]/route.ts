@@ -36,11 +36,11 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   }
 }
 
-export async function PUT(request: NextRequest,{ params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest,{ params }: { params: Promise<{ id: string }> }) {
   try {
     await authenticate(request);
 
-    const {id} = params;
+    const {id} = await params;
     const updateData = await request.json();
 
     if (!id) {
@@ -69,11 +69,11 @@ export async function PUT(request: NextRequest,{ params }: { params: { id: strin
   }
 }
 
-export async function DELETE(request: NextRequest,{ params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest,{ params }: { params: Promise<{ id: string }> }) {
   try {
     await authenticate(request);
 
-    const {id} = params;
+    const {id} = await params;
 
     if (!id) {
       throw new ApiError('User ID is required');
