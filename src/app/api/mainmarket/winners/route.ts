@@ -26,8 +26,8 @@ export async function POST(request: NextRequest) {
         // }).populate('userId', 'username name');
 
         // Calculate total bid amount and winning amount
-        let totalBidAmount = 0;
-        let totalWinningAmount = 0;
+        // let totalBidAmount = 0;
+        // let totalWinningAmount = 0;
 
         // const winners = winningBids.map(bid => {
         //     const bidAmount = bid.amount || 0;
