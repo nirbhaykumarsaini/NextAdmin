@@ -77,7 +77,7 @@ const AccountSettings = () => {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type } = e.target;
-
+    
     if (type === 'number') {
       setFormData(prev => ({
         ...prev,
@@ -111,30 +111,29 @@ const AccountSettings = () => {
 
     try {
       const response = await axios.post('/api/accountsetting', formData);
-
+      
       if (response.data.status) {
         toast.success('Account settings saved successfully');
       } else {
         toast.error(response.data.message || 'Failed to save settings');
       }
     } catch (error: any) {
-      if (error instanceof Error) {
-        toast.error(error.message || 'Failed to save account settings');
-      }
+      console.error('Error saving settings:', error);
+      toast.error(error.response?.data?.message || 'Failed to save account settings');
     } finally {
       setLoading(false);
     }
   };
 
-  // Don't render form until data is loaded to prevent controlled/uncontrolled issues
-  if (!isDataLoaded) {
-    return <div>Loading...</div>;
-  }
+//   // Don't render form until data is loaded to prevent controlled/uncontrolled issues
+//   if (!isDataLoaded) {
+//     return <div>Loading...</div>;
+//   }
 
   return (
     <div className="space-y-6">
       <h1 className='font-semibold text-2xl'>Account Rules & Limits</h1>
-
+      
       <form onSubmit={handleSubmit}>
         <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
           <div className="grid w-full items-center gap-3">

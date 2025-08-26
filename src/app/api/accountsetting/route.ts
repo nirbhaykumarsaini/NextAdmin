@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
             message: 'Account Setting information saved successfully',
         });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Error saving account settings:', error);
         if (error instanceof Error) {
             return NextResponse.json(
