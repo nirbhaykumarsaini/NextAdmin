@@ -1,17 +1,17 @@
 // app/api/main-market/[id]/status/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import connectDB  from "@/config/db";
-import MainMarketGame  from "@/models/MainMarketGame";
-import  ApiError  from "@/lib/errors/APiError";
+import connectDB from "@/config/db";
+import MainMarketGame from "@/models/MainMarketGame";
+import ApiError from "@/lib/errors/APiError";
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await connectDB();
-    
-    const { id } = params;
+
+    const { id } = await params;
     if (!id) throw new ApiError("Game ID is required");
 
     const body = await request.json();
@@ -26,7 +26,7 @@ export async function PATCH(
       { is_active },
       { new: true, runValidators: true }
     );
-    
+
     if (!game) throw new ApiError("Game not found");
 
     return NextResponse.json({
@@ -35,9 +35,9 @@ export async function PATCH(
     });
   } catch (error: any) {
     return NextResponse.json(
-      { 
-        status: false, 
-        message: error.message || "Failed to update status" 
+      {
+        status: false,
+        message: error.message || "Failed to update status"
       }
     );
   }
