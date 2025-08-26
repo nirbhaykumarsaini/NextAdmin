@@ -9,11 +9,11 @@ import connectDB from '@/config/db';
 connectDB();
 
 
-export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     await authenticate(request);
 
-     const { id } = params;
+     const { id } = await params;
 
     if (!id) {
       throw new ApiError('User ID is required');
