@@ -291,18 +291,7 @@ export function Sidebar() {
           </nav>
         </ScrollArea>
 
-        <div className={cn("p-2", isCollapsed ? "flex justify-center" : "")}>
-          <Button
-            variant="ghost"
-            className={cn(
-              "w-full",
-              isCollapsed ? "justify-center" : "justify-start"
-            )}
-          >
-            <FiLogOut className={cn("h-5 w-5", isCollapsed ? "" : "mr-3")} />
-            {!isCollapsed && <span>Logout</span>}
-          </Button>
-        </div>
+        
       </div>
     </div>
   );

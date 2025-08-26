@@ -1,67 +1,42 @@
-// components/ProtectedRoute.tsx
-import { useEffect } from 'react';
-import { useRouter } from 'next/router';
-import { useAppSelector, useAppDispatch } from '@/hooks/redux';
-import { initializeAuth } from '@/redux/slices/authSlice';
+// components/ProtectedRoute.tsx - Enhanced version
+'use client'
 
-interface ProtectedRouteProps {
-  children: React.ReactNode;
-  requireAuth?: boolean;
-  requireUnauth?: boolean;
-}
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { useAppSelector } from '@/hooks/redux'
+import { hasPermission } from '@/redux/slices/authSlice'
 
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ 
+export const ProtectedRoute = ({ 
   children, 
-  requireAuth = false, 
-  requireUnauth = false 
+  requiredPermission 
+}: { 
+  children: React.ReactNode
+  requiredPermission?: string
 }) => {
-  const router = useRouter();
-  const dispatch = useAppDispatch();
-  const { isAuthenticated, isLoading } = useAppSelector((state) => state.auth);
+  const router = useRouter()
+  const { isAuthenticated, isLoading, user } = useAppSelector((state) => state.auth)
 
   useEffect(() => {
-    dispatch(initializeAuth());
-  }, [dispatch]);
-
-  useEffect(() => {
-    if (!isLoading) {
-      // Redirect to login if authentication is required but user is not authenticated
-      if (requireAuth && !isAuthenticated) {
-        router.push('/');
-      }
-      
-      // Redirect to dashboard if user is authenticated but trying to access auth pages (like login)
-      if (requireUnauth && isAuthenticated) {
-        router.push('/dashboard');
-      }
+    if (!isLoading && !isAuthenticated) {
+      router.push('/')
     }
-  }, [isAuthenticated, isLoading, requireAuth, requireUnauth, router]);
+    
+    if (!isLoading && isAuthenticated && requiredPermission && !hasPermission(user, requiredPermission)) {
+      router.push('/unauthorized')
+    }
+  }, [isAuthenticated, isLoading, router, requiredPermission, user])
 
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
       </div>
-    );
+    )
   }
 
-  if (requireAuth && !isAuthenticated) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-      </div>
-    );
+  if (requiredPermission && !hasPermission(user, requiredPermission)) {
+    return null
   }
 
-  if (requireUnauth && isAuthenticated) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-      </div>
-    );
-  }
-
-  return <>{children}</>;
-};
-
-export default ProtectedRoute;
+  return isAuthenticated ? <>{children}</> : null
+}

@@ -8,9 +8,15 @@ import { ThemeProvider } from "@/providers/theme-provider";
 import { Breadcrumb } from '../ui/breadcrumb';
 import { Toaster } from "@/components/ui/sonner";
 import { Providers } from '@/providers/auth-provider';
+import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
+import { useAppSelector } from '@/hooks/redux';
 
 export function ClientLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const { isAuthenticated } = useAppSelector((state) => state.auth);
+
+  const isAuthPage = pathname === '/';
+  const showLayout = isAuthenticated && !isAuthPage;
 
   return (
     <ThemeProvider
@@ -21,23 +27,27 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
     >
       <Providers>
         <div className="flex h-screen overflow-hidden">
-          <Breadcrumb />
-          {pathname !== "/" && <Sidebar />}
+          {showLayout && <Breadcrumb />}
+          {showLayout && <Sidebar />}
 
           <div className="relative flex flex-col flex-1 overflow-y-auto overflow-x-hidden">
-            {pathname !== "/" && <Header />}
+            {showLayout && <Header />}
 
-            <main className={pathname !== "/" ? `flex-1 p-4` : `p-0 md:pl-0`}>
-              <div className={`rounded-xl bg-white dark:bg-gray-900 ${pathname !== "/" ? "p-4 md:p-6 " : "p-0 md:p-0"} shadow-sm border border-gray-200 dark:border-gray-800 transition-all duration-300`}>
-                {children}
+            <main className={showLayout ? `flex-1 p-4` : `p-0 md:pl-0`}>
+              <div className={`rounded-xl bg-white dark:bg-gray-900 ${showLayout ? "p-4 md:p-6 " : "p-0 md:p-0"} shadow-sm border border-gray-200 dark:border-gray-800 transition-all duration-300`}>
+                {isAuthPage ? children : (
+                  <ProtectedRoute>
+                    {children}
+                  </ProtectedRoute>
+                )}
               </div>
             </main>
 
-            {pathname !== "/" && <Footer />}
+            {showLayout && <Footer />}
           </div>
         </div>
         <Toaster />
-        </Providers>
+      </Providers>
     </ThemeProvider>
   );
 }

@@ -15,10 +15,13 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetTrigger } from "@/components/ui/sheet";
+import { logoutUser } from "@/redux/slices/authSlice";
+import { useAppDispatch } from "@/hooks/redux";
 
 export default function Header({}) {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
+  const dispatch = useAppDispatch()
 
   useEffect(() => setMounted(true), []);
 
@@ -84,7 +87,7 @@ export default function Header({}) {
             <DropdownMenuContent align="end" className="bg-white dark:bg-gray-900 cursor-pointer">
               <DropdownMenuItem>Profile</DropdownMenuItem>
               <DropdownMenuItem>Settings</DropdownMenuItem>
-              <DropdownMenuItem className="text-destructive">
+              <DropdownMenuItem className="text-destructive"  onClick={() => dispatch(logoutUser())}>
                 Logout
               </DropdownMenuItem>
             </DropdownMenuContent>

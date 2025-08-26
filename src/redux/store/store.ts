@@ -12,13 +12,7 @@ export const store = configureStore({
     mainMarket: mainMarketReducer,
     starline:starlineReducer,
     galidisawar:galidisawarReducer
-  },
-  middleware: (getDefaultMiddleware: (arg0: { serializableCheck: { ignoredActions: string[] } }) => any) =>
-    getDefaultMiddleware({
-      serializableCheck: {
-        ignoredActions: ['persist/PERSIST'],
-      },
-    }),
+  }
 })
 
 export type RootState = ReturnType<typeof store.getState>

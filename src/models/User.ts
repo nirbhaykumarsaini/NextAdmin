@@ -4,7 +4,7 @@ import bcrypt from 'bcryptjs';
 export interface IUser {
   username: string;
   password: string;
-  role?: 'user' | 'admin';
+  role?: 'admin';
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -28,7 +28,7 @@ const userSchema = new Schema<IUserDocument, IUserModel>(
     },
     role: { 
       type: String, 
-      enum: ['user', 'admin'], 
+      enum: ['admin'], 
       default: 'user' 
     }
   },
