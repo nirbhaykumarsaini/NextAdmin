@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import dbConnect from '@/config/db';
 import AppUser from '@/models/AppUser';
 import ApiError from '@/lib/errors/APiError';
-import logger from '@/config/logger';
 
 export async function POST(request: Request) {
   try {

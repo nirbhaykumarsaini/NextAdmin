@@ -107,9 +107,11 @@ const HowToPlay = () => {
             } else {
                 toast.error(response.data.message || 'Failed to save HowToPlay')
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('Error saving HowToPlay:', error)
-            toast.error(error.response?.data?.message || 'Failed to save HowToPlay')
+            if (error instanceof Error) {
+                toast.error(error.message || 'Failed to save HowToPlay')
+            }
         } finally {
             setLoading(false)
         }
