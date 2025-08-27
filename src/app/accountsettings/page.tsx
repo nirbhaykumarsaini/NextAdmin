@@ -68,17 +68,23 @@ const AccountSettings = () => {
         });
       }
       setIsDataLoaded(true);
-    } catch (error) {
-      if(error instanceof Error){
-      toast.error(error.message || 'Failed to load account settings');
-      setIsDataLoaded(true);
+    } catch (error: unknown) {
+      console.error('Error fetching settings:', error);
+
+      if (axios.isAxiosError(error)) {
+        toast.error(error.response?.data?.message || 'Failed to load account settings');
+      } else if (error instanceof Error) {
+        toast.error(error.message || 'Failed to load account settings');
+      } else {
+        toast.error('Failed to load account settings');
       }
+      setIsDataLoaded(true);
     }
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type } = e.target;
-    
+
     if (type === 'number') {
       setFormData(prev => ({
         ...prev,
@@ -112,16 +118,22 @@ const AccountSettings = () => {
 
     try {
       const response = await axios.post('/api/accountsetting', formData);
-      
+
       if (response.data.status) {
         toast.success('Account settings saved successfully');
       } else {
         toast.error(response.data.message || 'Failed to save settings');
       }
-    } catch (error: any) {
-     if(error instanceof Error){
-      toast.error(error?.message || 'Failed to save account settings');
-     }
+    } catch (error: unknown) {
+      console.error('Error saving settings:', error);
+
+      if (axios.isAxiosError(error)) {
+        toast.error(error.response?.data?.message || 'Failed to save account settings');
+      } else if (error instanceof Error) {
+        toast.error(error.message || 'Failed to save account settings');
+      } else {
+        toast.error('Failed to save account settings');
+      }
     } finally {
       setLoading(false);
     }
@@ -135,7 +147,7 @@ const AccountSettings = () => {
   return (
     <div className="space-y-6">
       <h1 className='font-semibold text-2xl'>Account Rules & Limits</h1>
-      
+
       <form onSubmit={handleSubmit}>
         <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
           <div className="grid w-full items-center gap-3">
