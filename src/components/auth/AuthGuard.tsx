@@ -2,11 +2,13 @@
 
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { useAppSelector } from '@/hooks/redux'
+import { useAppSelector } from '@/hooks/redux';
+import { AuthState } from '@/redux/slices/authSlice';
+
 
 const AuthGuard = ({ children }: { children: React.ReactNode }) => {
   const router = useRouter()
-  const { isAuthenticated, isLoading } = useAppSelector((state: { auth: any }) => state.auth)
+  const { isAuthenticated, isLoading } = useAppSelector((state: { auth: AuthState }) => state.auth)
 
   useEffect(() => {
     if (!isLoading) {

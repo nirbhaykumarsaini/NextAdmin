@@ -14,9 +14,10 @@ export async function GET() {
             status: true,
             data: upis
         });
-    } catch (error: any) {
+    } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message :  'Failed to retrieve upi'
         return NextResponse.json(
-            { status: false, message: error.message || 'Failed to retrieve upi' }
+            { status: false, message: errorMessage }
         );
     }
 }
@@ -33,7 +34,7 @@ export async function POST(request: NextRequest) {
             throw new ApiError('upi_id are required');
         }
 
-        const upi = await ManageUpi.create({
+         await ManageUpi.create({
             upi_id
         });
 
@@ -42,10 +43,11 @@ export async function POST(request: NextRequest) {
             message: 'UPI created successfully',
         });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Error saving upi:', error);
+        const errorMessage = error instanceof Error ? error.message :  'Failed to add upi'
         return NextResponse.json(
-            { status: false, message: error.message || 'Failed to add upi' }
+            { status: false, message: errorMessage }
         );
     }
 }
@@ -64,7 +66,6 @@ export async function PUT(request: NextRequest) {
 
         const body = await request.json();
         const { upi_id } = body;
-        console.log(upi_id)
 
         const updatedUPI = await ManageUpi.findByIdAndUpdate(
             id,
@@ -81,10 +82,11 @@ export async function PUT(request: NextRequest) {
             message: 'UPI updated successfully',
         });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Error updating UPI:', error);
+         const errorMessage = error instanceof Error ? error.message :  'Failed to update UPI'
         return NextResponse.json(
-            { status: false, message: error.message || 'Failed to update UPI' });
+            { status: false, message: errorMessage });
     }
 }
 
@@ -111,10 +113,11 @@ export async function DELETE(request: NextRequest) {
             message: 'UPI deleted successfully'
         });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Error deleting UPI:', error);
+         const errorMessage = error instanceof Error ? error.message :  'Failed to delete UPI' 
         return NextResponse.json(
-            { status: false, message: error.message || 'Failed to delete UPI' });
+            { status: false, message: errorMessage });
     }
 }
 
@@ -144,9 +147,10 @@ export async function PATCH(request: NextRequest) {
             message: `UPI ${upi.is_active ? 'activated' : 'deactivated'} successfully`,
         });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Error toggling UPI status:', error);
+        const errorMessage = error instanceof Error ? error.message :  'Failed to toggle UPI status' 
         return NextResponse.json(
-            { status: false, message: error.message || 'Failed to toggle UPI status' });
+            { status: false, message: errorMessage});
     }
 }

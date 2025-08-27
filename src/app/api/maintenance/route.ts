@@ -29,9 +29,10 @@ export async function GET() {
             status: true,
             data: maintenance
         });
-    } catch (error: any) {
+    } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message :  'Failed to retrieve maintenance settings'
         return NextResponse.json(
-            { status: false, message: error.message || 'Failed to retrieve maintenance settings' }
+            { status: false, message: errorMessage }
         );
     }
 }
@@ -94,10 +95,11 @@ export async function POST(request: NextRequest) {
             });
         }
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Error updating maintenance settings:', error);
+        const errorMessage = error instanceof Error ? error.message :  'Failed to update maintenance settings'
         return NextResponse.json(
-            { status: false, message: error.message || 'Failed to update maintenance settings' }
+            { status: false, message: errorMessage  }
         );
     }
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { FiEdit, FiTrash2, FiSearch, FiChevronLeft, FiChevronRight, FiPlus, FiX } from "react-icons/fi";
+import { FiEdit, FiTrash2, FiPlus } from "react-icons/fi";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -126,7 +126,7 @@ export default function Roles() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     try {
       setLoading(true);
       let response;
@@ -148,9 +148,13 @@ export default function Roles() {
       } else {
         toast.error(response.data.message || 'Failed to save role');
       }
-    } catch (error: any) {
-      console.error('Error saving role:', error);
-      toast.error(error.response?.data?.message || 'Failed to save role');
+    } catch (error: unknown) {
+      console.error('Error save role:', error);
+      if (axios.isAxiosError(error)) {
+        toast.error(error.response?.data?.message || 'Failed to save role');
+      } else if (error instanceof Error) {
+        toast.error(error.message || 'Failed to save role');
+      }
     } finally {
       setLoading(false);
     }
@@ -178,9 +182,13 @@ export default function Roles() {
       } else {
         toast.error(response.data.message || 'Failed to delete role');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error deleting role:', error);
-      toast.error(error.response?.data?.message || 'Failed to delete role');
+      if (axios.isAxiosError(error)) {
+        toast.error(error.response?.data?.message || 'Failed to delete role');
+      } else if (error instanceof Error) {
+        toast.error(error.message || 'Failed to delete role');
+      } 
     } finally {
       setLoading(false);
     }
@@ -356,12 +364,12 @@ export default function Roles() {
           <Pagination className="mt-4">
             <PaginationContent>
               <PaginationItem>
-                <PaginationPrevious 
+                <PaginationPrevious
                   onClick={() => handlePageChange(pagination.page - 1)}
                   className={pagination.page === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
                 />
               </PaginationItem>
-              
+
               {Array.from({ length: pagination.pages }, (_, i) => i + 1).map(page => (
                 <PaginationItem key={page}>
                   <PaginationLink
@@ -373,9 +381,9 @@ export default function Roles() {
                   </PaginationLink>
                 </PaginationItem>
               ))}
-              
+
               <PaginationItem>
-                <PaginationNext 
+                <PaginationNext
                   onClick={() => handlePageChange(pagination.page + 1)}
                   className={pagination.page === pagination.pages ? "pointer-events-none opacity-50" : "cursor-pointer"}
                 />

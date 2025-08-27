@@ -101,10 +101,14 @@ const NoticeForm = () => {
           toast.error(response.data.message || 'Failed to create notice')
         }
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error saving notice:', error)
-      toast.error(error.response?.data?.message || 'Failed to save notice')
-    } finally {
+      if (axios.isAxiosError(error)) {
+        toast.error(error.response?.data?.message || 'Failed to save notice');
+      } else if (error instanceof Error) {
+        toast.error(error.message || 'Failed to save notice');
+      }
+    }  finally {
       setLoading(false)
     }
   }
@@ -130,9 +134,13 @@ const NoticeForm = () => {
       } else {
         toast.error(response.data.message || 'Failed to delete notice')
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error deleting notice:', error)
-      toast.error(error.response?.data?.message || 'Failed to delete notice')
+      if (axios.isAxiosError(error)) {
+        toast.error(error.response?.data?.message || 'Failed to delete notice');
+      } else if (error instanceof Error) {
+        toast.error(error.message || 'Failed to delete notice');
+      }
     } finally {
       setLoading(false)
     }

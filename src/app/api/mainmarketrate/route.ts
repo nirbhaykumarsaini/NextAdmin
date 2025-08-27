@@ -4,7 +4,7 @@ import MainmarketRate from "@/models/MainmarketRate";
 import ApiError from "@/lib/errors/APiError";
 
 // GET - Get all rates
-export async function GET(request: NextRequest) {
+export async function GET() {
     try {
         await connectDB();
 
@@ -15,11 +15,12 @@ export async function GET(request: NextRequest) {
             message: "Rates retrieved successfully",
             data: rates
         });
-    } catch (error: any) {
+    } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message :  "Failed to retrieve rates"
         return NextResponse.json(
             {
                 status: false,
-                message: error.message || "Failed to retrieve rates"
+                message: errorMessage 
             },
         );
     }
@@ -65,11 +66,12 @@ export async function POST(request: NextRequest) {
             message,
             data: result
         });
-    } catch (error: any) {
+    } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message :  "Failed to process rate"
         return NextResponse.json(
             {
                 status: false,
-                message: error.message || "Failed to process rate"
-            }        );
+                message: errorMessage
+            });
     }
 }

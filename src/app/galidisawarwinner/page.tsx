@@ -1,7 +1,6 @@
 "use client";
 
-import { FiEdit, FiTrash2, FiSearch, FiChevronLeft, FiChevronRight } from "react-icons/fi";
-import { Button } from "@/components/ui/button";
+import { FiSearch } from "react-icons/fi";
 import { Input } from "@/components/ui/input";
 import {
     Table,
@@ -11,8 +10,7 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
     Pagination,
     PaginationContent,

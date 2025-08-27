@@ -1,6 +1,6 @@
 "use client";
 
-import { FiEdit, FiTrash2, FiSearch, FiChevronLeft, FiChevronRight } from "react-icons/fi";
+import { FiEdit, FiTrash2, FiSearch } from "react-icons/fi";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -11,8 +11,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   Pagination,
   PaginationContent,
@@ -50,9 +49,10 @@ export default function ManageUsers() {
         }
       })
       setUsers(response.data.data)
-      console.log(response.data.data)
-    } catch (error: any) {
-      console.log(error)
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.log(error)
+      }
     }
   }
 

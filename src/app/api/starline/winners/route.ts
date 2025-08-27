@@ -59,10 +59,11 @@ export async function POST(request: NextRequest) {
             // }
         });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Error fetching winners:', error);
+        const errorMessage = error instanceof Error ? error.message : 'Failed to fetch winners'
         return NextResponse.json(
-            { status: false, message: error.message || 'Failed to fetch winners' }
+            { status: false, message: errorMessage }
         );
     }
 }

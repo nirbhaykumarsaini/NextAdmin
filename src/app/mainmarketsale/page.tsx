@@ -1,7 +1,6 @@
 "use client"
 
 import React, { useState } from 'react'
-import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import {
     Select,
@@ -25,7 +24,7 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover"
-import { FiCalendar, FiEdit, FiEdit2, FiTrash2 } from 'react-icons/fi'
+import { FiCalendar, FiEdit } from 'react-icons/fi'
 import { Label } from '@/components/ui/label'
 
 
@@ -37,12 +36,7 @@ type GameResult = {
     session: string
 }
 
-const MainMarketSale = () => {
-    const [date, setDate] = useState<Date | undefined>(new Date())
-    const [gameName, setGameName] = useState("")
-    const [gameType, setGameType] = useState("")
-    const [session, setSession] = useState("")
-    const [results, setResults] = useState<GameResult[]>([
+const results : GameResult[]=[
         {
             id: "1",
             date: "12-08-2025",
@@ -64,7 +58,13 @@ const MainMarketSale = () => {
             gameType: "singe-digit",
             session: "open"
         }
-    ])
+    ]
+
+const MainMarketSale = () => {
+    const [date, setDate] = useState<Date | undefined>(new Date())
+    const [gameName, setGameName] = useState("")
+    const [gameType, setGameType] = useState("")
+    const [session, setSession] = useState("")
 
     return (
         <div className="container mx-auto space-y-8">

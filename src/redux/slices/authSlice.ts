@@ -1,13 +1,11 @@
 // store/slices/authSlice.ts
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit'
 import axios from 'axios'
-import { redirect } from 'next/navigation'
 
 export interface User {
   id: string
   username: string
   role: 'admin' | 'user'
-  // Add other user properties as needed
 }
 
 export interface AuthState {
@@ -54,8 +52,13 @@ export const fetchUserProfile = createAsyncThunk(
         return rejectWithValue(result.message || 'Login failed')
       }
       return result
-    } catch (error: any) {
-      const errorMessage = error.response?.data?.message || error.message || 'Login failed'
+    } catch (error: unknown) {
+      let errorMessage = 'Login failed';
+      if (axios.isAxiosError(error)) {
+        errorMessage = error.response?.data?.message || error.message || 'Login failed';
+      } else if (error instanceof Error) {
+        errorMessage = error.message;
+      }
       return rejectWithValue(errorMessage)
     }
   }
@@ -76,8 +79,13 @@ export const loginUser = createAsyncThunk(
       localStorage.setItem('accessToken', result.accessToken)
       localStorage.setItem('user',JSON.stringify(result.user))
       return result
-    } catch (error: any) {
-      const errorMessage = error.response?.data?.message || error.message || 'Login failed'
+    } catch (error: unknown) {
+      let errorMessage = 'Login failed';
+      if (axios.isAxiosError(error)) {
+        errorMessage = error.response?.data?.message || error.message || 'Login failed';
+      } else if (error instanceof Error) {
+        errorMessage = error.message;
+      }
       return rejectWithValue(errorMessage)
     }
   }
@@ -91,8 +99,12 @@ export const logoutUser = createAsyncThunk(
       
       localStorage.removeItem('accessToken');
       return { status: true };
-    } catch (error: any) {
-      return rejectWithValue(error.message || 'Logout failed');
+    } catch (error: unknown) {
+      let errorMessage = 'Logout failed';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      return rejectWithValue(errorMessage);
     }
   }
 );
@@ -165,7 +177,7 @@ const authSlice = createSlice({
 
 
 // Add permission checking utilities
-export const hasPermission = (user: User | null, permissionKey: string): boolean => {
+export const hasPermission = (user: User | null): boolean => {
   if (!user) return false;
   // For admin users, grant all permissions
   if (user.role === 'admin') return true;
@@ -180,7 +192,7 @@ export const hasAnyPermission = (user: User | null, permissionKeys: string[]): b
   if (user.role === 'admin') return true;
   
   // Check if user has any of the required permissions
-  return permissionKeys.some(key => hasPermission(user, key));
+  return permissionKeys.some(() => hasPermission(user));
 };
 
 export const { clearError, setCredentials, initializeAuth } = authSlice.actions

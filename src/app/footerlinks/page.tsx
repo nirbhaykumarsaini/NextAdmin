@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
-import { FiEdit, FiTrash2, FiSave, FiX } from 'react-icons/fi'
+import { FiEdit, FiTrash2 } from 'react-icons/fi'
 import axios from 'axios'
 import { toast } from 'sonner'
 
@@ -50,8 +50,14 @@ const FooterLinks = () => {
       } else {
         setFooterLinks(response.data.data)
       }
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to fetch footer links')
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error)) {
+        toast.error(error.response?.data?.message || 'Failed to fetch footer links');
+      } else if (error instanceof Error) {
+        toast.error(error.message || 'Failed to fetch footer links');
+      } else {
+        toast.error('Failed to fetch footer links');
+      }
     } finally {
       setIsLoading(false)
     }
@@ -94,8 +100,12 @@ const FooterLinks = () => {
       } else {
         toast.error(data.message || 'Failed to save footer link')
       }
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to save footer link')
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        toast.error(error.message || 'Failed to save footer link');
+      } else {
+        toast.error('Failed to save footer link');
+      }
     } finally {
       setIsLoading(false)
     }
@@ -131,8 +141,14 @@ const FooterLinks = () => {
         toast.success(response.data.message || 'Footer link deleted successfully')
         fetchFooterLinks()
       }
-    } catch (error: any) {
-      toast.error(error.message || "Error deleting footer link")
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error)) {
+        toast.error(error.response?.data?.message || "Error deleting footer link");
+      } else if (error instanceof Error) {
+        toast.error(error.message || "Error deleting footer link");
+      } else {
+        toast.error("Error deleting footer link");
+      }
     }
   }
 
@@ -146,8 +162,14 @@ const FooterLinks = () => {
         toast.success(`Footer link ${!currentStatus ? 'activated' : 'deactivated'} successfully`)
         fetchFooterLinks()
       }
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to update footer link status')
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error)) {
+        toast.error(error.response?.data?.message || 'Failed to update footer link status');
+      } else if (error instanceof Error) {
+        toast.error(error.message || 'Failed to update footer link status');
+      } else {
+        toast.error('Failed to update footer link status');
+      }
     }
   }
 

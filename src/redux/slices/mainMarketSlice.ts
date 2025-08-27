@@ -18,8 +18,14 @@ export const fetchGames = createAsyncThunk(
     try {
       const response = await axios.get('/api/mainmarket');
       return response.data;
-    } catch (error: any) {
-      return rejectWithValue(error.message);
+    } catch (error: unknown) {
+      let errorMessage = 'Failed to fetch games';
+      if (axios.isAxiosError(error)) {
+        errorMessage = error.response?.data?.message || error.message || 'Failed to fetch games';
+      } else if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      return rejectWithValue(errorMessage);
     }
   }
 );
@@ -30,8 +36,14 @@ export const createGame = createAsyncThunk(
     try {
       const response = await axios.post('/api/mainmarket', gameData);
       return response.data;
-    } catch (error: any) {
-      return rejectWithValue(error.message);
+    } catch (error: unknown) {
+      let errorMessage = 'Failed to create game';
+      if (axios.isAxiosError(error)) {
+        errorMessage = error.response?.data?.message || error.message || 'Failed to create game';
+      } else if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      return rejectWithValue(errorMessage);
     }
   }
 );
@@ -42,8 +54,14 @@ export const updateGame = createAsyncThunk(
     try {
       const response = await axios.put(`/api/mainmarket?id=${id}`, gameData);
       return response.data;
-    } catch (error: any) {
-      return rejectWithValue(error.message);
+    } catch (error: unknown) {
+      let errorMessage = 'Failed to update game';
+      if (axios.isAxiosError(error)) {
+        errorMessage = error.response?.data?.message || error.message || 'Failed to update game';
+      } else if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      return rejectWithValue(errorMessage);
     }
   }
 );
@@ -54,8 +72,14 @@ export const deleteGame = createAsyncThunk(
     try {
       await axios.delete(`/api/mainmarket?id=${id}`);
       return id;
-    } catch (error: any) {
-      return rejectWithValue(error.message);
+    } catch (error: unknown) {
+      let errorMessage = 'Failed to delete game';
+      if (axios.isAxiosError(error)) {
+        errorMessage = error.response?.data?.message || error.message || 'Failed to delete game';
+      } else if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      return rejectWithValue(errorMessage);
     }
   }
 );
@@ -67,10 +91,16 @@ export const updateMarketStatus = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
-      const response = await axios.patch(`/api/mainmarket?id=${id}`, {days});
+      const response = await axios.patch(`/api/mainmarket?id=${id}`, { days });
       return response.data;
-    } catch (error: any) {
-      return rejectWithValue(error.message);
+    } catch (error: unknown) {
+      let errorMessage = 'Failed to update market status';
+      if (axios.isAxiosError(error)) {
+        errorMessage = error.response?.data?.message || error.message || 'Failed to update market status';
+      } else if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      return rejectWithValue(errorMessage);
     }
   }
 );
@@ -81,8 +111,14 @@ export const toggleGameStatus = createAsyncThunk(
     try {
       const response = await axios.patch(`/api/mainmarket/${id}/status`, { is_active });
       return response.data;
-    } catch (error: any) {
-      return rejectWithValue(error.message);
+    } catch (error: unknown) {
+      let errorMessage = 'Failed to toggle game status';
+      if (axios.isAxiosError(error)) {
+        errorMessage = error.response?.data?.message || error.message || 'Failed to toggle game status';
+      } else if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      return rejectWithValue(errorMessage);
     }
   }
 );

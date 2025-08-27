@@ -1,6 +1,6 @@
 "use client";
 
-import { FiActivity, FiDollarSign, FiUserPlus, FiTrendingUp, FiEdit, FiTrash2, FiSearch, FiChevronLeft, FiChevronRight, FiPlus, FiX, FiUser, FiLock, FiEye, FiSettings } from "react-icons/fi";
+import { FiDollarSign, FiTrendingUp, FiEdit, FiTrash2, FiPlus, FiUser, FiLock, FiEye, FiSettings } from "react-icons/fi";
 import { useState, useEffect, JSX } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -114,10 +114,14 @@ export default function Permissions() {
       } else {
         toast.error(response.data.message || 'Failed to save permission');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error saving permission:', error);
-      toast.error(error.response?.data?.message || 'Failed to save permission');
-    } finally {
+      if (axios.isAxiosError(error)) {
+        toast.error(error.response?.data?.message || 'Failed to save permission');
+      } else if (error instanceof Error) {
+        toast.error(error.message || 'Failed to save permission');
+      }
+    }finally {
       setLoading(false);
     }
   };
@@ -145,9 +149,13 @@ export default function Permissions() {
       } else {
         toast.error(response.data.message || 'Failed to delete permission');
       }
-    } catch (error: any) {
+    }catch (error: unknown) {
       console.error('Error deleting permission:', error);
-      toast.error(error.response?.data?.message || 'Failed to delete permission');
+      if (axios.isAxiosError(error)) {
+        toast.error(error.response?.data?.message || 'Failed to delete permission');
+      } else if (error instanceof Error) {
+        toast.error(error.message || 'Failed to delete permission');
+      }
     } finally {
       setLoading(false);
     }

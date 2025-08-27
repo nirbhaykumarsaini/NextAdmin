@@ -25,7 +25,7 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover"
-import { FiCalendar, FiEdit, FiEdit2, FiTrash2 } from 'react-icons/fi'
+import { FiCalendar, FiTrash2 } from 'react-icons/fi'
 import { Label } from '@/components/ui/label'
 import {
     Dialog,
@@ -78,14 +78,14 @@ const MainMarketResult = () => {
     const [totalWinningAmount, setTotalWinningAmount] = useState(0)
 
     const dispatch = useAppDispatch();
-    const { games, loading, error, currentPage, totalCount } = useAppSelector(
+    const { games } = useAppSelector(
         (state) => state.mainMarket
     );
 
     const [allPanna, setAllPanna] = useState<Panna[] | null>(null)
 
     useEffect(() => {
-        dispatch(fetchGames() as any);
+        dispatch(fetchGames());
         fetchAllPanna();
         fetchResults();
     }, [dispatch]);

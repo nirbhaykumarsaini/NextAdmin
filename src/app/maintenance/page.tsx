@@ -15,12 +15,12 @@ import axios from 'axios'
 import { toast } from 'sonner'
 
 interface MaintenanceSettings {
-    _id?: string;
-    is_active: boolean;
-    maintenance_title: string;
-    expected_completion_date?: Date | null;
-    expected_completion_time?: string;
-    maintenance_message: string;
+  _id?: string;
+  is_active: boolean;
+  maintenance_title: string;
+  expected_completion_date?: Date | null;
+  expected_completion_time?: string;
+  maintenance_message: string;
 }
 
 const Maintenance = () => {
@@ -57,20 +57,26 @@ const Maintenance = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     try {
       setLoading(true)
       const response = await axios.post('/api/maintenance', maintenanceSettings)
-      
+
       if (response.data.status) {
         toast.success(response.data.message)
         fetchMaintenanceSettings() // Refresh the data
       } else {
         toast.error(response.data.message || 'Failed to update maintenance settings')
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error updating maintenance settings:', error)
-      toast.error(error.response?.data?.message || 'Failed to update maintenance settings')
+      if (axios.isAxiosError(error)) {
+        toast.error(error.response?.data?.message || 'Failed to update maintenance settings');
+      } else if (error instanceof Error) {
+        toast.error(error.message || 'Failed to update maintenance settings');
+      } else {
+        toast.error('Failed to update maintenance settings');
+      }
     } finally {
       setLoading(false)
     }
@@ -109,7 +115,7 @@ const Maintenance = () => {
           )}>
             {maintenanceSettings.is_active ? "Active" : "Inactive"}
           </span>
-          <Switch 
+          <Switch
             checked={maintenanceSettings.is_active}
             onCheckedChange={handleSwitchChange}
             disabled={loading}
@@ -156,8 +162,8 @@ const Maintenance = () => {
                       disabled={loading}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
-                      {maintenanceSettings.expected_completion_date ? 
-                        format(maintenanceSettings.expected_completion_date, "dd-MM-yyyy") : 
+                      {maintenanceSettings.expected_completion_date ?
+                        format(maintenanceSettings.expected_completion_date, "dd-MM-yyyy") :
                         <span>Pick a date</span>
                       }
                     </Button>
@@ -202,8 +208,8 @@ const Maintenance = () => {
         )}
 
         <div className="flex justify-end">
-          <Button 
-            type="submit" 
+          <Button
+            type="submit"
             variant={maintenanceSettings.is_active ? "default" : "destructive"}
             disabled={loading}
           >

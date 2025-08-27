@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import SingleDigit from '@/models/SingleDigit';
 import connectDB from '@/config/db';
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     await connectDB(); // Make sure to connect to the database
 
@@ -26,10 +26,11 @@ export async function GET(request: NextRequest) {
       data: allDigits
     });
     
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error in allSingleDigit:', error);
+     const errorMessage = error instanceof Error ? error.message :'Failed to retrieve single digits'
     return NextResponse.json(
-      { status: false, message: error.message || 'Failed to retrieve single digits' },
+      { status: false, message: errorMessage },
     );
   }
 }

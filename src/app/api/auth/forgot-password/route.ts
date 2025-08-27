@@ -28,25 +28,17 @@ export async function POST(request: Request) {
     user.otp = '1234';
     await user.save();
 
-    // In a real app, you would send the OTP via SMS here
-    // For now, we'll just return it in the response for testing
     return NextResponse.json({
       status: true,
       message: 'If the mobile number is registered, you will receive an OTP',
       otp: '1234' // Only for development
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error(error);
-    
-    if (error instanceof ApiError) {
+    const errorMessage = error instanceof Error ? error.message : 'Failed to forget password'
       return NextResponse.json(
-        { status: false, message: error.message }
+        { status: false, message: errorMessage }
       );
-    }
-    
-    return NextResponse.json(
-      { status: false, message: error.message || 'Internal server error' }
-    );
   }
 }

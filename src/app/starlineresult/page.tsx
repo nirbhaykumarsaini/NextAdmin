@@ -72,14 +72,14 @@ const MainMarketResult = () => {
     const [totalWinningAmount, setTotalWinningAmount] = useState(0)
 
     const dispatch = useAppDispatch();
-    const { games, loading, error, currentPage, totalCount } = useAppSelector(
+    const { games } = useAppSelector(
         (state) => state.starline
     );
 
     const [allPanna, setAllPanna] = useState<Panna[] | null>(null)
 
     useEffect(() => {
-        dispatch(fetchGames() as any);
+        dispatch(fetchGames());
         fetchAllPanna();
         fetchResults();
     }, [dispatch]);

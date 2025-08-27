@@ -44,8 +44,14 @@ const ContactInfo = () => {
           email: contactData.email || ''
         })
       }
-    } catch (error) {
-      toast.error('Failed to load contact information')
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error)) {
+        toast.error(error.response?.data?.message || 'Failed to load contact information');
+      } else if (error instanceof Error) {
+        toast.error(error.message || 'Failed to load contact information');
+      } else {
+        toast.error('Failed to load contact information');
+      }
     }
   }
 
@@ -69,14 +75,20 @@ const ContactInfo = () => {
       } else {
         toast.error(response.data.message || 'Failed to save contact information')
       }
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to save contact information')
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error)) {
+        toast.error(error.response?.data?.message || 'Failed to save contact information');
+      } else if (error instanceof Error) {
+        toast.error(error.message || 'Failed to save contact information');
+      } else {
+        toast.error('Failed to save contact information');
+      }
     } finally {
       setLoading(false)
     }
   }
 
- 
+
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">

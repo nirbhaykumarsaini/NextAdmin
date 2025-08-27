@@ -13,7 +13,7 @@ export const authenticate = async (request: NextRequest) => {
   try {
     const payload = verifyToken(accessToken);
     return payload.sub;
-  } catch (error) {
+  } catch {
     throw new ApiError('Please authenticate');
   }
 };

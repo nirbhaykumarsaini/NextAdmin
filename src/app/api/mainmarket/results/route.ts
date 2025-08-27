@@ -61,9 +61,10 @@ export async function GET(request: NextRequest) {
             status: true,
             data: groupedResultsArray
         });
-    } catch (error: any) {
+    } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : 'Failed to retrieve results'
         return NextResponse.json(
-            { status: false, message: error.message || 'Failed to retrieve results' }
+            { status: false, message: errorMessage }
         );
     }
 }
@@ -105,7 +106,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Create the new result
-        const result = await MainMarketResult.create({
+        await MainMarketResult.create({
             result_date,
             game_name,
             session,
@@ -114,17 +115,18 @@ export async function POST(request: NextRequest) {
         });
 
         // Get all results grouped by date and game
-        const allResults = await MainMarketResult.find().sort({ result_date: -1, createdAt: -1 });
+        await MainMarketResult.find().sort({ result_date: -1, createdAt: -1 });
 
         return NextResponse.json({
             status: true,
             message: 'Result created successfully',
         });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Error creating result:', error);
+        const errorMessage = error instanceof Error ? error.message : 'Failed to create result'
         return NextResponse.json(
-            { status: false, message: error.message || 'Failed to create result' }
+            { status: false, message: errorMessage  }
         );
     }
 }
@@ -149,17 +151,18 @@ export async function DELETE(request: NextRequest) {
         }
 
         // Get all results grouped by date and game
-        const allResults = await MainMarketResult.find().sort({ result_date: -1, createdAt: -1 });
+        await MainMarketResult.find().sort({ result_date: -1, createdAt: -1 });
 
         return NextResponse.json({
             status: true,
             message: 'Result deleted successfully',
         });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Error deleting result:', error);
+        const errorMessage = error instanceof Error ? error.message : 'Failed to delete result'
         return NextResponse.json(
-            { status: false, message: error.message || 'Failed to delete result' }
+            { status: false, message: errorMessage  }
         );
     }
 }

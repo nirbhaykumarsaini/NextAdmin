@@ -15,9 +15,9 @@ export async function POST(request: Request) {
       if (!body.name) missingFields.push('name');
       if (!body.mobile_number) missingFields.push('mobile_number');
       if (!body.password) missingFields.push('password');
-      
+
       throw new ApiError(
-        `${missingFields.join(' and ')} ${missingFields.length > 1 ? 'are' : 'is'} required` );
+        `${missingFields.join(' and ')} ${missingFields.length > 1 ? 'are' : 'is'} required`);
     }
 
     if (!body.name.trim() || !body.mobile_number.trim() || !body.password.trim()) {
@@ -31,7 +31,7 @@ export async function POST(request: Request) {
     }
 
     // Create user with OTP (using dummy OTP 1234)
-    const user = await AppUser.create({
+    await AppUser.create({
       name: body.name.trim(),
       mobile_number: body.mobile_number.trim(),
       password: body.password,
@@ -47,31 +47,41 @@ export async function POST(request: Request) {
       otp: '1234' // Only for development
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error(error);
-    
+
+    // Handle ApiError instances
     if (error instanceof ApiError) {
       return NextResponse.json(
-        { status: false, message: error.message },
-        { status: error.statusCode }
+        { status: false, message: error.message }
       );
     }
-    
-    if (error.name === 'ValidationError') {
-      const messages = Object.values(error.errors).map((val: any) => val.message);
+
+    // Handle other Error instances
+    if (error instanceof Error) {
+      // Check for Mongoose validation errors
+      if (error.name === 'ValidationError') {
+        const mongooseError = error as { errors?: Record<string, { message: string }> };
+        if (mongooseError.errors) {
+          const messages = Object.values(mongooseError.errors).map(val => val.message);
+          return NextResponse.json(
+            { status: false, message: messages.join(', ') }
+          );
+        }
+      }
+
+      // Check for MongoDB duplicate key error
+      const mongoError = error as { code?: number };
+      if (mongoError.code === 11000) {
+        return NextResponse.json(
+          { status: false, message: 'Mobile number already exists' }
+        );
+      }
+
+      // Generic error
       return NextResponse.json(
-        { status: false, message: messages.join(', ') }
+        { status: false, message: error.message || 'Internal server error' }
       );
     }
-    
-    if (error.code === 11000) {
-      return NextResponse.json(
-        { status: false, message: 'Mobile number already exists' }
-      );
-    }
-    
-    return NextResponse.json(
-      { status: false, message: error.message || 'Internal server error' }
-    );
   }
 }

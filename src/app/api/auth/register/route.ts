@@ -1,20 +1,18 @@
-
 import { NextResponse } from 'next/server';
 import dbConnect from '@/config/db';
 import User from '@/models/User';
 import { generateToken } from '@/lib/auth/jwt';
-import { ILogin, IRegister } from '@/types/auth';
+import { IRegister } from '@/types/auth';
 import ApiError from '@/lib/errors/APiError';
 import logger from '@/config/logger';
-
-
+import { IUser } from '@/types/user';
 
 export async function POST(request: Request) {
     try {
         await dbConnect();
 
         // Helper function to handle successful authentication
-        const handleSuccessfulAuth = async (user: any) => {
+        const handleSuccessfulAuth = async (user: IUser) => {
             const accessToken = generateToken(user._id);
 
             const response = NextResponse.json({
@@ -33,8 +31,6 @@ export async function POST(request: Request) {
             return response;
         };
 
-
-
         const body: IRegister = await request.json();
 
         if (!body.username || !body.password) {
@@ -42,9 +38,7 @@ export async function POST(request: Request) {
             if (!body.username) missingFields.push('username');
             if (!body.password) missingFields.push('password');
             throw new ApiError(
-                `${missingFields.join(' and ')} ${missingFields.length > 1 ? 'are' : 'is'} required`,
-                400
-            );
+                `${missingFields.join(' and ')} ${missingFields.length > 1 ? 'are' : 'is'} required`);
         }
 
         if (!body.username.trim() || !body.password.trim()) {
@@ -75,36 +69,43 @@ export async function POST(request: Request) {
 
         return await handleSuccessfulAuth(user);
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         logger.error(error);
 
+        // Handle ApiError instances
         if (error instanceof ApiError) {
             return NextResponse.json(
-                { status: false, message: error.message },
-            );
+                { status: false, message: error.message });
         }
 
-        if (error.name === 'ValidationError') {
-            const messages = Object.values(error.errors).map((val: any) => val.message);
-            return NextResponse.json(
-                { status: false, message: messages.join(', ') },
-            );
-        }
+        // Handle other Error instances
+        if (error instanceof Error) {
+            // Check for Mongoose validation errors
+            if (error.name === 'ValidationError') {
+                const mongooseError = error as { errors?: Record<string, { message: string }> };
+                if (mongooseError.errors) {
+                    const messages = Object.values(mongooseError.errors).map(val => val.message);
+                    return NextResponse.json(
+                        { status: false, message: messages.join(', ') });
+                }
+            }
 
-        if (error.code === 11000) {
-            if (error.keyPattern && error.keyPattern.username) {
+            // Check for MongoDB duplicate key error
+            const mongoError = error as { code?: number; keyPattern?: Record<string, unknown> };
+            if (mongoError.code === 11000) {
+                if (mongoError.keyPattern && 'username' in mongoError.keyPattern) {
+                    return NextResponse.json(
+                        { status: false, message: 'Username already exists' });
+                }
                 return NextResponse.json(
-                    { status: false, message: 'Username already exists' },
-
+                    { status: false, message: 'Duplicate entry error. Please try again.' }
                 );
             }
+
+            // Generic error
             return NextResponse.json(
-                { status: false, message: 'Session error. Please try again.' },
+                { status: false, message: error.message || 'Internal server error' }
             );
         }
-
-        return NextResponse.json(
-            { status: false, message: error.message || 'Internal server error' },
-        );
     }
 }

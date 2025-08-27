@@ -44,17 +44,14 @@ export async function POST(request: Request) {
       otp: '1234' // Only for development
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error(error);
-    
+    const errorMessage = error instanceof Error ? error.message :  'Failed to send resent otp'
     if (error instanceof ApiError) {
       return NextResponse.json(
-        { status: false, message: error.message }
+        { status: false, message:errorMessage }
       );
     }
-    
-    return NextResponse.json(
-      { status: false, message: error.message || 'Internal server error' }
-    );
+
   }
 }

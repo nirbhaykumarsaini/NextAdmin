@@ -85,8 +85,10 @@ const Slider = () => {
                 fetchAppConfig()
                 toast.success(result.message || "Logo and app title saved successfully")
             }
-        } catch (error: any) {
-            toast.error(error.message || "Failed to add app config")
+        } catch (error: unknown) {
+            if (error instanceof Error) {
+                toast.error(error.message || "Failed to add app config")
+            }
         } finally {
             setIsSubmitting(false);
         }

@@ -28,9 +28,10 @@ export async function GET(request: NextRequest) {
             status: true,
             data: results
         });
-    } catch (error: any) {
+    } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : 'Failed to retrieve results'
         return NextResponse.json(
-            { status: false, message: error.message || 'Failed to retrieve results' }
+            { status: false, message: errorMessage  }
         );
     }
 }
@@ -68,7 +69,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Create the new result
-        const result = await StarlineResult.create({
+         await StarlineResult.create({
             result_date,
             game_name,
             panna,
@@ -80,10 +81,11 @@ export async function POST(request: NextRequest) {
             message: 'Result created successfully',
         });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Error creating result:', error);
+        const errorMessage = error instanceof Error ? error.message : 'Failed to create result'
         return NextResponse.json(
-            { status: false, message: error.message || 'Failed to create result' }
+            { status: false, message: errorMessage }
         );
     }
 }
@@ -112,10 +114,11 @@ export async function DELETE(request: NextRequest) {
             message: 'Result deleted successfully',
         });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Error deleting result:', error);
+        const errorMessage = error instanceof Error ? error.message : 'Failed to delete result'
         return NextResponse.json(
-            { status: false, message: error.message || 'Failed to delete result' }
+            { status: false, message: errorMessage }
         );
     }
 }

@@ -7,17 +7,11 @@ import {
   FiUsers,
   FiSettings,
   FiFileText,
-  FiLogOut,
   FiChevronLeft,
   FiChevronRight,
   FiChevronDown,
-  FiChevronUp,
-  FiInbox,
-  FiSave,
   FiGlobe,
-  FiRewind,
   FiWind,
-  FiBookmark,
 } from "react-icons/fi";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";

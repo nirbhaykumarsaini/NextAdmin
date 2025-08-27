@@ -12,7 +12,7 @@ import {
     TableRow,
 } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
-import { FiEdit, FiTrash2, FiSave } from 'react-icons/fi'
+import { FiSave } from 'react-icons/fi'
 import { Textarea } from '@/components/ui/textarea'
 import axios from 'axios'
 import { toast } from 'sonner'
@@ -58,9 +58,15 @@ const HowToPlay = () => {
             } else {
                 toast.error('Failed to fetch HowToPlay data')
             }
-        } catch (error) {
-            console.error('Error fetching HowToPlay data:', error)
-            toast.error('Failed to fetch HowToPlay data')
+        } catch (error: unknown) {
+            console.error('Error saving HowToPlay:', error)
+            if (axios.isAxiosError(error)) {
+                toast.error(error.response?.data?.message || 'Failed to save HowToPlay');
+            } else if (error instanceof Error) {
+                toast.error(error.message || 'Failed to save HowToPlay');
+            } else {
+                toast.error('Failed to save HowToPlay');
+            }
         } finally {
             setLoading(false)
         }
@@ -76,12 +82,12 @@ const HowToPlay = () => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
-        
+
         if (!formData.howtoplay_title.trim()) {
             toast.error('Title is required')
             return
         }
-        
+
         if (!formData.howtoplay_message.trim()) {
             toast.error('Message is required')
             return
@@ -112,7 +118,7 @@ const HowToPlay = () => {
     return (
         <div className="space-y-6">
             <h1 className='font-semibold text-2xl'>How to Play</h1>
-            
+
             <form onSubmit={handleSubmit} className="space-y-4">
                 <div className='grid grid-cols-1 md:grid-cols-2 gap-6 w-full'>
                     <div className="grid w-full gap-3">
@@ -141,9 +147,9 @@ const HowToPlay = () => {
                     </div>
                     <div className="md:col-span-2 grid w-full items-center gap-3">
                         <Label htmlFor="howtoplay_message">Message</Label>
-                        <Textarea 
-                            className='w-full' 
-                            placeholder='Enter message' 
+                        <Textarea
+                            className='w-full'
+                            placeholder='Enter message'
                             id='howtoplay_message'
                             name="howtoplay_message"
                             value={formData.howtoplay_message}

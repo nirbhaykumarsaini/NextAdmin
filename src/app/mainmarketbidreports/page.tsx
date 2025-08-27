@@ -1,7 +1,6 @@
 "use client"
 
 import React, { useState } from 'react'
-import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import {
     Select,
@@ -25,7 +24,7 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover"
-import { FiCalendar, FiEdit, FiEdit2, FiTrash2 } from 'react-icons/fi'
+import { FiCalendar, FiEdit } from 'react-icons/fi'
 import { Label } from '@/components/ui/label'
 
 
@@ -36,30 +35,31 @@ type GameResult = {
     gameType: string
 }
 
+const results: GameResult[] = [
+    {
+        id: "1",
+        date: "12-08-2025",
+        gameName: "Milan Day",
+        gameType: "singe-digit"
+    },
+    {
+        id: "2",
+        date: "12-08-2025",
+        gameName: "Milan Day",
+        gameType: "singe-digit"
+    },
+    {
+        id: "3",
+        date: "11-08-2025",
+        gameName: "Rajdhani Night",
+        gameType: "singe-digit"
+    }
+]
+
 const MainMarketBidReports = () => {
     const [date, setDate] = useState<Date | undefined>(new Date())
     const [gameName, setGameName] = useState("")
     const [gameType, setGameType] = useState("")
-    const [results, setResults] = useState<GameResult[]>([
-        {
-            id: "1",
-            date: "12-08-2025",
-            gameName: "Milan Day",
-            gameType:"singe-digit"
-        },
-        {
-            id: "2",
-            date: "12-08-2025",
-            gameName: "Milan Day",
-           gameType:"singe-digit"
-        },
-        {
-            id: "3",
-            date: "11-08-2025",
-            gameName: "Rajdhani Night",
-            gameType:"singe-digit"
-        }
-    ])
 
     return (
         <div className="container mx-auto space-y-8">
@@ -133,7 +133,7 @@ const MainMarketBidReports = () => {
                 </form>
             </div>
 
-            
+
 
             {/* Results Table */}
             <div className=" rounded-lg border shadow-md overflow-hidden">
@@ -162,7 +162,7 @@ const MainMarketBidReports = () => {
                                     <Button variant="ghost" className="">
                                         <FiEdit />
                                     </Button>
-                                   
+
                                 </TableCell>
                             </TableRow>
                         ))}
@@ -170,7 +170,7 @@ const MainMarketBidReports = () => {
                 </Table>
             </div>
 
-            
+
         </div>
     )
 }

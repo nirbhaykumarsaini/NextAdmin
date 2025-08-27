@@ -13,8 +13,7 @@ export async function GET(request: NextRequest) {
 
     if (!token) {
       return NextResponse.json(
-        { status: false, message: 'Not authenticated' },
-        { status: 401 }
+        { status: false, message: 'Not authenticated' }
       );
     }
 
@@ -23,9 +22,7 @@ export async function GET(request: NextRequest) {
 
     if (!decoded?.sub) {
       return NextResponse.json(
-        { status: false, message: 'Invalid token' },
-        { status: 401 }
-      );
+        { status: false, message: 'Invalid token' });
     }
 
     // Fetch user without password
@@ -33,9 +30,7 @@ export async function GET(request: NextRequest) {
 
     if (!user) {
       return NextResponse.json(
-        { status: false, message: 'User not found' },
-        { status: 404 }
-      );
+        { status: false, message: 'User not found' });
     }
 
     // Fetch role with only needed fields (excluding users, createdAt, updatedAt, __v)
@@ -54,11 +49,11 @@ export async function GET(request: NextRequest) {
         updatedAt: user.updatedAt,
       },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error fetching user profile:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Failed to fetch user details'
     return NextResponse.json(
-      { status: false, message: error.message || 'Authentication failed' },
-      { status: 401 }
+      { status: false, message: errorMessage }
     );
   }
 }

@@ -26,7 +26,7 @@ async function initializePannaData(Model: any, data: string[], type: string) {
   }
 }
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     await connectDB();
     await initializePannaData(SinglePanna, SP_PANA_DATA, "Single");
@@ -39,11 +39,11 @@ export async function GET(request: NextRequest) {
       data: allDigits
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error in allSinglePanna:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Failed to retrieve single panna'
     return NextResponse.json(
-      { status: false, message: error.message || 'Failed to retrieve single panna' },
-      { status: 500 }
+      { status: false, message: errorMessage },
     );
   }
 }

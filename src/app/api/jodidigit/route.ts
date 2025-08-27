@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import JodiDigit from '@/models/JodiDigit';
 import connectDB from '@/config/db';
 
-export async function GET(request: NextRequest) {
+export async function GET() {
     try {
         await connectDB(); // Connect to database
 
@@ -32,12 +32,13 @@ export async function GET(request: NextRequest) {
             data: formattedDigits
         });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Error in allJodiDigit:', error);
+        const errorMessage = error instanceof Error ? error.message :  'Failed to retrieve jodi digits'
         return NextResponse.json(
             {
                 status: false,
-                message: error.message || 'Failed to retrieve jodi digits'
+                message: errorMessage 
             }
         );
     }

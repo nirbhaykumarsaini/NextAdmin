@@ -1,6 +1,6 @@
 "use client";
 
-import { FiSearch, FiBell, FiMenu } from "react-icons/fi";
+import {  FiBell, FiMenu } from "react-icons/fi";
 import { useState, useEffect } from "react";
 import { Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
@@ -13,13 +13,12 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import { Sheet, SheetTrigger } from "@/components/ui/sheet";
 import { logoutUser } from "@/redux/slices/authSlice";
 import { useAppDispatch } from "@/hooks/redux";
 
 export default function Header({}) {
-  const { theme, setTheme } = useTheme();
+  const {setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const dispatch = useAppDispatch()
 

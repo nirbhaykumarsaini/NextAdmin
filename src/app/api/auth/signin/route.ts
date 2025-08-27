@@ -17,8 +17,7 @@ export async function POST(request: Request) {
       if (!body.password) missingFields.push('password');
       
       throw new ApiError(
-        `${missingFields.join(' and ')} ${missingFields.length > 1 ? 'are' : 'is'} required`,
-        400
+        `${missingFields.join(' and ')} ${missingFields.length > 1 ? 'are' : 'is'} required`
       );
     }
 
@@ -58,15 +57,9 @@ export async function POST(request: Request) {
 
   } catch (error: any) {
     logger.error(error);
-    
-    if (error instanceof ApiError) {
+    const errorMessage = error instanceof Error ? error.message :  'Failed to signin user'
       return NextResponse.json(
-        { status: false, message: error.message }
+        { status: false, message: errorMessage }
       );
-    }
-    
-    return NextResponse.json(
-      { status: false, message: error.message || 'Internal server error' },
-    );
   }
 }

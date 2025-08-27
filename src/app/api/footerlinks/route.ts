@@ -14,9 +14,10 @@ export async function GET() {
             status: true,
             data: footers
         });
-    } catch (error: any) {
+    } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message :  'Failed to retrieve footer links';
         return NextResponse.json(
-            { status: false, message: error.message || 'Failed to retrieve footer links' }
+            { status: false, message: errorMessage }
         );
     }
 }
@@ -45,10 +46,11 @@ export async function POST(request: NextRequest) {
             data: footer
         });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Error saving footer link:', error);
+        const errorMessage = error instanceof Error ? error.message :  'Failed to add footer link';
         return NextResponse.json(
-            { status: false, message: error.message || 'Failed to add footer link' }
+            { status: false, message: errorMessage }
         );
     }
 }
@@ -89,10 +91,11 @@ export async function PUT(request: NextRequest) {
             data: updatedFooter
         });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Error updating footer link:', error);
+        const errorMessage = error instanceof Error ? error.message :  'Failed to update footer link'
         return NextResponse.json(
-            { status: false, message: error.message || 'Failed to update footer link' });
+            { status: false, message: errorMessage });
     }
 }
 
@@ -121,8 +124,9 @@ export async function DELETE(request: NextRequest) {
 
     } catch (error: any) {
         console.error('Error deleting footer link:', error);
+        const errorMessage = error instanceof Error ? error.message :  'Failed to delete footer link'
         return NextResponse.json(
-            { status: false, message: error.message || 'Failed to delete footer link' });
+            { status: false, message: errorMessage });
     }
 }
 
@@ -153,9 +157,10 @@ export async function PATCH(request: NextRequest) {
             data: footer
         });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Error toggling footer link status:', error);
+        const errorMessage = error instanceof Error ? error.message :  'Failed to toggle footer link status'
         return NextResponse.json(
-            { status: false, message: error.message || 'Failed to toggle footer link status' });
+            { status: false, message: errorMessage });
     }
 }

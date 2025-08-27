@@ -8,11 +8,11 @@ import { Button } from "@/components/ui/button"
 import { toast } from 'sonner'
 import Image from 'next/image'
 
-interface AppConfig {
-    _id?: string;
-    app_title: string;
-    logo_image: string;
-}
+// interface AppConfig {
+//     _id?: string;
+//     app_title: string;
+//     logo_image: string;
+// }
 
 const ManageLogo = () => {
     const [imagePreview, setImagePreview] = useState<string | null>(null)
@@ -85,8 +85,10 @@ const ManageLogo = () => {
                 fetchAppConfig()
                 toast.success(result.message || "Logo and app title saved successfully")
             }
-        } catch (error: any) {
-            toast.error(error.message || "Failed to add app config")
+        } catch (error: unknown) {
+            if(error instanceof Error){
+                toast.error(error.message || "Failed to add app config")
+            }
         } finally {
             setIsSubmitting(false);
         }

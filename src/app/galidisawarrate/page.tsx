@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import {
@@ -53,11 +53,7 @@ const GalidisawarRate = () => {
     },
   })
 
-  useEffect(() => {
-    fetchRate()
-  }, [])
-
-  const fetchRate = async () => {
+  const fetchRate = useCallback(async () => {
     try {
       const response = await axios.get('/api/galidisawarrate')
       console.log(response.data)
@@ -76,13 +72,23 @@ const GalidisawarRate = () => {
           jodi_digit_amount: rateData.jodi_digit_amount,
         });
       }
-    } catch (error: any) {
-      toast.error(error.message || `Failed to fatch rate`)
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error)) {
+        toast.error(error.response?.data?.message || 'Failed to fetch rate');
+      } else if (error instanceof Error) {
+        toast.error(error.message || 'Failed to fetch rate');
+      } else {
+        toast.error('Failed to fetch rate');
+      }
     }
-  }
+  }, [form]);
+
+  useEffect(() => {
+    fetchRate()
+  }, [fetchRate])
+
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
-
     try {
       const response = await axios.post('/api/galidisawarrate', {
         id: rateId,
@@ -95,8 +101,14 @@ const GalidisawarRate = () => {
         toast.success(response.data.message || `Rate ${rateId ? "updated" : "added"} successfully`);
         fetchRate()
       }
-    } catch (error: any) {
-      toast.error(error.message || `Failed to  ${rateId ? "update" : "add"} rate`)
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error)) {
+        toast.error(error.response?.data?.message || `Failed to ${rateId ? "update" : "add"} rate`);
+      } else if (error instanceof Error) {
+        toast.error(error.message || `Failed to ${rateId ? "update" : "add"} rate`);
+      } else {
+        toast.error(`Failed to ${rateId ? "update" : "add"} rate`);
+      }
     }
   }
 

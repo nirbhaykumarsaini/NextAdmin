@@ -5,7 +5,7 @@ import connectDB from '@/config/db';
 import ApiError from '@/lib/errors/APiError';
 
 // GET all roles with populated permissions and user count
-export async function GET(request: NextRequest) {
+export async function GET() {
     try {
         await connectDB();
 
@@ -25,9 +25,10 @@ export async function GET(request: NextRequest) {
             data: formattedRoles,
 
         });
-    } catch (error: any) {
+    } catch (error: unknown) {
+         const errorMessage = error instanceof Error ? error.message : 'Failed to retrieve roles'
         return NextResponse.json(
-            { status: false, message: error.message || 'Failed to retrieve roles' }
+            { status: false, message: errorMessage  }
         );
     }
 }
@@ -78,10 +79,11 @@ export async function POST(request: NextRequest) {
             data: populatedRole
         });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Error creating role:', error);
+         const errorMessage = error instanceof Error ? error.message : 'Failed to create role'
         return NextResponse.json(
-            { status: false, message: error.message || 'Failed to create role' }
+            { status: false, message: errorMessage }
         );
     }
 }
@@ -144,10 +146,11 @@ export async function PUT(request: NextRequest) {
             data: updatedRole
         });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Error updating role:', error);
+         const errorMessage = error instanceof Error ? error.message : 'Failed to update role'
         return NextResponse.json(
-            { status: false, message: error.message || 'Failed to update role' }
+            { status: false, message: errorMessage }
         );
     }
 }
@@ -181,10 +184,11 @@ export async function DELETE(request: NextRequest) {
             message: 'Role deleted successfully'
         });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Error deleting role:', error);
+         const errorMessage = error instanceof Error ? error.message : 'Failed to delete role'
         return NextResponse.json(
-            { status: false, message: error.message || 'Failed to delete role' }
+            { status: false, message: errorMessage }
         );
     }
 }

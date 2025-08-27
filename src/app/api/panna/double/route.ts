@@ -26,11 +26,11 @@ async function initializePannaData(Model: any, data: string[], type: string) {
   }
 }
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     await connectDB();
     await initializePannaData(DoublePanna, DP_PANA_DATA, "Double");
-    
+
     const allDigits = await DoublePanna.find({}).sort({ digit: 1 });
 
     return NextResponse.json({
@@ -39,11 +39,11 @@ export async function GET(request: NextRequest) {
       data: allDigits
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error in allDoublePanna:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Failed to retrieve double panna'
     return NextResponse.json(
-      { status: false, message: error.message || 'Failed to retrieve double panna' },
-      { status: 500 }
+      { status: false, message: errorMessage },
     );
   }
 }

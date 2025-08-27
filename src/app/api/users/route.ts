@@ -12,9 +12,10 @@ export async function GET(request: NextRequest) {
 
     const users = await User.find().select('-password');
     return NextResponse.json({ status: true, data: users });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : "Failed to fetch user"
     return NextResponse.json(
-      { status: false, message: error.message },
+      { status: false, message: errorMessage },
     );
   }
 }

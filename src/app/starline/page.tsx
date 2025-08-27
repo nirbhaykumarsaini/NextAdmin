@@ -74,15 +74,11 @@ const DAYS_OF_WEEK = [
   "Sunday",
 ];
 
-const DEFAULT_DAY_CONFIG = {
-  open_time: "09:00",
-  market_status: false,
-};
 
 // ---------------- Main Component ----------------
 const StarlineGame = () => {
   const dispatch = useAppDispatch();
-  const { games, loading, error, currentPage, totalCount } = useAppSelector(
+  const { games, loading, error, currentPage } = useAppSelector(
     (state) => state.starline
   );
 
@@ -97,8 +93,8 @@ const StarlineGame = () => {
       game_name: "",
       days: DAYS_OF_WEEK.map((day) => ({
         day,
-        open_time:"",
-        market_status:false
+        open_time: "",
+        market_status: false
       })),
     },
   });
@@ -156,9 +152,12 @@ const StarlineGame = () => {
       await dispatch(fetchGames());
       form.reset();
       setEditingId(null);
-    } catch (error: any) {
-      toast.error(error.message || "An error occurred");
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        toast.error(error.message || `Failed to ${editingId ? "update" : "create"} game`);
+      }
     }
+
   };
 
   // ---------------- Edit/Delete ----------------
@@ -178,8 +177,10 @@ const StarlineGame = () => {
           await dispatch(fetchGames());
           form.reset();
         }
-      } catch (error: any) {
-        toast.error(error.message || "An error occurred");
+      } catch (error: unknown) {
+        if (error instanceof Error) {
+          toast.error(error.message || `Failed to delete game`);
+        }
       }
     }
   };
@@ -200,8 +201,10 @@ const StarlineGame = () => {
         toast.success(response.message || 'Game status updated successfully')
       }
 
-    } catch (error: any) {
-      toast.error(error.message || "An error occurred");
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        toast.error(error.message || `Failed to update game status`);
+      }
     }
   };
 
@@ -242,8 +245,10 @@ const StarlineGame = () => {
       await dispatch(fetchGames());
       closeMarketStatusDialog();
 
-    } catch (error: any) {
-      toast.error(error.message || "An error occurred");
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        toast.error(error.message || `Failed to update game market status`);
+      }
     }
   };
 

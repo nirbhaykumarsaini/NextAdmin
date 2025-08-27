@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import {
@@ -58,11 +58,7 @@ const StarlineRate = () => {
     },
   })
 
-  useEffect(() => {
-    fetchRate()
-  }, [])
-
-  const fetchRate = async () => {
+  const fetchRate = useCallback(async () => {
     try {
       const response = await axios.get('/api/starlinerate')
       console.log(response.data)
@@ -86,7 +82,11 @@ const StarlineRate = () => {
     } catch (error: any) {
       toast.error(error.message || `Failed to  fatch rate`)
     }
-  }
+  },[form])
+
+    useEffect(() => {
+    fetchRate()
+  }, [fetchRate])
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
 
@@ -102,8 +102,12 @@ const StarlineRate = () => {
         toast.success(response.data.message || `Rate ${rateId ? "updated" : "added"} successfully`);
         fetchRate()
       }
-    } catch (error: any) {
-      toast.error(error.message || `Failed to  ${rateId ? "update" : "add"} rate`)
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error)) {
+        toast.error(error.response?.data?.message || `Failed to ${rateId ? "update" : "add"} rate`);
+      } else if (error instanceof Error) {
+        toast.error(error.message || `Failed to ${rateId ? "update" : "add"} rate`);
+      }
     }
   }
 

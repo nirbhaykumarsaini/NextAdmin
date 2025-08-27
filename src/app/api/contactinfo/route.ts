@@ -35,9 +35,10 @@ export async function POST(request: NextRequest) {
             message: 'Contact information saved successfully',
         });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
+         const errorMessage = error instanceof Error ? error.message : 'Failed to save contact information';
         return NextResponse.json(
-            { status: false, message: error.message || 'Failed to save contact information' },
+            { status: false, message: errorMessage  },
         );
     }
 }
@@ -54,9 +55,10 @@ export async function GET() {
             data: contactInfo || {}
         });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : 'Failed to fetch contact information';
         return NextResponse.json(
-            { status: false, message: error.message || 'Failed to fetch contact information' },
+            { status: false, message: errorMessage  },
         );
     }
 }

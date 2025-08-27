@@ -43,14 +43,14 @@ async function initializePannaData(Model: any, data: string[], type: string) {
   }
 }
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     await connectDB();
 
     // Initialize all panna types if needed
     await initializePannaData(SinglePanna, SP_PANA_DATA, "Single");
     await initializePannaData(DoublePanna, DP_PANA_DATA, "Double");
-    
+
     // For triple panna, we'll recreate it each time to ensure consistency
     await TriplePanna.deleteMany({});
     const tripleDigitsToSave = TP_PANA_DATA.map(digit => ({ digit }));
@@ -63,7 +63,7 @@ export async function GET(request: NextRequest) {
       TriplePanna.find({}).sort({ digit: 1 })
     ]);
 
-    const allPanna = [...singlePanna,...doublePanna,...triplePanna]
+    const allPanna = [...singlePanna, ...doublePanna, ...triplePanna]
 
     return NextResponse.json({
       status: true,
@@ -71,10 +71,11 @@ export async function GET(request: NextRequest) {
       data: allPanna
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error in allPannaSingleDoubleTriple:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Failed to retrieve all panna types'
     return NextResponse.json(
-      { status: false, message: error.message || 'Failed to retrieve all panna types' },
+      { status: false, message: errorMessage },
     );
   }
 }

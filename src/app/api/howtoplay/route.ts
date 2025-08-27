@@ -14,9 +14,10 @@ export async function GET() {
             status: true,
             data: howtoplay
         });
-    } catch (error: any) {
+    } catch (error: unknown) {
+         const errorMessage = error instanceof Error ? error.message : 'Failed to retrieve HowToPlay'
         return NextResponse.json(
-            { status: false, message: error.message || 'Failed to retrieve HowToPlay' }
+            { status: false, message: errorMessage }
         );
     }
 }
@@ -77,10 +78,11 @@ export async function POST(request: NextRequest) {
             });
         }
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Error adding/updating HowToPlay:', error);
+        const errorMessage = error instanceof Error ? error.message : 'Failed to add/update how to play'
         return NextResponse.json(
-            { status: false, message: error.message || 'Failed to add/update HowToPlay' }
+            { status: false, message: errorMessage  }
         );
     }
 }

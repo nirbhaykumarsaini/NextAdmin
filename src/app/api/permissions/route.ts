@@ -22,9 +22,10 @@ export async function GET(request: NextRequest) {
             status: true,
             data: permissions
         });
-    } catch (error: any) {
+    } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : 'Failed to retrieve permissions'
         return NextResponse.json(
-            { status: false, message: error.message || 'Failed to retrieve permissions' }
+            { status: false, message: errorMessage  }
         );
     }
 }
@@ -70,10 +71,11 @@ export async function POST(request: NextRequest) {
             data: permission
         });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Error creating permission:', error);
+        const errorMessage = error instanceof Error ? error.message : 'Failed to create permission'
         return NextResponse.json(
-            { status: false, message: error.message || 'Failed to create permission' }
+            { status: false, message: errorMessage  }
         );
     }
 }
@@ -116,10 +118,11 @@ export async function PUT(request: NextRequest) {
             data: updatedPermission
         });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Error updating permission:', error);
+         const errorMessage = error instanceof Error ? error.message : 'Failed to update permission'
         return NextResponse.json(
-            { status: false, message: error.message || 'Failed to update permission' }
+            { status: false, message: errorMessage }
         );
     }
 }
@@ -147,10 +150,11 @@ export async function DELETE(request: NextRequest) {
             message: 'Permission deleted successfully'
         });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Error deleting permission:', error);
+         const errorMessage = error instanceof Error ? error.message : 'Failed to delete permission'
         return NextResponse.json(
-            { status: false, message: error.message || 'Failed to delete permission' }
+            { status: false, message: errorMessage }
         );
     }
 }

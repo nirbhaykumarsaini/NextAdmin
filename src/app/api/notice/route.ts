@@ -14,9 +14,10 @@ export async function GET() {
             status: true,
             data: notices
         });
-    } catch (error: any) {
+    } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : 'Failed to retrieve notices'
         return NextResponse.json(
-            { status: false, message: error.message || 'Failed to retrieve notices' }
+            { status: false, message: errorMessage }
         );
     }
 }
@@ -33,7 +34,7 @@ export async function POST(request: NextRequest) {
             throw new ApiError('notice_title and notice_message are required');
         }
 
-        const notice = await Notice.create({
+         await Notice.create({
             notice_title,
             notice_message
         });
@@ -43,10 +44,11 @@ export async function POST(request: NextRequest) {
             message: 'Notice sent successfully',
         });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Error to sent notice:', error);
+        const errorMessage = error instanceof Error ? error.message : 'Failed to sent notice'
         return NextResponse.json(
-            { status: false, message: error.message || 'Failed to sent notice' }
+            { status: false, message: errorMessage }
         );
     }
 }
@@ -81,10 +83,11 @@ export async function PUT(request: NextRequest) {
             message: 'Notice updated successfully',
         });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Error updating Notice:', error);
+        const errorMessage = error instanceof Error ? error.message : 'Failed to update Notice'
         return NextResponse.json(
-            { status: false, message: error.message || 'Failed to update Notice' });
+            { status: false, message: errorMessage });
     }
 }
 
@@ -111,9 +114,10 @@ export async function DELETE(request: NextRequest) {
             message: 'Notice deleted successfully'
         });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Error deleting Notice:', error);
+        const errorMessage = error instanceof Error ? error.message : 'Failed to delete Notice'
         return NextResponse.json(
-            { status: false, message: error.message || 'Failed to delete Notice' });
+            { status: false, message:errorMessage });
     }
 }

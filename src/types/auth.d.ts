@@ -1,8 +1,3 @@
-
-import { Types } from 'mongoose';
-
-
-
 export interface ILogin {
   username: string;
   password: string;
@@ -14,14 +9,6 @@ export interface IRegister {
   role?: 'user' | 'admin';
 }
 
-
-export interface CookieOptions {
-  httpOnly: boolean;
-  secure: boolean;
-  sameSite: 'strict' | 'lax' | 'none';
-  path: string;
-  maxAge?: number; // Changed from string to number
-}
 
 export interface AuthTokens {
   accessToken: string;

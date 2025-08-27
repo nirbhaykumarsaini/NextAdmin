@@ -11,7 +11,7 @@ export const rateLimitMiddleware = async (request: Request) => {
     const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || '127.0.0.1';
     await rateLimiter.consume(ip);
     return null;
-  } catch (error) {
+  } catch{
     return NextResponse.json(
       { status: false, message: 'Too many requests' },
     );

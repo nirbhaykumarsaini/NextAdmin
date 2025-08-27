@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
@@ -92,9 +92,13 @@ const ManageUpi = () => {
           toast.error(response.data.message || 'Failed to add UPI')
         }
       }
-    } catch (error: any) {
+    }  catch (error: unknown) {
       console.error('Error saving UPI:', error)
-      toast.error(error.response?.data?.message || 'Failed to save UPI')
+      if (axios.isAxiosError(error)) {
+        toast.error(error.response?.data?.message || 'Failed to save UPI');
+      } else if (error instanceof Error) {
+        toast.error(error.message || 'Failed to save UPI');
+      }
     } finally {
       setLoading(false)
     }
@@ -118,9 +122,13 @@ const ManageUpi = () => {
       } else {
         toast.error(response.data.message || 'Failed to delete UPI')
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error deleting UPI:', error)
-      toast.error(error.response?.data?.message || 'Failed to delete UPI')
+      if (axios.isAxiosError(error)) {
+        toast.error(error.response?.data?.message || 'Failed to delete UPI');
+      } else if (error instanceof Error) {
+        toast.error(error.message || 'Failed to delete UPI');
+      }
     } finally {
       setLoading(false)
     }
@@ -136,9 +144,13 @@ const ManageUpi = () => {
       } else {
         toast.error(response.data.message || 'Failed to toggle UPI status')
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error toggling UPI status:', error)
-      toast.error(error.response?.data?.message || 'Failed to toggle UPI status')
+      if (axios.isAxiosError(error)) {
+        toast.error(error.response?.data?.message || 'Failed to toggle UPI status');
+      } else if (error instanceof Error) {
+        toast.error(error.message || 'Failed to toggle UPI status');
+      }
     } finally {
       setLoading(false)
     }

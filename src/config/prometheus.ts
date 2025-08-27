@@ -1,8 +1,5 @@
 import client from 'prom-client';
 
-const collectDefaultMetrics = client.collectDefaultMetrics;
-// collectDefaultMetrics({ timeout: 5000 });
-
 export const httpRequestDurationMicroseconds = new client.Histogram({
   name: 'http_request_duration_ms',
   help: 'Duration of HTTP requests in ms',

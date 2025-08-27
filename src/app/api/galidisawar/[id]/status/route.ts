@@ -33,12 +33,10 @@ export async function PATCH(
       status: true,
       message: "Game status updated successfully",
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : "Failed to update status"
     return NextResponse.json(
-      { 
-        status: false, 
-        message: error.message || "Failed to update status" 
-      }
+      { status: false,  message: errorMessage }
     );
   }
 }

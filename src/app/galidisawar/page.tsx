@@ -74,15 +74,10 @@ const DAYS_OF_WEEK = [
   "Sunday",
 ];
 
-const DEFAULT_DAY_CONFIG = {
-  open_time: "09:00",
-  market_status: false,
-};
-
 // ---------------- Main Component ----------------
 const GalidisawarGame = () => {
   const dispatch = useAppDispatch();
-  const { games, loading, error, currentPage, totalCount } = useAppSelector(
+  const { games, loading, error, currentPage } = useAppSelector(
     (state) => state.galidisawar
   );
 
@@ -156,8 +151,12 @@ const GalidisawarGame = () => {
       await dispatch(fetchGames());
       form.reset();
       setEditingId(null);
-    } catch (error: any) {
-      toast.error(error.message || "An error occurred");
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        toast.error(error.message || "An error occurred");
+      } else {
+        toast.error("An error occurred");
+      }
     }
   };
 
@@ -178,8 +177,12 @@ const GalidisawarGame = () => {
           await dispatch(fetchGames());
           form.reset();
         }
-      } catch (error: any) {
-        toast.error(error.message || "An error occurred");
+      } catch (error: unknown) {
+        if (error instanceof Error) {
+          toast.error(error.message || "Falied to delete game");
+        } else {
+          toast.error("Falied to delete game");
+        }
       }
     }
   };
@@ -200,8 +203,12 @@ const GalidisawarGame = () => {
         toast.success(response.message || 'Game status updated successfully')
       }
 
-    } catch (error: any) {
-      toast.error(error.message || "An error occurred");
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        toast.error(error.message || "Failed to update status");
+      } else {
+        toast.error("Failed to update status");
+      }
     }
   };
 
@@ -242,8 +249,12 @@ const GalidisawarGame = () => {
       await dispatch(fetchGames());
       closeMarketStatusDialog();
 
-    } catch (error: any) {
-      toast.error(error.message || "An error occurred");
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        toast.error(error.message || "An error occurred");
+      } else {
+        toast.error("An error occurred");
+      }
     }
   };
 

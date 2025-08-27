@@ -4,7 +4,7 @@ import connectDB from '@/config/db';
 
 const TP_PANA_DATA = ["000", "111", "222", "333", "444", "555", "666", "777", "888", "999"];
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     await connectDB();
 
@@ -29,11 +29,11 @@ export async function GET(request: NextRequest) {
       data: allDigits
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error in allTriplePanna:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Failed to retrieve triple panna'
     return NextResponse.json(
-      { status: false, message: error.message || 'Failed to retrieve triple panna' },
-      { status: 500 }
+      { status: false, message: errorMessage }
     );
   }
 }

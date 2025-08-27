@@ -37,7 +37,7 @@ import {
   toggleGameStatus,
   clearError,
 } from "@/redux/slices/mainMarketSlice";
-import { IMainMarketGame } from "@/models/MainMarketGame";
+import { IMainMarketGame, IMainMarketGameDay } from "@/models/MainMarketGame";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -75,19 +75,17 @@ const DAYS_OF_WEEK = [
   "Sunday",
 ];
 
-
-
 // ---------------- Main Component ----------------
 const MainMarket = () => {
   const dispatch = useAppDispatch();
-  const { games, loading, error, currentPage, totalCount } = useAppSelector(
+  const { games, loading, error, currentPage } = useAppSelector(
     (state) => state.mainMarket
   );
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [marketStatusDialogOpen, setMarketStatusDialogOpen] = useState(false);
   const [selectedGame, setSelectedGame] = useState<IMainMarketGame | null>(null);
-  const [selectedGameDays, setSelectedGameDays] = useState<any[]>([]);
+  const [selectedGameDays, setSelectedGameDays] = useState<IMainMarketGameDay[]>([]);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -155,8 +153,12 @@ const MainMarket = () => {
       await dispatch(fetchGames());
       form.reset();
       setEditingId(null);
-    } catch (error: any) {
-      toast.error(error.message || "An error occurred");
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        toast.error(error.message || `Failed to ${editingId ? "update" : "create"} game`);
+      } else {
+        toast.error(`Failed to ${editingId ? "update" : "create"} game`);
+      }
     }
   };
 
@@ -177,8 +179,12 @@ const MainMarket = () => {
           await dispatch(fetchGames());
           form.reset();
         }
-      } catch (error: any) {
-        toast.error(error.message || "An error occurred");
+      } catch (error: unknown) {
+        if (error instanceof Error) {
+          toast.error(error.message || `Failed to delete game`);
+        } else {
+          toast.error(`Failed to delete game`);
+        }
       }
     }
   };
@@ -199,8 +205,12 @@ const MainMarket = () => {
         toast.success(response.message || 'Game status updated successfully')
       }
 
-    } catch (error: any) {
-      toast.error(error.message || "An error occurred");
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        toast.error(error.message || `Failed to update game status`);
+      } else {
+        toast.error("Failed to update game status");
+      }
     }
   };
 
@@ -241,8 +251,12 @@ const MainMarket = () => {
       await dispatch(fetchGames());
       closeMarketStatusDialog();
 
-    } catch (error: any) {
-      toast.error(error.message || "An error occurred");
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        toast.error(error.message || `Failed to update game market status`);
+      } else {
+        toast.error("Failed to update game market  status");
+      }
     }
   };
 

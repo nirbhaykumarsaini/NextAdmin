@@ -51,10 +51,11 @@ export async function POST(request: NextRequest) {
             message: 'Logo and app title saved successfully',
         });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Error saving logo:', error);
+        const errorMessage = error instanceof Error ? error.message : 'Failed to add app config'
         return NextResponse.json(
-            { status: false, message: error.message || 'Failed to add app config' }
+            { status: false, message: errorMessage }
         );
     }
 }
@@ -69,9 +70,10 @@ export async function GET() {
             status: true,
             data: slider
         });
-    } catch (error: any) {
+    } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : 'Failed to retrive app config'
         return NextResponse.json(
-            { status: false, message: error.message || 'Failed to retrive app config ' },
+            { status: false, message: errorMessage},
         );
     }
 }

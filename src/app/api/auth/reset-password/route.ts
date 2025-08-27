@@ -45,15 +45,9 @@ export async function POST(request: Request) {
 
   } catch (error: any) {
     logger.error(error);
-    
-    if (error instanceof ApiError) {
+    const errorMessage = error instanceof Error ? error.message :  'Failed to reset passwod'
       return NextResponse.json(
-        { status: false, message: error.message }
+        { status: false, message: errorMessage }
       );
-    }
-    
-    return NextResponse.json(
-      { status: false, message: error.message || 'Internal server error' }
-    );
   }
 }

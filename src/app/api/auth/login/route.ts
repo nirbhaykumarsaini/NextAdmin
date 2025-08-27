@@ -2,23 +2,21 @@ import { NextResponse } from 'next/server';
 import dbConnect from '@/config/db';
 import User from '@/models/User';
 import { generateToken } from '@/lib/auth/jwt';
-import { ILogin, IRegister } from '@/types/auth';
+import { ILogin } from '@/types/auth';
 import ApiError from '@/lib/errors/APiError';
 import logger from '@/config/logger';
-
-
+import { IUser } from '@/types/user';
 
 export async function POST(request: Request) {
     try {
         await dbConnect();
 
-        // Helper function to handle successful authentication
-        const handleSuccessfulAuth = async (user: any) => {
+        const handleSuccessfulAuth = async (user: IUser) => {
             const accessToken = generateToken(user._id);
 
             const response = NextResponse.json({
                 status: true,
-                message: 'Authentication successful',
+                message: 'Login successful',
                 user: {
                     _id: user._id,
                     username: user.username,
@@ -53,36 +51,49 @@ export async function POST(request: Request) {
 
         return await handleSuccessfulAuth(user);
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         logger.error(error);
 
+        // Handle specific error types
         if (error instanceof ApiError) {
             return NextResponse.json(
-                { status: false, message: error.message },
+                { status: false, message: error.message }
             );
         }
 
-        if (error.name === 'ValidationError') {
-            const messages = Object.values(error.errors).map((val: any) => val.message);
-            return NextResponse.json(
-                { status: false, message: messages.join(', ') },
-            );
-        }
+        if (error instanceof Error) {
+            // Check for Mongoose validation errors
+            if (error.name === 'ValidationError') {
+                const mongooseError = error as { errors?: Record<string, { message: string }> };
+                if (mongooseError.errors) {
+                    const messages = Object.values(mongooseError.errors).map(val => val.message);
+                    return NextResponse.json(
+                        { status: false, message: messages.join(', ') });
+                }
+            }
 
-        if (error.code === 11000) {
-            if (error.keyPattern && error.keyPattern.username) {
+            // Check for MongoDB duplicate key error
+            if ((error as { code?: number }).code === 11000) {
+                const mongoError = error as { keyPattern?: Record<string, unknown> };
+                if (mongoError.keyPattern && 'username' in mongoError.keyPattern) {
+                    return NextResponse.json(
+                        { status: false, message: 'Username already exists' }
+                    );
+                }
                 return NextResponse.json(
-                    { status: false, message: 'Username already exists' },
-
+                    { status: false, message: 'Duplicate entry error' }
                 );
             }
+
+            // Generic error
             return NextResponse.json(
-                { status: false, message: 'Session error. Please try again.' },
+                { status: false, message: error.message || 'Internal server error' }
             );
         }
 
+        // Unknown error type
         return NextResponse.json(
-            { status: false, message: error.message || 'Internal server error' },
+            { status: false, message: 'Internal server error' }
         );
     }
 }

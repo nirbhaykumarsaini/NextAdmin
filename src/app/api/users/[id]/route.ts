@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { authenticate } from '@/lib/middleware/auth';
 import ApiError from '@/lib/errors/APiError';
 import User from '@/models/User';
 
@@ -9,7 +8,7 @@ import connectDB from '@/config/db';
 connectDB();
 
 
-export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function POST( { params }: { params: Promise<{ id: string }> }) {
   try {
 
      const { id } = await params;
@@ -28,9 +27,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       data:user,
       message: 'User Fetched successfully'
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+     const errorMessage = error instanceof Error ? error.message : "Failed to create user"
     return NextResponse.json(
-      { status: false, message: error.message },
+      { status: false, message: errorMessage },
     );
   }
 }
@@ -60,14 +60,15 @@ export async function PUT(request: NextRequest,{ params }: { params: Promise<{ i
     }
     
     return NextResponse.json({status: true, data:user});
-  } catch (error: any) {
+  } catch (error: unknown) {
+     const errorMessage = error instanceof Error ? error.message : "Failed to update user"
     return NextResponse.json(
-      { status: false, message: error.message },
+      { status: false, message:errorMessage },
     );
   }
 }
 
-export async function DELETE(request: NextRequest,{ params }: { params: Promise<{ id: string }> }) {
+export async function DELETE({ params }: { params: Promise<{ id: string }> }) {
   try {
 
     const {id} = await params;
@@ -85,9 +86,10 @@ export async function DELETE(request: NextRequest,{ params }: { params: Promise<
       status: true, 
       message: 'User deleted successfully' 
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : "Failed to delete user"
     return NextResponse.json(
-      { status: false, message: error.message },
+      { status: false, message: errorMessage },
     );
   }
 }

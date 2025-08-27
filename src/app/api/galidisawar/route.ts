@@ -11,21 +11,22 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const is_active = searchParams.get('is_active');
-    
+
     let filter = {};
     if (is_active !== null) {
       filter = { is_active: is_active === 'true' };
     }
-    
+
     const games = await GalidisawarGame.find(filter);
-    return NextResponse.json({ 
-      status: true, 
+    return NextResponse.json({
+      status: true,
       data: games,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error('Error fetching games:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Failed to fetch game'
     return NextResponse.json(
-      { status: false, message: error.message },
+      { status: false, message: errorMessage },
     );
   }
 }
@@ -34,37 +35,45 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    
+
     // Validate required fields
     if (!body.game_name) {
       throw new ApiError('Game name is required');
     }
-    
+
     if (!body.days || !Array.isArray(body.days) || body.days.length === 0) {
       throw new ApiError('At least one day configuration is required');
     }
-    
+
     // Create the game
     const game = await GalidisawarGame.create(body);
-    
+
     logger.info(`Game created: ${game._id}`);
-    return NextResponse.json({ 
-      status: true, 
-      message: "Game created successfully" 
+    return NextResponse.json({
+      status: true,
+      message: "Game created successfully"
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error('Error creating game:', error);
-    
-    if (error.name === 'ValidationError') {
-      const messages = Object.values(error.errors).map((err: any) => err.message);
+    if (error instanceof ApiError) {
       return NextResponse.json(
-        { status: false, message: messages.join(', ') },
-      );
+        { status: false, message: error.message || "Failed to create game" });
     }
-    
-    return NextResponse.json(
-      { status: false, message: error.message },
-    );
+    if (error instanceof Error) {
+      // Check for Mongoose validation errors
+      if (error.name === 'ValidationError') {
+        const mongooseError = error as { errors?: Record<string, { message: string }> };
+        if (mongooseError.errors) {
+          const messages = Object.values(mongooseError.errors).map(err => err.message);
+          return NextResponse.json(
+            { status: false, message: messages.join(', ') });
+        }
+      }
+
+      // Generic error
+      return NextResponse.json(
+        { status: false, message: error.message || 'Failed to create game' });
+    }
   }
 }
 
@@ -73,42 +82,51 @@ export async function PUT(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
-    
+
     if (!id) {
       throw new ApiError('Game ID is required');
     }
-    
+
     const body = await request.json();
-    
+
     // Find and update the game
     const game = await GalidisawarGame.findByIdAndUpdate(
       id,
       body,
       { new: true, runValidators: true }
     );
-    
+
     if (!game) {
       throw new ApiError('Game not found');
     }
-    
+
     logger.info(`Game updated: ${id}`);
-    return NextResponse.json({ 
-      status: true, 
-      message: "Game updated successfully" 
+    return NextResponse.json({
+      status: true,
+      message: "Game updated successfully"
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error('Error updating game:', error);
-    
-    if (error.name === 'ValidationError') {
-      const messages = Object.values(error.errors).map((err: any) => err.message);
+
+    if (error instanceof ApiError) {
       return NextResponse.json(
-        { status: false, message: messages.join(', ') },
-      );
+        { status: false, message: error.message || "Failed to update game" });
     }
-    
-    return NextResponse.json(
-      { status: false, message: error.message },
-    );
+    if (error instanceof Error) {
+      // Check for Mongoose validation errors
+      if (error.name === 'ValidationError') {
+        const mongooseError = error as { errors?: Record<string, { message: string }> };
+        if (mongooseError.errors) {
+          const messages = Object.values(mongooseError.errors).map(err => err.message);
+          return NextResponse.json(
+            { status: false, message: messages.join(', ') });
+        }
+      }
+
+      // Generic error
+      return NextResponse.json(
+        { status: false, message: error.message || 'Failed to update game' });
+    }
   }
 }
 
@@ -117,27 +135,27 @@ export async function DELETE(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
-    
+
     if (!id) {
       throw new ApiError('Game ID is required');
     }
-    
+
     const game = await GalidisawarGame.findByIdAndDelete(id);
-    
+
     if (!game) {
       throw new ApiError('Game not found');
     }
-    
+
     logger.info(`Game deleted: ${id}`);
-    return NextResponse.json({ 
-      status: true, 
-      message: 'Game deleted successfully' 
+    return NextResponse.json({
+      status: true,
+      message: 'Game deleted successfully'
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error('Error deleting game:', error);
+    const errorMessage = error instanceof Error ? error.message :  'Failed to date game'
     return NextResponse.json(
-      { status: false, message: error.message },
-      { status: error.statusCode || 500 }
+      { status: false, message: errorMessage },
     );
   }
 }
@@ -146,7 +164,7 @@ export async function DELETE(request: NextRequest) {
 export async function PATCH(request: NextRequest) {
   try {
     await connectDB();
-    
+
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
 
@@ -177,12 +195,10 @@ export async function PATCH(request: NextRequest) {
       status: true,
       message: "Market days updated successfully",
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message :  "Failed to update days status"
     return NextResponse.json(
-      { 
-        status: false, 
-        message: error.message || "Failed to update days status" 
-      }
+      { status: false, message: errorMessage }
     );
   }
 }

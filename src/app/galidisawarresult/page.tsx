@@ -1,7 +1,6 @@
 "use client"
 
 import React, { useEffect, useState } from 'react'
-import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import {
     Select,
@@ -70,7 +69,7 @@ const MainMarketResult = () => {
     const [totalWinningAmount, setTotalWinningAmount] = useState(0)
 
     const dispatch = useAppDispatch();
-    const { games, loading, error, currentPage, totalCount } = useAppSelector(
+    const { games } = useAppSelector(
         (state) => state.galidisawar
     );
 
