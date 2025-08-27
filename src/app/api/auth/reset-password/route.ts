@@ -15,11 +15,9 @@ export async function POST(request: Request) {
       if (!body.mobile_number) missingFields.push('mobile_number');
       if (!body.otp) missingFields.push('otp');
       if (!body.newPassword) missingFields.push('newPassword');
-      
+
       throw new ApiError(
-        `${missingFields.join(' and ')} ${missingFields.length > 1 ? 'are' : 'is'} required`,
-        400
-      );
+        `${missingFields.join(' and ')} ${missingFields.length > 1 ? 'are' : 'is'} required`);
     }
 
     // Find user
@@ -43,11 +41,10 @@ export async function POST(request: Request) {
       message: 'Password reset successfully'
     });
 
-  } catch (error: any) {
-    logger.error(error);
-    const errorMessage = error instanceof Error ? error.message :  'Failed to reset passwod'
-      return NextResponse.json(
-        { status: false, message: errorMessage }
-      );
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Failed to reset passwod'
+    return NextResponse.json(
+      { status: false, message: errorMessage }
+    );
   }
 }

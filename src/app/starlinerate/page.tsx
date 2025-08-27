@@ -79,12 +79,14 @@ const StarlineRate = () => {
           triple_panna_amount: rateData.triple_panna_amount
         });
       }
-    } catch (error: any) {
-      toast.error(error.message || `Failed to  fatch rate`)
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        toast.error(error.message || `Failed to  fatch rate`)
+      }
     }
-  },[form])
+  }, [form])
 
-    useEffect(() => {
+  useEffect(() => {
     fetchRate()
   }, [fetchRate])
 

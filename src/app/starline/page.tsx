@@ -37,7 +37,7 @@ import {
   toggleGameStatus,
   clearError,
 } from "@/redux/slices/starlineSlice";
-import { IStarlineGame } from "@/models/StarlineGame";
+import { IStarlineGame, IStarlineGameDay } from "@/models/StarlineGame";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -85,7 +85,7 @@ const StarlineGame = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [marketStatusDialogOpen, setMarketStatusDialogOpen] = useState(false);
   const [selectedGame, setSelectedGame] = useState<IStarlineGame | null>(null);
-  const [selectedGameDays, setSelectedGameDays] = useState<any[]>([]);
+  const [selectedGameDays, setSelectedGameDays] = useState<IStarlineGameDay[]>([]);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -225,7 +225,7 @@ const StarlineGame = () => {
     setSelectedGameDays([]);
   };
 
-  const handleDayStatusChange = (index: number, field: string, value: any) => {
+  const handleDayStatusChange = (index: number, field: string, value: boolean | string) => {
     const updatedDays = [...selectedGameDays];
     updatedDays[index] = { ...updatedDays[index], [field]: value };
     setSelectedGameDays(updatedDays);
@@ -363,7 +363,7 @@ const StarlineGame = () => {
               <TableRow>
                 <TableHead>S. No.</TableHead>
                 <TableHead>Game Name</TableHead>
-                <TableHead>Today's Day</TableHead>
+                <TableHead>Today&lsquo;s Day</TableHead>
                 <TableHead>Open Time</TableHead>
                 {/* <TableHead>Close Time</TableHead> */}
                 <TableHead>Market Status</TableHead>

@@ -1,6 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import DoublePanna from '@/models/DoublePanna';
 import connectDB from '@/config/db';
+import { Model } from 'mongoose';
 
 const DP_PANA_DATA = [
   "118", "226", "244", "299", "334", "488", "550", "668", "677",
@@ -15,7 +16,11 @@ const DP_PANA_DATA = [
   "117", "144", "199", "225", "388", "559", "577", "667", "900"
 ];
 
-async function initializePannaData(Model: any, data: string[], type: string) {
+async function initializePannaData<T extends { digit: string }>(
+  Model: Model<T>,
+  data: string[],
+  type: string
+) {
   const count = await Model.countDocuments();
   if (count === 0) {
     const pannasToSave = data.map(digit => ({

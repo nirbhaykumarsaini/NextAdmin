@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import Role from '@/models/Role';
+import Role, { IRole } from '@/models/Role';
 import Permission from '@/models/Permission';
 import connectDB from '@/config/db';
 import ApiError from '@/lib/errors/APiError';
@@ -129,7 +129,7 @@ export async function PUT(request: NextRequest) {
             }
         }
 
-        const updateData: any = {};
+        const updateData: Partial<IRole> = {};
         if (role_name) updateData.role_name = role_name;
         if (role_description) updateData.role_description = role_description;
         if (permissions) updateData.permissions = permissions;

@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { IMainMarketGame } from '@/models/MainMarketGame';
+import { IMainMarketGame, IMainMarketGameDay } from '@/models/MainMarketGame';
 import axios from 'axios';
 import { MainMarketState } from '@/types/game';
 
@@ -87,7 +87,7 @@ export const deleteGame = createAsyncThunk(
 export const updateMarketStatus = createAsyncThunk(
   'mainMarket/updateMarketStatus',
   async (
-    { id, days }: { id: string; days: any[] },
+    { id, days }: { id: string, days: IMainMarketGameDay[] },
     { rejectWithValue }
   ) => {
     try {

@@ -104,8 +104,10 @@ const MainMarketRate = () => {
                     full_sangam_amount: rateData.full_sangam_amount,
                 });
             }
-        } catch (error: any) {
-            toast.error(error.message || `Failed to  fatch rate`)
+        } catch (error: unknown) {
+            if (error instanceof Error) {
+                toast.error(error.message || `Failed to  fatch rate`)
+            }
         }
     }, [form])
 

@@ -37,7 +37,7 @@ import {
   toggleGameStatus,
   clearError,
 } from "@/redux/slices/galidisawarSlice";
-import { IGalidisawarGame } from "@/models/GalidisawarGame";
+import { IGalidisawarGame, IGalidisawarGameDay } from "@/models/GalidisawarGame";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -84,7 +84,7 @@ const GalidisawarGame = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [marketStatusDialogOpen, setMarketStatusDialogOpen] = useState(false);
   const [selectedGame, setSelectedGame] = useState<IGalidisawarGame | null>(null);
-  const [selectedGameDays, setSelectedGameDays] = useState<any[]>([]);
+  const [selectedGameDays, setSelectedGameDays] = useState<IGalidisawarGameDay[]>([]);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -229,7 +229,7 @@ const GalidisawarGame = () => {
     setSelectedGameDays([]);
   };
 
-  const handleDayStatusChange = (index: number, field: string, value: any) => {
+  const handleDayStatusChange = (index: number, field: string, value: boolean | string) => {
     const updatedDays = [...selectedGameDays];
     updatedDays[index] = { ...updatedDays[index], [field]: value };
     setSelectedGameDays(updatedDays);
@@ -369,7 +369,7 @@ const GalidisawarGame = () => {
               <TableRow>
                 <TableHead>S. No.</TableHead>
                 <TableHead>Game Name</TableHead>
-                <TableHead>Today's Day</TableHead>
+                <TableHead>Today&lsquo;s Day</TableHead>
                 <TableHead>Open Time</TableHead>
                 {/* <TableHead>Close Time</TableHead> */}
                 <TableHead>Market Status</TableHead>

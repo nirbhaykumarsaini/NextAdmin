@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import SingleDigit from '@/models/SingleDigit';
 import connectDB from '@/config/db';
 
@@ -16,7 +16,7 @@ export async function GET() {
 
     const allDigits = await SingleDigit.find({}).sort({ digit: 1 });
     
-    allDigits.forEach((digitObj: { digit: any; }) => {
+    allDigits.forEach((digitObj: { digit: number; }) => {
       console.log(`Digit : ${digitObj.digit}`);
     });
 

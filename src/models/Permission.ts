@@ -4,6 +4,7 @@ export interface IPermission extends Document {
     permission_name: string;
     permission_key: string;
     permission_description: string;
+    category:string;
 }
 
 const permissionSchema: Schema = new Schema(

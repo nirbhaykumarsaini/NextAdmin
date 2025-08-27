@@ -1,8 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import SinglePanna from '@/models/SinglePanna';
 import DoublePanna from '@/models/DoublePanna';
 import TriplePanna from '@/models/TriplePanna';
 import connectDB from '@/config/db';
+import { Model } from 'mongoose';
 
 const SP_PANA_DATA = [
   "127", "136", "145", "190", "235", "280", "370", "389", "460", "479", "569", "578",
@@ -32,7 +33,11 @@ const DP_PANA_DATA = [
 
 const TP_PANA_DATA = ["000", "111", "222", "333", "444", "555", "666", "777", "888", "999"];
 
-async function initializePannaData(Model: any, data: string[], type: string) {
+async function initializePannaData<T extends { digit: string }>(
+  Model: Model<T>,
+  data: string[],
+  type: string
+) {
   const count = await Model.countDocuments();
   if (count === 0) {
     const pannasToSave = data.map(digit => ({

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import FooterLink from '@/models/FooterLinks';
+import FooterLink, { IFooterLinks } from '@/models/FooterLinks';
 import connectDB from '@/config/db';
 import ApiError from '@/lib/errors/APiError';
 
@@ -70,7 +70,7 @@ export async function PUT(request: NextRequest) {
         const body = await request.json();
         const { footer_name, footer_link, is_active } = body;
 
-        const updateData: any = {};
+        const updateData: Partial<IFooterLinks> = {};
         if (footer_name) updateData.footer_name = footer_name;
         if (footer_link) updateData.footer_link = footer_link;
         if (typeof is_active !== 'undefined') updateData.is_active = is_active;
@@ -122,7 +122,7 @@ export async function DELETE(request: NextRequest) {
             message: 'Footer link deleted successfully'
         });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Error deleting footer link:', error);
         const errorMessage = error instanceof Error ? error.message :  'Failed to delete footer link'
         return NextResponse.json(

@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
       status: true,
       data: games,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error('Error fetching games:', error);
     const errorMessage = error instanceof Error ? error.message : 'Failed to fetch game'
     return NextResponse.json(

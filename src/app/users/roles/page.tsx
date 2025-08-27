@@ -1,7 +1,7 @@
 "use client";
 
 import { FiEdit, FiTrash2, FiPlus } from "react-icons/fi";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -71,13 +71,9 @@ export default function Roles() {
     pages: 1
   });
 
-  // Fetch roles and permissions on component mount
-  useEffect(() => {
-    fetchRoles();
-    fetchPermissions();
-  }, [pagination.page]);
 
-  const fetchRoles = async () => {
+
+  const fetchRoles = useCallback(async () => {
     try {
       setLoading(true);
       const response = await axios.get(`/api/roles?page=${pagination.page}&limit=${pagination.limit}`);
@@ -96,9 +92,9 @@ export default function Roles() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [pagination.page, pagination.limit]);
 
-  const fetchPermissions = async () => {
+  const fetchPermissions = useCallback(async () => {
     try {
       const response = await axios.get('/api/permissions');
       if (response.data.status) {
@@ -107,7 +103,13 @@ export default function Roles() {
     } catch (error) {
       console.error('Error fetching permissions:', error);
     }
-  };
+  }, []);
+
+  // Fetch roles and permissions on component mount
+  useEffect(() => {
+    fetchRoles();
+    fetchPermissions();
+  }, [fetchRoles, fetchPermissions]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -188,7 +190,7 @@ export default function Roles() {
         toast.error(error.response?.data?.message || 'Failed to delete role');
       } else if (error instanceof Error) {
         toast.error(error.message || 'Failed to delete role');
-      } 
+      }
     } finally {
       setLoading(false);
     }

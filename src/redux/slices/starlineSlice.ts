@@ -1,4 +1,4 @@
-import { IStarlineGame } from '@/models/StarlineGame';
+import { IStarlineGame, IStarlineGameDay } from '@/models/StarlineGame';
 import { StarlineGameState } from '@/types/game';
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import axios from 'axios';
@@ -88,7 +88,7 @@ export const deleteGame = createAsyncThunk(
 export const updateMarketStatus = createAsyncThunk(
   'starline/updateMarketStatus',
   async (
-    { id, days }: { id: string; days: any[] },
+    { id, days }: { id: string, days: IStarlineGameDay[] },
     { rejectWithValue }
   ) => {
     try {

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import Permission from '@/models/Permission';
+import Permission, { IPermission } from '@/models/Permission';
 import connectDB from '@/config/db';
 import ApiError from '@/lib/errors/APiError';
 
@@ -96,7 +96,7 @@ export async function PUT(request: NextRequest) {
         const { permission_name, permission_description,permission_key, category } = body;
 
         // Don't allow updating the key as it should be immutable
-        const updateData: any = {};
+        const updateData: Partial<IPermission> = {};
         if (permission_name) updateData.permission_name = permission_name;
         if (permission_key) updateData.permission_key = permission_key;
         if (permission_description) updateData.permission_description = permission_description;

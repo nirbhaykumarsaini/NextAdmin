@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import axios from 'axios';
 import { GalidisawarGameState } from '@/types/game';
-import { IGalidisawarGame } from '@/models/GalidisawarGame';
+import { IGalidisawarGame, IGalidisawarGameDay } from '@/models/GalidisawarGame';
 
 const initialState: GalidisawarGameState = {
   games: [],
@@ -87,7 +87,7 @@ export const deleteGame = createAsyncThunk(
 export const updateMarketStatus = createAsyncThunk(
   'galidisawar/updateMarketStatus',
   async (
-    { id, days }: { id: string; days: Array<{ day: string; open_time: string; market_status: boolean }> },
+    { id, days }: { id: string; days: IGalidisawarGameDay[] },
     { rejectWithValue }
   ) => {
     try {

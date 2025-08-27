@@ -231,7 +231,7 @@ const MainMarket = () => {
     setSelectedGameDays([]);
   };
 
-  const handleDayStatusChange = (index: number, field: string, value: any) => {
+  const handleDayStatusChange = (index: number, field: string, value: boolean | string) => {
     const updatedDays = [...selectedGameDays];
     updatedDays[index] = { ...updatedDays[index], [field]: value };
     setSelectedGameDays(updatedDays);
@@ -380,7 +380,7 @@ const MainMarket = () => {
               <TableRow>
                 <TableHead>S. No.</TableHead>
                 <TableHead>Game Name</TableHead>
-                <TableHead>Today's Day</TableHead>
+                <TableHead>Today&lsquo;s Day</TableHead>
                 <TableHead>Open Time</TableHead>
                 <TableHead>Close Time</TableHead>
                 <TableHead>Market Status</TableHead>
