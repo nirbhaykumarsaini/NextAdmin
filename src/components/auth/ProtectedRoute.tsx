@@ -21,7 +21,7 @@ export const ProtectedRoute = ({
       router.push('/')
     }
     
-    if (!isLoading && isAuthenticated && requiredPermission && !hasPermission(user, requiredPermission)) {
+    if (!isLoading && isAuthenticated && requiredPermission && !hasPermission(user)) {
       router.push('/unauthorized')
     }
   }, [isAuthenticated, isLoading, router, requiredPermission, user])
@@ -34,7 +34,7 @@ export const ProtectedRoute = ({
     )
   }
 
-  if (requiredPermission && !hasPermission(user, requiredPermission)) {
+  if (requiredPermission && !hasPermission(user)) {
     return null
   }
 
