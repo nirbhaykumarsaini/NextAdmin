@@ -8,14 +8,10 @@ import connectDB from '@/config/db';
 connectDB();
 
 
-
-
-export async function POST(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function GET( { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = params;
+
+     const { id } = await params;
 
     if (!id) {
       throw new ApiError('User ID is required');
@@ -28,16 +24,16 @@ export async function POST(
 
     return NextResponse.json({
       status: true,
-      data: user,
-      message: 'User Fetched successfully',
+      data:user,
+      message: 'User Fetched successfully'
     });
   } catch (error: unknown) {
-    const errorMessage =
-      error instanceof Error ? error.message : 'Failed to fetch user';
-    return NextResponse.json({ status: false, message: errorMessage });
+     const errorMessage = error instanceof Error ? error.message : "Failed to create user"
+    return NextResponse.json(
+      { status: false, message: errorMessage },
+    );
   }
 }
-
 
 export async function PUT(request: NextRequest,{ params }: { params: Promise<{ id: string }> }) {
   try {
