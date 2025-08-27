@@ -69,9 +69,10 @@ const AccountSettings = () => {
       }
       setIsDataLoaded(true);
     } catch (error) {
-      console.error('Error fetching settings:', error);
-      toast.error('Failed to load account settings');
+      if(error instanceof Error){
+      toast.error(error.message || 'Failed to load account settings');
       setIsDataLoaded(true);
+      }
     }
   };
 
@@ -118,17 +119,18 @@ const AccountSettings = () => {
         toast.error(response.data.message || 'Failed to save settings');
       }
     } catch (error: any) {
-      console.error('Error saving settings:', error);
-      toast.error(error.response?.data?.message || 'Failed to save account settings');
+     if(error instanceof Error){
+      toast.error(error?.message || 'Failed to save account settings');
+     }
     } finally {
       setLoading(false);
     }
   };
 
-//   // Don't render form until data is loaded to prevent controlled/uncontrolled issues
-//   if (!isDataLoaded) {
-//     return <div>Loading...</div>;
-//   }
+  // Don't render form until data is loaded to prevent controlled/uncontrolled issues
+  if (!isDataLoaded) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <div className="space-y-6">
