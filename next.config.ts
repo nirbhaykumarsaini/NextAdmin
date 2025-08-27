@@ -1,10 +1,25 @@
+// next.config.ts
 import type { NextConfig } from "next";
-import path from 'path';
 
 const nextConfig: NextConfig = {
-  outputFileTracingRoot: path.join(__dirname, '../../'), // Adjust the path as needed
+  reactStrictMode: true,
+  swcMinify: true,
+
+  // ✅ Allow images from external domains (optional)
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "**", // change to specific domain if needed
+      },
+    ],
+  },
+
+  // ✅ If you’re using API routes and need Node.js runtime
   experimental: {
-    // Other experimental features if needed
+    serverActions: {
+      bodySizeLimit: "2mb",
+    },
   },
 };
 
