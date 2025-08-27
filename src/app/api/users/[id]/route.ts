@@ -8,7 +8,7 @@ import connectDB from '@/config/db';
 connectDB();
 
 
-export async function GET( { params }: { params: Promise<{ id: string }> }) {
+export async function POST(req:NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
 
      const { id } = await params;
