@@ -43,12 +43,14 @@ interface Panna {
 }
 
 interface Winner {
-    userId: string;
-    userName: string;
-    bidAmount: number;
-    winningAmount: number;
-    gameType: string;
-    bidDate: string;
+    amount: number;
+    created_at: string;
+    digit: string;
+    game: number;
+    game_type: string;
+    user: string;
+    winning_amount: number;
+    _id: string;
 }
 
 interface GroupedResult {
@@ -60,13 +62,15 @@ interface GroupedResult {
 
 const MainMarketResult = () => {
     const [result_date, setDate] = useState<Date | undefined>(new Date())
-    const [game_name, setGameName] = useState("")
+    const [game_id, setGameName] = useState("")
     const [digit, setDigit] = useState("")
     const [results, setResults] = useState<GroupedResult[]>([])
     const [showWinnerDialog, setShowWinnerDialog] = useState(false)
     const [winners, setWinners] = useState<Winner[]>([])
     const [totalBidAmount, setTotalBidAmount] = useState(0)
     const [totalWinningAmount, setTotalWinningAmount] = useState(0)
+
+    console.log(totalBidAmount, totalWinningAmount)
 
     const dispatch = useAppDispatch();
     const { games } = useAppSelector(
@@ -131,17 +135,18 @@ const MainMarketResult = () => {
                 },
                 body: JSON.stringify({
                     result_date: formattedDate,
-                    game_name,
+                    game_id,
                     digit
                 }),
             });
 
             const winnersResult = await winnersResponse.json();
+            console.log(winnersResult)
 
             if (winnersResult.status) {
                 setWinners(winnersResult.data.winners);
-                setTotalBidAmount(winnersResult.data.totalBidAmount);
-                setTotalWinningAmount(winnersResult.data.totalWinningAmount);
+                setTotalBidAmount(winnersResult.data.total_bid_amount);
+                setTotalWinningAmount(winnersResult.data.total_win_amount);
                 setShowWinnerDialog(true);
             } else {
                 toast.error(winnersResult.message || "Failed to fetch winners");
@@ -164,8 +169,9 @@ const MainMarketResult = () => {
                 },
                 body: JSON.stringify({
                     result_date: formattedDate,
-                    game_name,
-                    digit
+                    game_id,
+                    digit, 
+                    winners
                 }),
             });
 
@@ -276,13 +282,13 @@ const MainMarketResult = () => {
                     {/* Game Name Select */}
                     <div className="space-y-2">
                         <Label>Game Name</Label>
-                        <Select onValueChange={setGameName} value={game_name}>
+                        <Select onValueChange={setGameName} value={game_id}>
                             <SelectTrigger className='w-full'>
                                 <SelectValue placeholder="Select Game" />
                             </SelectTrigger>
                             <SelectContent className='bg-white dark:bg-gray-900'>
                                 {availableGames.map((game) => (
-                                    <SelectItem key={game._id} value={game.name}>
+                                    <SelectItem key={game._id} value={game._id}>
                                         {game.name}
                                     </SelectItem>
                                 ))}
@@ -369,7 +375,7 @@ const MainMarketResult = () => {
             <Dialog open={showWinnerDialog} onOpenChange={setShowWinnerDialog}>
                 <DialogContent className="sm:max-w-4xl bg-white dark:bg-gray-950">
                     <DialogHeader>
-                        <DialogTitle>Winners - {game_name}</DialogTitle>
+                        <DialogTitle>Winners - {game_id}</DialogTitle>
                     </DialogHeader>
                     <div className="space-y-6">
                         <div className="flex justify-between items-center rounded-lg">
@@ -393,22 +399,26 @@ const MainMarketResult = () => {
                             <Table>
                                 <TableHeader>
                                     <TableRow>
-                                        <TableHead>User Name</TableHead>
-                                        <TableHead>Amount</TableHead>
-                                        <TableHead>Winning Amount</TableHead>
-                                        <TableHead>Game Type</TableHead>
+                                        <TableHead>S. No.</TableHead>
                                         <TableHead>Date</TableHead>
+                                        <TableHead>User</TableHead>
+                                        <TableHead>Game Name</TableHead>
+                                        <TableHead>Game Type</TableHead>
+                                        <TableHead>Bid Amount</TableHead>
+                                        <TableHead>Winning Amount</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
                                     {winners?.length > 0 ? (
                                         winners.map((winner, index) => (
                                             <TableRow key={index}>
-                                                <TableCell>{winner?.userName}</TableCell>
-                                                <TableCell>₹{winner?.bidAmount}</TableCell>
-                                                <TableCell>₹{winner?.winningAmount}</TableCell>
-                                                <TableCell>{winner?.gameType}</TableCell>
-                                                <TableCell>{new Date(winner?.bidDate).toLocaleDateString()}</TableCell>
+                                                <TableCell>{index + 1}</TableCell>
+                                                <TableCell>{winner?.created_at}</TableCell>
+                                                <TableCell>{winner?.user}</TableCell>
+                                                <TableCell>{winner?.game}</TableCell>
+                                                <TableCell>{winner?.game_type}</TableCell>
+                                                 <TableCell>{winner?.amount}</TableCell>
+                                                  <TableCell>{winner?.winning_amount}</TableCell>
                                             </TableRow>
                                         ))
                                     ) : (

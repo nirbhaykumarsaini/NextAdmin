@@ -44,12 +44,14 @@ interface Panna {
 }
 
 interface Winner {
-    userId: string;
-    userName: string;
-    bidAmount: number;
-    winningAmount: number;
-    gameType: string;
-    bidDate: string;
+    _id: string;
+    user: string;
+    game: string;
+    amount: number;
+    winning_amount: number;
+    game_type: string;
+    created_at: string;
+    digit: string;
 }
 
 interface SessionResult {
@@ -67,7 +69,7 @@ interface GroupedResult {
 
 const MainMarketResult = () => {
     const [result_date, setDate] = useState<Date | undefined>(new Date())
-    const [game_name, setGameName] = useState("")
+    const [game_id, setGameName] = useState("")
     const [session, setSession] = useState("")
     const [panna, setPanna] = useState("")
     const [digit, setDigit] = useState("")
@@ -153,7 +155,7 @@ const MainMarketResult = () => {
                 },
                 body: JSON.stringify({
                     result_date: formattedDate,
-                    game_name,
+                    game_id,
                     session,
                     panna,
                     digit
@@ -164,8 +166,8 @@ const MainMarketResult = () => {
 
             if (winnersResult.status) {
                 setWinners(winnersResult.data.winners);
-                setTotalBidAmount(winnersResult.data.totalBidAmount);
-                setTotalWinningAmount(winnersResult.data.totalWinningAmount);
+                setTotalBidAmount(winnersResult.data.total_bid_amount);
+                setTotalWinningAmount(winnersResult.data.total_win_amount);
                 setShowWinnerDialog(true);
             } else {
                 toast.error(winnersResult.message || "Failed to fetch winners");
@@ -188,10 +190,11 @@ const MainMarketResult = () => {
                 },
                 body: JSON.stringify({
                     result_date: formattedDate,
-                    game_name,
+                    game_id,
                     session,
                     panna,
-                    digit
+                    digit,
+                    winners
                 }),
             });
 
@@ -253,19 +256,29 @@ const MainMarketResult = () => {
         }
     };
 
-    // Filter games that have both open and close session results declared
+    // Filter games that have both open and close session results declared for the selected date
     const getAvailableGames = () => {
-        const gameOptions = games.map((game: IMainMarketGame) => ({
+        const formattedDate = result_date ? format(result_date, "dd-MM-yyyy") : "";
+
+        return games.filter((game: IMainMarketGame) => {
+            // Find results for this specific game and date
+            const gameResults = results?.find(r =>
+                r?.game_name === game.game_name &&
+                r?.result_date === formattedDate
+            );
+
+            // If no results exist for this game and date, it's available
+            if (!gameResults) return true;
+
+            // Check if both sessions are declared for this specific date
+            const hasBothSessions = gameResults.openSession && gameResults.closeSession;
+
+            // Only show games that don't have both sessions declared for this date
+            return !hasBothSessions;
+        }).map(game => ({
             _id: game._id,
             name: game.game_name
         }));
-
-        // Filter out games that already have both open and close session results
-        return gameOptions.filter(game => {
-            const gameResults = results?.find(r => r?.game_name === game?.name);
-            // Only show games that don't have both sessions declared
-            return !gameResults || !(gameResults.openSession && gameResults.closeSession);
-        });
     };
 
     const availableGames = getAvailableGames();
@@ -304,13 +317,13 @@ const MainMarketResult = () => {
                     {/* Game Name Select */}
                     <div className="space-y-2">
                         <Label>Game Name</Label>
-                        <Select onValueChange={setGameName} value={game_name}>
+                        <Select onValueChange={setGameName} value={game_id}>
                             <SelectTrigger className='w-full'>
                                 <SelectValue placeholder="Select Game" />
                             </SelectTrigger>
                             <SelectContent className='bg-white dark:bg-gray-900'>
                                 {availableGames.map((game) => (
-                                    <SelectItem key={game._id} value={game.name}>
+                                    <SelectItem key={game._id} value={game._id}>
                                         {game.name}
                                     </SelectItem>
                                 ))}
@@ -440,7 +453,7 @@ const MainMarketResult = () => {
             <Dialog open={showWinnerDialog} onOpenChange={setShowWinnerDialog}>
                 <DialogContent className="sm:max-w-4xl bg-white dark:bg-gray-950">
                     <DialogHeader>
-                        <DialogTitle>Winners - {game_name} {session} Session</DialogTitle>
+                        <DialogTitle>Winners - {game_id} {session} Session</DialogTitle>
                     </DialogHeader>
                     <div className="space-y-6">
                         <div className="flex justify-between items-center rounded-lg">
@@ -464,7 +477,7 @@ const MainMarketResult = () => {
                             <Table>
                                 <TableHeader>
                                     <TableRow>
-                                         <TableHead>S. No.</TableHead>
+                                        <TableHead>S. No.</TableHead>
                                         <TableHead>Date</TableHead>
                                         <TableHead>User Name</TableHead>
                                         <TableHead>Game Name</TableHead>
@@ -477,11 +490,15 @@ const MainMarketResult = () => {
                                     {winners?.length > 0 ? (
                                         winners.map((winner, index) => (
                                             <TableRow key={index}>
-                                                <TableCell>{winner?.userName}</TableCell>
-                                                <TableCell>₹{winner?.bidAmount}</TableCell>
-                                                <TableCell>₹{winner?.winningAmount}</TableCell>
-                                                <TableCell>{winner?.gameType}</TableCell>
-                                                <TableCell>{new Date(winner?.bidDate).toLocaleDateString()}</TableCell>
+                                                <TableCell>{index + 1}</TableCell>
+                                                <TableCell>{new Date(winner?.created_at).toLocaleDateString()}</TableCell>
+                                                <TableCell>{winner?.game}</TableCell>
+                                                <TableCell>{winner?.user}</TableCell>
+                                                <TableCell>{winner?.game_type}</TableCell>
+                                                <TableCell>₹{winner?.amount}</TableCell>
+                                                <TableCell>₹{winner?.winning_amount}</TableCell>
+
+
                                             </TableRow>
                                         ))
                                     ) : (

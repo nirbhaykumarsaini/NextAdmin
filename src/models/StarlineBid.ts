@@ -15,16 +15,16 @@ export interface IStarlineBid {
   updated_at?: Date;
 }
 
-export interface IStarlineBidDocument extends IStarlineBid, Document {}
+export interface IStarlineBidDocument extends IStarlineBid, Document { }
 
 const bidSchema = new Schema<IBid>({
   digit: {
     type: String,
     validate: {
-      validator: function(this: IBid, v: string) {
+      validator: function (this: IBid, v: string) {
         // Digit is required for digit-based games in the appropriate session
-        const digitGames = ['single-digit','single-panna', 'double-panna', 'triple-panna'];
-        
+        const digitGames = ['single-digit', 'single-panna', 'double-panna', 'triple-panna'];
+
         if (digitGames.includes(this.game_type)) {
           return v !== undefined && v !== null && v !== '';
         }
@@ -62,9 +62,9 @@ const starlineBidSchema = new Schema<IStarlineBidDocument>({
     min: 0
   }
 }, {
-  timestamps: { 
-    createdAt: 'created_at', 
-    updatedAt: 'updated_at' 
+  timestamps: {
+    createdAt: 'created_at',
+    updatedAt: 'updated_at'
   }
 });
 
@@ -80,7 +80,7 @@ starlineBidSchema.pre('save', function (next) {
 starlineBidSchema.index({ user_id: 1, created_at: -1 });
 starlineBidSchema.index({ 'bids.game_id': 1, 'bids.game_type': 1 });
 
-const StarlineBid = mongoose.models.StarlineBid || 
+const StarlineBid = mongoose.models.StarlineBid ||
   mongoose.model<IStarlineBidDocument>('StarlineBid', starlineBidSchema);
 
 export default StarlineBid;
