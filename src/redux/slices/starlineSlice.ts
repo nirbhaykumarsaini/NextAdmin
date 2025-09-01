@@ -15,7 +15,7 @@ const initialState: StarlineGameState = {
 // Async thunks
 export const fetchGames = createAsyncThunk(
   'starline/fetchGames',
-  async ({ is_active }: { is_active: boolean }, { rejectWithValue }) => {
+  async ({ is_active }: { is_active?: boolean }, { rejectWithValue }) => {
     try {
       const query = is_active !== undefined ? `?is_active=${is_active}` : "";
       const response = await axios.get(`/api/starline${query}`);

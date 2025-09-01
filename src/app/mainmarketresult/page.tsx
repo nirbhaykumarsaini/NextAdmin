@@ -85,7 +85,7 @@ const MainMarketResult = () => {
     const [allPanna, setAllPanna] = useState<Panna[] | null>(null)
 
     useEffect(() => {
-        dispatch(fetchGames());
+        dispatch(fetchGames({}));
         fetchAllPanna();
         fetchResults();
     }, [dispatch]);

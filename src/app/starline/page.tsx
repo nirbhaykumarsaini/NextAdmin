@@ -100,7 +100,7 @@ const StarlineGame = () => {
   });
 
   useEffect(() => {
-    dispatch(fetchGames());
+    dispatch(fetchGames({}));
   }, [dispatch]);
 
   useEffect(() => {
@@ -149,7 +149,7 @@ const StarlineGame = () => {
         await dispatch(createGame(gameData)).unwrap();
         toast.success("Game created successfully");
       }
-      await dispatch(fetchGames());
+      await dispatch(fetchGames({}));
       form.reset();
       setEditingId(null);
     } catch (error: unknown) {
@@ -174,7 +174,7 @@ const StarlineGame = () => {
         toast.success("Game deleted successfully");
         if (editingId === id) {
           setEditingId(null);
-          await dispatch(fetchGames());
+          await dispatch(fetchGames({}));
           form.reset();
         }
       } catch (error: unknown) {
@@ -197,7 +197,7 @@ const StarlineGame = () => {
       if (response.status === false) {
         toast.error(response.message || 'Failed to update status')
       } else {
-        await dispatch(fetchGames());
+        await dispatch(fetchGames({}));
         toast.success(response.message || 'Game status updated successfully')
       }
 
@@ -209,7 +209,7 @@ const StarlineGame = () => {
   };
 
   const handleRefresh = () => {
-    dispatch(fetchGames());
+    dispatch(fetchGames({}));
   };
 
   // ---------------- Market Status Dialog ----------------
@@ -242,7 +242,7 @@ const StarlineGame = () => {
       ).unwrap();
 
       toast.success("Market status updated successfully");
-      await dispatch(fetchGames());
+      await dispatch(fetchGames({}));
       closeMarketStatusDialog();
 
     } catch (error: unknown) {
