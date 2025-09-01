@@ -1,11 +1,64 @@
 import { NextResponse } from 'next/server';
 import dbConnect from '@/config/db';
 import MainMarketBid from '@/models/MainMarketBid';
-import mongoose from 'mongoose';
+import mongoose, { Types } from 'mongoose';
 import MainMarketRate from '@/models/MainmarketRate';
 
+interface Winners {
+  _id: string;
+  user: string;
+  created_at: string;
+  game_type: string;
+  session: string;
+  game: string;
+  amount: number;
+  winning_amount: number;
+  panna?: string;
+  digit?: string;
+}
+
+interface GameRates {
+  single_digit_point: number;
+  jodi_digit_point: number;
+  single_panna_point: number;
+  double_panna_point: number;
+  triple_panna_point: number;
+  half_sangam_point: number;
+  full_sangam_point: number;
+}
+
+interface PopulatedUser {
+  _id: Types.ObjectId;
+  name: string;
+  mobile_number: string;
+}
+
+interface PopulatedGame {
+  _id: Types.ObjectId;
+  game_name: string;
+}
+
+interface PopulatedBid {
+  _id: Types.ObjectId;
+  digit?: string;
+  panna?: string;
+  bid_amount: number;
+  game_id: PopulatedGame;
+  game_type: string;
+  session?: 'open' | 'close';
+}
+
+interface PopulatedMainMarketBid {
+  _id: string;
+  user_id: PopulatedUser;
+  bids: PopulatedBid[];
+  total_amount: number;
+  created_at: Date;
+  updated_at: Date;
+}
+
 // Helper function to calculate winning amount
-function calculateWinningAmount(gameType: string, bidAmount: number, gameRates: any): number {
+function calculateWinningAmount(gameType: string, bidAmount: number, gameRates: GameRates): number {
   const rateMap: Record<string, number> = {
     'single-digit': gameRates.single_digit_point,
     'jodi-digit': gameRates.jodi_digit_point,
@@ -31,10 +84,10 @@ function calculateWinningAmount(gameType: string, bidAmount: number, gameRates: 
 export async function POST(request: Request) {
   try {
     await dbConnect();
-    
+
     const body = await request.json();
     const { result_date, game_id, session, panna, digit } = body;
-    
+
     // Validate required fields
     if (!result_date || !game_id || !session || !panna || digit === undefined) {
       return NextResponse.json(
@@ -69,7 +122,7 @@ export async function POST(request: Request) {
     }
 
     // Get game rates
-    const gameRates = await MainMarketRate.findOne({});
+    const gameRates = await MainMarketRate.findOne({}) as GameRates | null;
     if (!gameRates) {
       return NextResponse.json(
         { status: false, message: 'Game rates not configured' },
@@ -88,7 +141,7 @@ export async function POST(request: Request) {
       created_at: { $gte: startDate, $lte: endDate },
       'bids.game_id': new mongoose.Types.ObjectId(game_id)
     }).populate('user_id', 'name mobile_number')
-      .populate('bids.game_id', 'game_name');
+      .populate('bids.game_id', 'game_name') as PopulatedMainMarketBid[];
 
     if (!bids || bids.length === 0) {
       return NextResponse.json({
@@ -103,7 +156,7 @@ export async function POST(request: Request) {
     const pannaDigit = pannaSum > 9 ? String(pannaSum).slice(-1) : pannaSum;
 
     // Filter winning bids
-    const winningBids: any[] = [];
+    const winningBids: Winners[] = [];
 
     bids.forEach(mainBid => {
       mainBid.bids.forEach(bid => {
@@ -125,17 +178,17 @@ export async function POST(request: Request) {
           case 'full-sangam':
             // Only check in close session
             if (sessionLower !== 'close') return;
-            
+
             // For full-sangam, check if panna matches
             if (bid.panna === panna) {
               const winningAmount = calculateWinningAmount(bid.game_type, bid.bid_amount, gameRates);
               winningBids.push({
                 _id: mainBid._id,
-                user: mainBid.user_id,
-                created_at: mainBid.created_at,
+                user: mainBid.user_id.name,
+                created_at: mainBid.created_at.toISOString(),
                 game_type: bid.game_type,
-                session: bid.session,
-                game: bid.game_id,
+                session: bid.session || '',
+                game: bid.game_id.game_name,
                 amount: bid.bid_amount,
                 winning_amount: winningAmount,
                 panna: bid.panna
@@ -147,16 +200,16 @@ export async function POST(request: Request) {
           case 'red-bracket':
             // Only check in close session
             if (sessionLower !== 'close') return;
-            
+
             // For jodi-digit and red-bracket, check if digit matches
             if (bid.digit === digit) {
               const winningAmount = calculateWinningAmount(bid.game_type, bid.bid_amount, gameRates);
               winningBids.push({
                 _id: mainBid._id,
                 user: mainBid.user_id.name,
-                created_at: mainBid.created_at,
+                created_at: mainBid.created_at.toISOString(),
                 game_type: bid.game_type,
-                session: bid.session,
+                session: bid.session || '',
                 game: bid.game_id.game_name,
                 amount: bid.bid_amount,
                 winning_amount: winningAmount,
@@ -171,11 +224,11 @@ export async function POST(request: Request) {
               const winningAmount = calculateWinningAmount(bid.game_type, bid.bid_amount, gameRates);
               winningBids.push({
                 _id: mainBid._id,
-                user: mainBid.user_id,
-                created_at: mainBid.created_at,
+                user: mainBid.user_id.name,
+                created_at: mainBid.created_at.toISOString(),
                 game_type: bid.game_type,
-                session: bid.session,
-                game: bid.game_id,
+                session: bid.session || '',
+                game: bid.game_id.game_name,
                 amount: bid.bid_amount,
                 winning_amount: winningAmount,
                 panna: bid.panna
@@ -192,9 +245,9 @@ export async function POST(request: Request) {
               winningBids.push({
                 _id: mainBid._id,
                 user: mainBid.user_id.name,
-                created_at: mainBid.created_at,
+                created_at: mainBid.created_at.toISOString(),
                 game_type: bid.game_type,
-                session: bid.session,
+                session: bid.session || '',
                 game: bid.game_id.game_name,
                 amount: bid.bid_amount,
                 winning_amount: winningAmount,
@@ -217,9 +270,9 @@ export async function POST(request: Request) {
               winningBids.push({
                 _id: mainBid._id,
                 user: mainBid.user_id.name,
-                created_at: mainBid.created_at,
+                created_at: mainBid.created_at.toISOString(),
                 game_type: bid.game_type,
-                session: bid.session,
+                session: bid.session || '',
                 game: bid.game_id.game_name,
                 amount: bid.bid_amount,
                 winning_amount: winningAmount,
@@ -239,7 +292,7 @@ export async function POST(request: Request) {
       message: 'Winners retrieved successfully',
       data: winningBids
     });
-    
+
   } catch (error: unknown) {
     console.error('Error checking winners:', error);
     const errorMessage = error instanceof Error ? error.message : 'Failed to check winners';
