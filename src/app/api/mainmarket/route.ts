@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import MainMarketGame from '@/models/MainMarketGame';
 import connectDB from '@/config/db';
 import ApiError from '@/lib/errors/APiError';
-import logger from '@/config/logger';
 
 connectDB();
 
@@ -23,7 +22,6 @@ export async function GET(request: NextRequest) {
       data: games,
     });
   } catch (error: unknown) {
-    logger.error('Error fetching games:', error);
     const errorMessage = error instanceof Error ? error.message : 'Failed to fetch game'
     return NextResponse.json(
       { status: false, message: errorMessage },
@@ -48,13 +46,11 @@ export async function POST(request: NextRequest) {
     // Create the game
     const game = await MainMarketGame.create(body);
 
-    logger.info(`Game created: ${game._id}`);
     return NextResponse.json({
       status: true,
       data: game
     });
   } catch (error: unknown) {
-    logger.error('Error creating game:', error);
 
     // Handle ApiError instances
     if (error instanceof ApiError) {
@@ -105,13 +101,11 @@ export async function PUT(request: NextRequest) {
       throw new ApiError('Game not found');
     }
 
-    logger.info(`Game updated: ${id}`);
     return NextResponse.json({
       status: true,
       data: game
     });
   } catch (error: unknown) {
-    logger.error('Error updating game:', error);
 
     // Handle ApiError instances
     if (error instanceof ApiError) {
@@ -160,13 +154,11 @@ export async function DELETE(request: NextRequest) {
       throw new ApiError('Game not found');
     }
 
-    logger.info(`Game deleted: ${id}`);
     return NextResponse.json({
       status: true,
       message: 'Game deleted successfully'
     });
   } catch (error: unknown) {
-    logger.error('Error deleting game:', error);
     const errorMessage = error instanceof Error ? error.message : 'Failed to delete game'
     return NextResponse.json(
       { status: false, message: errorMessage }

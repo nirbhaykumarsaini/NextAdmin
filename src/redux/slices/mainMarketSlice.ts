@@ -14,9 +14,10 @@ const initialState: MainMarketState = {
 // Async thunks
 export const fetchGames = createAsyncThunk(
   'mainMarket/fetchGames',
-  async (_, { rejectWithValue }) => {
+  async ({ is_active }: { is_active?: boolean }, { rejectWithValue }) => {
     try {
-      const response = await axios.get('/api/mainmarket');
+       const query = is_active !== undefined ? `?is_active=${is_active}` : "";
+      const response = await axios.get(`/api/mainmarket${query}`);
       return response.data;
     } catch (error: unknown) {
       let errorMessage = 'Failed to fetch games';

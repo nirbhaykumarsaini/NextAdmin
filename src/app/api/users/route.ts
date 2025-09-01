@@ -1,22 +1,37 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { authenticate } from '@/lib/middleware/auth';
-import User from '@/models/User';
-import connectDB from '@/config/db';
+import { NextResponse } from 'next/server';
+import dbConnect from '@/config/db';
+import AppUser from '@/models/AppUser';
 
-// Connect to database
-connectDB();
-
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
-    await authenticate(request);
+    await dbConnect();
+    
+    const users = await AppUser.find({}).select('name mobile_number is_blocked batting balance created_at devices');
+    
+    return NextResponse.json({
+      status: true,
+      users: users.map(user => ({
+        id: user._id,
+        name: user.name,
+        mobile_number: user.mobile_number,
+        is_blocked: user.is_blocked,
+        batting: user.batting,
+        balance: user.balance,
+        created_at: user.created_at,
+        device_count: user.devices.length
+      }))
+    });
 
-    const users = await User.find().select('-password');
-    return NextResponse.json({ status: true, data: users });
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : "Failed to fetch user"
+
+    if (error instanceof Error) {
+      return NextResponse.json(
+        { status: false, message: error.message || 'Internal server error' }
+      );
+    }
+
     return NextResponse.json(
-      { status: false, message: errorMessage },
+      { status: false, message: 'Internal server error' }
     );
   }
 }
-

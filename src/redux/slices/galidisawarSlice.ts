@@ -14,9 +14,10 @@ const initialState: GalidisawarGameState = {
 // Async thunks
 export const fetchGames = createAsyncThunk(
   'galidisawar/fetchGames',
-  async (_, { rejectWithValue }) => {
+  async ({is_active}:{is_active:boolean}, { rejectWithValue }) => {
     try {
-      const response = await axios.get('/api/galidisawar');
+       const query = is_active !== undefined ? `?is_active=${is_active}` : "";
+      const response = await axios.get(`/api/galidisawar${query}`);
       return response.data;
     } catch (error: unknown) {
       let errorMessage = 'Failed to fetch games';

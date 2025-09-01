@@ -4,7 +4,6 @@ import User from '@/models/User';
 import { generateToken } from '@/lib/auth/jwt';
 import { IRegister } from '@/types/auth';
 import ApiError from '@/lib/errors/APiError';
-import logger from '@/config/logger';
 import { IUser } from '@/types/user';
 
 export async function POST(request: Request) {
@@ -70,7 +69,6 @@ export async function POST(request: Request) {
         return await handleSuccessfulAuth(user);
 
     } catch (error: unknown) {
-        logger.error(error);
 
         // Handle ApiError instances
         if (error instanceof ApiError) {

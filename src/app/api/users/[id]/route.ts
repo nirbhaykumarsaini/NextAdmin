@@ -1,97 +1,125 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
+import dbConnect from '@/config/db';
+import AppUser from '@/models/AppUser';
 import ApiError from '@/lib/errors/APiError';
-import User from '@/models/User';
+import mongoose from 'mongoose';
 
-import connectDB from '@/config/db';
+interface Params {
+  params: {
+    id: string;
+  };
+}
 
-// Connect to database
-connectDB();
-
-
-export async function POST(req:NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function PATCH(request: Request, { params }: Params) {
   try {
+    await dbConnect();
+    const { id } = params;
+    const body = await request.json();
 
-     const { id } = await params;
-
-    if (!id) {
-      throw new ApiError('User ID is required');
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      throw new ApiError('Invalid user ID');
     }
 
-    const user = await User.findOne({ _id: id });
+    const user = await AppUser.findById(id);
+    if (!user) {
+      throw new ApiError('User not found');
+    }
+
+    // Update is_blocked if provided
+    if (typeof body.is_blocked === 'boolean') {
+      user.is_blocked = body.is_blocked;
+    }
+
+    // Update batting if provided
+    if (typeof body.batting === 'boolean') {
+      user.batting = body.batting;
+    }
+
+    await user.save();
+
+    return NextResponse.json({
+      status: true,
+      message: 'User updated successfully',
+      user: {
+        id: user._id,
+        name: user.name,
+        mobile_number: user.mobile_number,
+        is_blocked: user.is_blocked,
+        batting: user.batting,
+        devices: user.devices
+      }
+    });
+
+  } catch (error: unknown) {
+
+    if (error instanceof ApiError) {
+      return NextResponse.json(
+        { status: false, message: error.message },
+        { status: 400 }
+      );
+    }
+
+    if (error instanceof Error) {
+      return NextResponse.json(
+        { status: false, message: error.message || 'Internal server error' },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json(
+      { status: false, message: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function GET(request: Request, { params }: Params) {
+  try {
+    await dbConnect();
+    const { id } = params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      throw new ApiError('Invalid user ID');
+    }
+
+    const user = await AppUser.findById(id);
     if (!user) {
       throw new ApiError('User not found');
     }
 
     return NextResponse.json({
       status: true,
-      data:user,
-      message: 'User Fetched successfully'
+      user: {
+        id: user._id,
+        name: user.name,
+        mobile_number: user.mobile_number,
+        is_blocked: user.is_blocked,
+        batting: user.batting,
+        devices: user.devices,
+        balance: user.balance,
+        created_at: user.created_at
+      }
     });
+
   } catch (error: unknown) {
-     const errorMessage = error instanceof Error ? error.message : "Failed to create user"
+
+    if (error instanceof ApiError) {
+      return NextResponse.json(
+        { status: false, message: error.message },
+        { status: 400 }
+      );
+    }
+
+    if (error instanceof Error) {
+      return NextResponse.json(
+        { status: false, message: error.message || 'Internal server error' },
+        { status: 500 }
+      );
+    }
+
     return NextResponse.json(
-      { status: false, message: errorMessage },
+      { status: false, message: 'Internal server error' },
+      { status: 500 }
     );
   }
 }
-
-export async function PUT(request: NextRequest,{ params }: { params: Promise<{ id: string }> }) {
-  try {
-
-    const {id} = await params;
-    const updateData = await request.json();
-
-    if (!id) {
-      throw new ApiError('User ID is required');
-    }
-
-    // Don't allow password updates through this endpoint
-    if (updateData.password) {
-      delete updateData.password;
-    }
-
-    const user = await User.findByIdAndUpdate(id, updateData, { 
-      new: true, 
-      runValidators: true 
-    }).select('-password');
-    
-    if (!user) {
-      throw new ApiError('User not found');
-    }
-    
-    return NextResponse.json({status: true, data:user});
-  } catch (error: unknown) {
-     const errorMessage = error instanceof Error ? error.message : "Failed to update user"
-    return NextResponse.json(
-      { status: false, message:errorMessage },
-    );
-  }
-}
-
-export async function DELETE(request: NextRequest,{ params }: { params: Promise<{ id: string }> }) {
-  try {
-
-    const {id} = await params;
-
-    if (!id) {
-      throw new ApiError('User ID is required');
-    }
-
-    const user = await User.findByIdAndDelete(id);
-    if (!user) {
-      throw new ApiError( 'User not found');
-    }
-    
-    return NextResponse.json({ 
-      status: true, 
-      message: 'User deleted successfully' 
-    });
-  } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : "Failed to delete user"
-    return NextResponse.json(
-      { status: false, message: errorMessage },
-    );
-  }
-}
-
-

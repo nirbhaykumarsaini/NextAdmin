@@ -15,9 +15,10 @@ const initialState: StarlineGameState = {
 // Async thunks
 export const fetchGames = createAsyncThunk(
   'starline/fetchGames',
-  async (_, { rejectWithValue }) => {
+  async ({ is_active }: { is_active: boolean }, { rejectWithValue }) => {
     try {
-      const response = await axios.get('/api/starline');
+      const query = is_active !== undefined ? `?is_active=${is_active}` : "";
+      const response = await axios.get(`/api/starline${query}`);
       return response.data;
     } catch (error: unknown) {
       let errorMessage = 'Failed to fetch games';
@@ -73,7 +74,7 @@ export const deleteGame = createAsyncThunk(
     try {
       await axios.delete(`/api/starline?id=${id}`);
       return id;
-    }catch (error: unknown) {
+    } catch (error: unknown) {
       let errorMessage = 'Failed to delete game';
       if (axios.isAxiosError(error)) {
         errorMessage = error.response?.data?.message || error.message || 'Failed to delete game';
@@ -92,7 +93,7 @@ export const updateMarketStatus = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
-      const response = await axios.patch(`/api/starline?id=${id}`, {days});
+      const response = await axios.patch(`/api/starline?id=${id}`, { days });
       return response.data;
     } catch (error: unknown) {
       let errorMessage = 'Failed to update market status';

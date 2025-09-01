@@ -2,14 +2,27 @@ import { NextResponse } from 'next/server';
 import dbConnect from '@/config/db';
 import AppUser from '@/models/AppUser';
 import ApiError from '@/lib/errors/APiError';
-import logger from '@/config/logger';
+import { headers } from 'next/headers';
+
+// Function to extract device info from request
+async function getDeviceInfo() {
+  const headersList = await headers();
+
+  return {
+    device_id: headersList.get('x-device-id') || 'unknown',
+    device_model: headersList.get('x-device-model') || 'Unknown',
+    os: headersList.get('x-os') || 'Unknown',
+    browser: headersList.get('user-agent') || 'Unknown',
+    ip_address: headersList.get('x-forwarded-for') || headersList.get('x-real-ip') || 'Unknown'
+  };
+}
 
 export async function POST(request: Request) {
   try {
     await dbConnect();
     const body = await request.json();
+    const deviceInfo = getDeviceInfo();
 
-    // Validation
     if (!body.name || !body.mobile_number || !body.password) {
       const missingFields = [];
       if (!body.name) missingFields.push('name');
@@ -24,23 +37,21 @@ export async function POST(request: Request) {
       throw new ApiError('Name, mobile number and password cannot be empty');
     }
 
-    // Check if user already exists
     const existingUser = await AppUser.findOne({ mobile_number: body.mobile_number });
     if (existingUser) {
       throw new ApiError('User with this mobile number already exists');
     }
 
-    // Create user with OTP (using dummy OTP 1234)
     await AppUser.create({
       name: body.name.trim(),
       mobile_number: body.mobile_number.trim(),
       password: body.password,
-      otp: '1234', // Default dummy OTP
-      isVerifed: false
+      otp: '1234',
+      is_verified: false,
+      is_blocked: false,
+      devices: [deviceInfo]
     });
 
-    // In a real app, you would send the OTP via SMS here
-    // For now, we'll just return it in the response for testing
     return NextResponse.json({
       status: true,
       message: 'User registered successfully. Please verify OTP.',
@@ -48,9 +59,7 @@ export async function POST(request: Request) {
     });
 
   } catch (error: unknown) {
-    logger.error(error);
 
-    // Handle ApiError instances
     if (error instanceof ApiError) {
       return NextResponse.json(
         { status: false, message: error.message }
@@ -83,5 +92,9 @@ export async function POST(request: Request) {
         { status: false, message: error.message || 'Internal server error' }
       );
     }
+
+    return NextResponse.json(
+      { status: false, message: 'Internal server error' }
+    );
   }
 }

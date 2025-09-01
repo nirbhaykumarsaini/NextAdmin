@@ -3,7 +3,6 @@ import dbConnect from '@/config/db';
 import AppUser from '@/models/AppUser';
 import { generateToken } from '@/lib/auth/jwt';
 import ApiError from '@/lib/errors/APiError';
-import logger from '@/config/logger';
 
 export async function POST(request: Request) {
   try {
@@ -27,7 +26,7 @@ export async function POST(request: Request) {
     }
 
     // Check if already verified
-    if (user.isVerified) {
+    if (user.is_verified) {
       throw new ApiError('User is already verified');
     }
 
@@ -37,7 +36,7 @@ export async function POST(request: Request) {
     }
 
     // Update user as verified
-    user.isVerified = true;
+    user.is_verified = true;
     await user.save();
 
     // Generate token
@@ -58,7 +57,6 @@ export async function POST(request: Request) {
     });
 
   } catch (error: unknown) {
-    logger.error(error);
     const errorMessage = error instanceof Error ? error.message :  'Failed to verify otp'
     if (error instanceof ApiError) {
       return NextResponse.json(
