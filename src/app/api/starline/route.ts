@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create the game
-    const game = await StarlineGame.create(body);
+    await StarlineGame.create(body);
 
     return NextResponse.json({
       status: true,

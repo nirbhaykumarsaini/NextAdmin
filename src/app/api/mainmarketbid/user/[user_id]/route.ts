@@ -26,6 +26,8 @@ export async function GET(
       data: transformBids(bids),
     });
   } catch (error: unknown) {
-    return NextResponse.json({ status: false, message: "Failed to fetch user bids" });
+    if(error instanceof Error){
+      return NextResponse.json({ status: false, message: "Failed to fetch user bids" });
+    }
   }
 }

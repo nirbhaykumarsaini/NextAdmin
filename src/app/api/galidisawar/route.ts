@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create the game
-    const game = await GalidisawarGame.create(body);
+     await GalidisawarGame.create(body);
 
     return NextResponse.json({
       status: true,

@@ -2,8 +2,7 @@ import { NextResponse } from 'next/server';
 import dbConnect from '@/config/db';
 import StarlineBid from '@/models/StarlineBid';
 import ApiError from '@/lib/errors/APiError';
-import { transformBids } from '@/utils/transformbid';
-
+import { transformBids, BidDocument } from '@/utils/transformbid';
 
 export async function GET(
   request: Request,
@@ -15,17 +14,21 @@ export async function GET(
     const user_id = params.user_id;
     if (!user_id) throw new ApiError("User ID is required");
 
+    // Cast the result to BidDocument[] to handle the lean() return type
     const bids = await StarlineBid.find({ user_id })
       .populate("user_id", "name mobile_number")
       .populate("bids.game_id", "game_name")
       .sort({ created_at: -1 })
-      .lean();
+      .lean() as unknown as BidDocument[];
 
     return NextResponse.json({
       status: true,
       data: transformBids(bids),
     });
   } catch (error: unknown) {
+    if (error instanceof ApiError) {
+      return NextResponse.json({ status: false, message: error.message });
+    }
     return NextResponse.json({ status: false, message: "Failed to fetch user bids" });
   }
 }

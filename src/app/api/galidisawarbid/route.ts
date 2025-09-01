@@ -24,6 +24,15 @@ interface GalidisawarBidRequest {
     bids: BidRequest[];
 }
 
+interface FilterType {
+    created_at?: {
+        $gte?: Date;
+        $lte?: Date;
+    };
+    'bids.game_id'?: Types.ObjectId;
+    'bids.game_type'?: string;
+}
+
 export async function POST(request: Request) {
     const session = await mongoose.startSession();
     session.startTransaction();
@@ -336,7 +345,7 @@ export async function GET(request: Request) {
         const gameType = searchParams.get('game_type');
 
         // Build filter object dynamically
-        let filter: any = {};
+        const filter: FilterType = {};
 
         // Date filtering :cite[5]:cite[10]
         if (startDate || endDate) {

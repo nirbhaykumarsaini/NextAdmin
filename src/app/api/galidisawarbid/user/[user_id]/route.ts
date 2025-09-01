@@ -7,12 +7,12 @@ import { transformBids } from '@/utils/transformbid';
 
 export async function GET(
   request: Request,
-  { params }: { params: { user_id: string } }
+  { params }: { params: Promise<{ user_id: string }> }
 ) {
   try {
     await dbConnect();
 
-    const user_id = params.user_id;
+    const {user_id} = await params;
     if (!user_id) throw new ApiError("User ID is required");
 
     const bids = await GalidisawarBid.find({ user_id })
@@ -26,6 +26,8 @@ export async function GET(
       data: transformBids(bids),
     });
   } catch (error: unknown) {
-    return NextResponse.json({ status: false, message: "Failed to fetch user bids" });
+    if(error instanceof Error){
+      return NextResponse.json({ status: false, message: "Failed to fetch user bids" });
+    }
   }
 }

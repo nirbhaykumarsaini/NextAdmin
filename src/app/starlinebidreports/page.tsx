@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import {
     Select,
@@ -20,7 +20,6 @@ import {
 import { FiSearch, FiRefreshCw } from 'react-icons/fi'
 import { Label } from '@/components/ui/label'
 import { toast } from 'sonner'
-import MainBidTable from '@/components/BidTables/MainBidTable'
 import { Input } from '@/components/ui/input'
 import { useAppDispatch, useAppSelector } from '@/hooks/redux'
 import { fetchGames } from '@/redux/slices/starlineSlice'
@@ -68,7 +67,7 @@ const StarlineBidReports = () => {
     const dispatch = useAppDispatch();
     const { games } = useAppSelector((state) => state.starline);
 
-    const fetchBids = async () => {
+    const fetchBids = useCallback(async () => {
         setLoading(true)
         try {
             const params = new URLSearchParams()
@@ -97,11 +96,11 @@ const StarlineBidReports = () => {
         } finally {
             setLoading(false)
         }
-    }
+    },[startDate, endDate, gameId, gameType, userId])
 
     useEffect(() => {
         fetchBids()
-    }, [])
+    }, [fetchBids])
 
     useEffect(() => {
         dispatch(fetchGames({ is_active: true }));

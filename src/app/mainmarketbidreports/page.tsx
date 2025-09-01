@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import {
     Select,
@@ -88,7 +88,7 @@ const MainMarketBidReports = () => {
     const dispatch = useAppDispatch();
     const { games } = useAppSelector((state) => state.mainMarket);
 
-    const fetchBids = async () => {
+    const fetchBids = useCallback(async () => {
         setLoading(true)
         try {
             const params = new URLSearchParams()
@@ -118,11 +118,11 @@ const MainMarketBidReports = () => {
         } finally {
             setLoading(false)
         }
-    }
+    },[startDate,endDate, gameId, gameType, userId])
 
     useEffect(() => {
         fetchBids()
-    }, [])
+    }, [fetchBids])
 
     useEffect(() => {
         dispatch(fetchGames({ is_active: true }));
