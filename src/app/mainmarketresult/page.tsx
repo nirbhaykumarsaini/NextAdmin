@@ -464,11 +464,13 @@ const MainMarketResult = () => {
                             <Table>
                                 <TableHeader>
                                     <TableRow>
-                                        <TableHead>User Name</TableHead>
-                                        <TableHead>Amount</TableHead>
-                                        <TableHead>Winning Amount</TableHead>
-                                        <TableHead>Game Type</TableHead>
+                                         <TableHead>S. No.</TableHead>
                                         <TableHead>Date</TableHead>
+                                        <TableHead>User Name</TableHead>
+                                        <TableHead>Game Name</TableHead>
+                                        <TableHead>Game Type</TableHead>
+                                        <TableHead>Bid Amount</TableHead>
+                                        <TableHead>Winning Amount</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
