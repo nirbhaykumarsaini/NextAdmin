@@ -118,7 +118,7 @@ const MainMarketBidReports = () => {
         } finally {
             setLoading(false)
         }
-    },[startDate,endDate, gameId, gameType, userId])
+    },[startDate,endDate, gameId, gameType, userId, session])
 
     useEffect(() => {
         fetchBids()

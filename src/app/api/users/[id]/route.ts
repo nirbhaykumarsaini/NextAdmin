@@ -4,16 +4,11 @@ import AppUser from '@/models/AppUser';
 import ApiError from '@/lib/errors/APiError';
 import mongoose from 'mongoose';
 
-interface Params {
-  params: {
-    id: string;
-  };
-}
 
-export async function PATCH(request: Request, { params }: Params) {
+export async function PATCH(request: Request, { params }:{params: Promise<{id:string}>}) {
   try {
     await dbConnect();
-    const { id } = params;
+    const { id } = await params;
     const body = await request.json();
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -73,10 +68,10 @@ export async function PATCH(request: Request, { params }: Params) {
   }
 }
 
-export async function GET(request: Request, { params }: Params) {
+export async function GET(request: Request, { params }: {params: Promise<{id:string}>}) {
   try {
     await dbConnect();
-    const { id } = params;
+    const { id } = await params;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
       throw new ApiError('Invalid user ID');
