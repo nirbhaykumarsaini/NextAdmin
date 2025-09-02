@@ -23,23 +23,26 @@ import {
 import { useEffect, useState } from "react";
 import axios from "axios";
 
-
-
 export interface User {
-  _id: string
-  username: string,
-  role: string,
-  updatedAt: string,
-  createdAt: string
+  id: string;
+  name: string;
+  mobile_number: string;
+  balance: number;
+  batting: boolean;
+  device_count: number;
+  is_blocked: boolean;
+  // Add these if they exist in your actual response
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export default function ManageUsers() {
-
-  const [users, setUsers] = useState<User[]>([])
+  const [users, setUsers] = useState<User[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
-    getUsers()
-  }, [])
+    getUsers();
+  }, []);
 
   const getUsers = async () => {
     try {
@@ -47,16 +50,26 @@ export default function ManageUsers() {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('accessToken')}`
         }
-      })
-      setUsers(response.data.data)
+      });
+      setUsers(response.data.data || response.data);
     } catch (error: unknown) {
       if (error instanceof Error) {
-        console.log(error)
+        console.log(error);
       }
     }
-  }
+  };
 
+  // Filter users based on search term
+  const filteredUsers = users.filter(user =>
+    user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    user.mobile_number.includes(searchTerm)
+  );
 
+  // Format date function
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return 'N/A';
+    return new Date(dateString).toLocaleDateString();
+  };
 
   return (
     <div className="space-y-6">
@@ -68,6 +81,8 @@ export default function ManageUsers() {
             <Input
               placeholder="Search users..."
               className="pl-10 w-full md:w-[300px]"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
         </div>
@@ -79,15 +94,18 @@ export default function ManageUsers() {
             <TableRow>
               <TableHead>S. No.</TableHead>
               <TableHead>User</TableHead>
-              {/* <TableHead>Status</TableHead> */}
-              <TableHead>Role</TableHead>
-              <TableHead>Last Active</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead>Mobile Number</TableHead>
+              <TableHead>Balance</TableHead>
+              <TableHead>Batting</TableHead>
+              <TableHead>Devices</TableHead>
+              <TableHead>Status</TableHead>
+              {/* <TableHead>Joined Date</TableHead> */}
+              {/* <TableHead className="text-right">Actions</TableHead> */}
             </TableRow>
           </TableHeader>
           <TableBody>
-            {users?.map((user: User, index: number) => (
-              <TableRow key={user._id}>
+            {filteredUsers.map((user: User, index: number) => (
+              <TableRow key={user.id}>
                 <TableCell className="text-sm">
                   {index + 1}
                 </TableCell>
@@ -95,36 +113,68 @@ export default function ManageUsers() {
                   <div className="flex items-center gap-4">
                     <Avatar className="h-9 w-9 capitalize">
                       <AvatarFallback>
-                        {user.username.charAt(0)}
+                        {user.name?.charAt(0) || 'U'}
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <div className="text-sm text-muted-foreground capitalize">
-                        {user.username}
+                      <div className="font-medium capitalize">
+                        {user.name}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        ID: {user.id.slice(-6)}
                       </div>
                     </div>
                   </div>
                 </TableCell>
-
                 <TableCell className="text-sm">
-                  {user.role}
+                  {user.mobile_number}
+                </TableCell>
+                <TableCell className="text-sm font-medium">
+                  ₹{user.balance.toLocaleString()}
+                </TableCell>
+                <TableCell>
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                    user.batting 
+                      ? 'bg-green-100 text-green-800' 
+                      : 'bg-gray-100 text-gray-800'
+                  }`}>
+                    {user.batting ? 'Active' : 'Inactive'}
+                  </span>
                 </TableCell>
                 <TableCell className="text-sm">
-                  {user.updatedAt}
+                  {user.device_count}
                 </TableCell>
-                <TableCell className="text-right">
+                <TableCell>
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                    user.is_blocked 
+                      ? 'bg-red-100 text-red-800' 
+                      : 'bg-green-100 text-green-800'
+                  }`}>
+                    {user.is_blocked ? 'Blocked' : 'Active'}
+                  </span>
+                </TableCell>
+                {/* <TableCell className="text-sm">
+                  {formatDate(user.createdAt)}
+                </TableCell> */}
+                {/* <TableCell className="text-right">
                   <Button variant="ghost" size="icon" className="text-primary hover:text-primary/80">
                     <FiEdit className="h-4 w-4" />
                   </Button>
                   <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive/80">
                     <FiTrash2 className="h-4 w-4" />
                   </Button>
-                </TableCell>
+                </TableCell> */}
               </TableRow>
             ))}
           </TableBody>
         </Table>
       </div>
+
+      {filteredUsers.length === 0 && (
+        <div className="text-center py-8 text-muted-foreground">
+          No users found
+        </div>
+      )}
 
       <Pagination>
         <PaginationContent>

@@ -10,14 +10,14 @@ export async function GET() {
     
     return NextResponse.json({
       status: true,
-      users: users.map(user => ({
+      data: users.map(user => ({
         id: user._id,
         name: user.name,
         mobile_number: user.mobile_number,
         is_blocked: user.is_blocked,
         batting: user.batting,
         balance: user.balance,
-        created_at: user.created_at,
+        created_at: user.createdAt,
         device_count: user.devices.length
       }))
     });
