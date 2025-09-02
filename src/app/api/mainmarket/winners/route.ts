@@ -57,7 +57,25 @@ interface PopulatedMainMarketBid {
     created_at: Date;
     updated_at: Date;
 }
+interface WinnerItem {
+    user: string;
+    game_name: string;
+    game_type: string;
+    panna?: string;
+    digit?: string;
+    session?: string;
+    winning_amount: number;
+    bid_amount: number;
+    _id?: Types.ObjectId;
+}
 
+interface MainMarketWinnerDocument {
+    _id: Types.ObjectId;
+    result_date: Date;
+    winners: WinnerItem[];
+    createdAt: Date;
+    updatedAt: Date;
+}
 // Helper function to calculate winning amount
 function calculateWinningAmount(gameType: string, bidAmount: number, gameRates: GameRates): number {
     const rateMap: Record<string, number> = {
@@ -289,12 +307,12 @@ export async function GET(request: Request) {
             filter = { user_id: user_id };
         }
 
-        const winnersData = await MainMarketWinner.find(filter).maxTimeMS(15000);
+        const winnersData = await MainMarketWinner.find(filter).maxTimeMS(15000) as unknown as MainMarketWinnerDocument[];
         
         // Transform the data to a simpler format
         const simplifiedData = winnersData.flatMap(winnerDoc => 
             winnerDoc.winners.map(winner => ({
-                id: winner._id.toString(),
+                id: winner._id?.toString() || new Types.ObjectId().toString(),
                 result_date: winnerDoc.result_date,
                 user: winner.user,
                 game_name: winner.game_name,
@@ -311,6 +329,7 @@ export async function GET(request: Request) {
         return NextResponse.json({
             status: true,
             data: simplifiedData,
+            count: simplifiedData.length
         });
     } catch (error: unknown) {
         const errorMessage = error instanceof Error ? error.message : 'Failed to fetch winners';
