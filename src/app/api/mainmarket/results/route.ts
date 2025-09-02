@@ -126,7 +126,7 @@ export async function POST(request: NextRequest) {
           }
 
           // Create transaction for the win
-          const transaction = await Transaction.create({
+         await Transaction.create({
             user_id: userDoc._id,
             type: 'credit',
             amount: winning_amount,

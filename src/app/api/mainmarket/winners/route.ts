@@ -308,9 +308,9 @@ export async function GET(request: Request) {
         }
 
         const winnersData = await MainMarketWinner.find(filter).maxTimeMS(15000) as unknown as MainMarketWinnerDocument[];
-        
+
         // Transform the data to a simpler format
-        const simplifiedData = winnersData.flatMap(winnerDoc => 
+        const simplifiedData = winnersData.flatMap(winnerDoc =>
             winnerDoc.winners.map(winner => ({
                 id: winner._id?.toString() || new Types.ObjectId().toString(),
                 result_date: winnerDoc.result_date,
@@ -329,13 +329,11 @@ export async function GET(request: Request) {
         return NextResponse.json({
             status: true,
             data: simplifiedData,
-            count: simplifiedData.length
         });
     } catch (error: unknown) {
         const errorMessage = error instanceof Error ? error.message : 'Failed to fetch winners';
         return NextResponse.json(
-            { status: false, message: errorMessage },
-            { status: 500 }
+            { status: false, message: errorMessage }
         );
     }
 }

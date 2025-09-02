@@ -18,19 +18,14 @@ interface StarlineResultDocument {
 }
 
 interface WinnerData {
-    user_id: string;
-    game_id: string;
-    bid_id: string;
-    win_amount: number;
+    user: string;
+    game_type: string;
+    game: string;
+    amount: number;
+    winning_amount: number;
+    digit?: string;
 }
 
-interface ProcessedWinner {
-    user_id: Types.ObjectId;
-    game_id: Types.ObjectId;
-    bid_id: Types.ObjectId;
-    win_amount: number;
-    transaction_id: Types.ObjectId;
-}
 
 // CREATE a new result
 export async function POST(request: NextRequest) {
@@ -40,77 +35,70 @@ export async function POST(request: NextRequest) {
         const body = await request.json();
         const { result_date, game_id, digit, winners } = body;
 
-        // Validate required fields
-        if (!result_date) {
-            throw new ApiError('Date is required');
-        }
-        if (!game_id) {
-            throw new ApiError('Game id is required');
-        }
-        if (!digit) {
-            throw new ApiError('Digit is required');
-        }
+        if (!result_date) throw new ApiError('Date is required');
+        if (!game_id) throw new ApiError('Game id is required');
+        if (!digit) throw new ApiError('Digit is required');
 
-        // Check if result already exists for this date, game, and session
-        const existingResult = await GalidisawarResult.findOne({
-            game_id,
-            result_date,
-        });
-
+        // Check duplicate result
+        const existingResult = await GalidisawarResult.findOne({ game_id, result_date });
         if (existingResult) {
             throw new ApiError('Result already exists for this date, game');
         }
 
-        // Create the new result
-        await GalidisawarResult.create({
-            result_date,
-            game_id,
-            digit
-        });
+        // Create result entry
+        await GalidisawarResult.create({ result_date, game_id, digit });
 
-        const processedWinners: ProcessedWinner[] = [];
+        const winnerDocs: any[] = [];
 
         if (winners && winners.length > 0) {
-            // Process each winner to create transactions and update balances
             for (const winner of winners as WinnerData[]) {
-                const { user_id, game_id, bid_id, win_amount } = winner;
+                const { user, game, amount, winning_amount, game_type, digit } = winner;
 
-                // Validate winner data
-                if (!user_id || !game_id || !bid_id || win_amount === undefined) {
+                if (!user || !game || !game_type || winning_amount === undefined) {
                     console.warn('Invalid winner data:', winner);
                     continue;
                 }
 
-                // Create transaction for the win
-                const transaction = await Transaction.create({
-                    user_id: new Types.ObjectId(user_id),
-                    type: 'win',
-                    amount: win_amount,
-                    description: `Win from ${game_id} on ${result_date}`,
-                    status: 'completed'
-                });
+                let userId: Types.ObjectId | null = null;
 
-                // Update user balance
-                await AppUser.findByIdAndUpdate(
-                    user_id,
-                    { $inc: { balance: win_amount } },
-                    { new: true }
-                );
+                // Validate if user is ObjectId
+                if (Types.ObjectId.isValid(user)) {
+                    userId = new Types.ObjectId(user);
 
-                processedWinners.push({
-                    user_id: new Types.ObjectId(user_id),
-                    game_id: new Types.ObjectId(game_id),
-                    bid_id: new Types.ObjectId(bid_id),
-                    win_amount,
-                    transaction_id: transaction._id
+                    // Create transaction only if valid userId
+                     await Transaction.create({
+                        user_id: userId,
+                        type: 'win',
+                        amount: winning_amount,
+                        description: `Win from ${game} on ${result_date}`,
+                        status: 'completed'
+                    });
+
+                    // Update user balance
+                    await AppUser.findByIdAndUpdate(
+                        userId,
+                        { $inc: { balance: winning_amount } },
+                        { new: true }
+                    );
+                } else {
+                    console.warn(`Skipping transaction: invalid userId (${user})`);
+                }
+
+                // Save winner entry regardless (string or ObjectId)
+                winnerDocs.push({
+                    user, // keep as provided (string)
+                    game_name: game,
+                    game_type,
+                    digit,
+                    winning_amount,
+                    bid_amount: amount
                 });
             }
 
-            // Save winners to MainMarketWinner collection
-            if (processedWinners.length > 0) {
+            if (winnerDocs.length > 0) {
                 await GalidisawarWinner.create({
                     result_date,
-                    winners: processedWinners
+                    winners: winnerDocs
                 });
             }
         }
@@ -122,10 +110,8 @@ export async function POST(request: NextRequest) {
 
     } catch (error: unknown) {
         console.error('Error creating result:', error);
-        const errorMessage = error instanceof Error ? error.message : 'Failed to create result'
-        return NextResponse.json(
-            { status: false, message: errorMessage }
-        );
+        const errorMessage = error instanceof Error ? error.message : 'Failed to create result';
+        return NextResponse.json({ status: false, message: errorMessage });
     }
 }
 
@@ -148,10 +134,10 @@ export async function GET(request: NextRequest) {
 
         // Get all results
         const results = await GalidisawarResult.find(query)
-        .populate('game_id', 'game_name') 
-        .sort({ result_date: -1, createdAt: -1 }) as unknown as StarlineResultDocument[];
+            .populate('game_id', 'game_name')
+            .sort({ result_date: -1, createdAt: -1 }) as unknown as StarlineResultDocument[];
 
-         const transformedResults = results.map(result => ({
+        const transformedResults = results.map(result => ({
             _id: result._id,
             result_date: result.result_date,
             game_name: result.game_id?.game_name || 'Unknown Game', // Extract game_name

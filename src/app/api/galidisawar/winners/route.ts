@@ -4,6 +4,7 @@ import GalidisawarBid from '@/models/GalidisawarBid';
 import mongoose, { Types } from 'mongoose';
 import GalidisawarRate from '@/models/GalidisawarRate';
 import ApiError from '@/lib/errors/APiError';
+import GalidisawarWinner from '@/models/GalidisawarWinner';
 
 interface Winners {
     _id: string;
@@ -49,6 +50,24 @@ interface PopulatedMainMarketBid {
     total_amount: number;
     created_at: Date;
     updated_at: Date;
+}
+
+interface WinnerItem {
+    user: string;
+    game_name: string;
+    game_type: string;
+    digit?: string;
+    winning_amount: number;
+    bid_amount: number;
+    _id?: Types.ObjectId;
+}
+
+interface MainMarketWinnerDocument {
+    _id: Types.ObjectId;
+    result_date: Date;
+    winners: WinnerItem[];
+    createdAt: Date;
+    updatedAt: Date;
 }
 
 // Helper function to calculate winning amount
@@ -149,7 +168,7 @@ export async function POST(request: Request) {
                         }
                         break;
                     case 'jodi-digit':
-                       if (bid.digit === jodiDigitStr) {
+                        if (bid.digit === jodiDigitStr) {
                             isWinner = true;
                             winningAmount = calculateWinningAmount(bid.game_type, bid.bid_amount, gameRates);
                         }
@@ -193,5 +212,48 @@ export async function POST(request: Request) {
         return NextResponse.json(
             { status: false, message: errorMessage }
         );
+    }
+}
+
+
+// GET - Get all games
+export async function GET(request: Request) {
+    try {
+        // Establish database connection
+        await dbConnect();
+
+        const { searchParams } = new URL(request.url);
+        const user_id = searchParams.get('user_id');
+
+        let filter = {};
+        if (user_id) {
+            filter = { user_id: user_id };
+        }
+
+        const winnersData = await GalidisawarWinner.find(filter).maxTimeMS(15000) as unknown as MainMarketWinnerDocument[];
+
+        // Transform the data to a simpler format
+        const simplifiedData = winnersData.flatMap(winnerDoc =>
+            winnerDoc.winners.map(winner => ({
+                id: winner._id?.toString() || new Types.ObjectId().toString(),
+                result_date: winnerDoc.result_date,
+                user: winner.user,
+                game_name: winner.game_name,
+                game_type: winner.game_type,
+                digit: winner.digit,
+                winning_amount: winner.winning_amount,
+                bid_amount: winner.bid_amount,
+                created_at: winnerDoc.createdAt
+            }))
+        );
+
+        return NextResponse.json({
+            status: true,
+            data: simplifiedData,
+        });
+    } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : 'Failed to fetch winners';
+        return NextResponse.json(
+            { status: false, message: errorMessage });
     }
 }

@@ -37,7 +37,7 @@ const mainMarketWinnerSchema = new mongoose.Schema({
         },
         game_type: {
             type: String,
-            required: [true, "Game name is required"]
+            required: [true, "Game type is required"]
         },
         panna: {
             type: String,

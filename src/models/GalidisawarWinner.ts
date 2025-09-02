@@ -4,48 +4,50 @@ import '@/models/GalidisawarGame';
 import '@/models/GalidisawarBid'
 import '@/models/Transaction';
 
-export interface IStarlineWinner extends Document {
+export interface IGalidisawarWinner extends Document {
     result_date: string;
-    winners:[
+    winners: [
         {
-            user_id:Types.ObjectId;
-            game_id:Types.ObjectId;
-            bid_id:Types.ObjectId;
-            win_amount:number;
-            transaction_id:Types.ObjectId;
+            user: string;
+            game_name: string;
+            game_type: string;
+            digit?: string;
+            winning_amount: number;
+            bid_amount: number;
         }
     ]
 }
 
 
-const starlineWinnerSchema = new mongoose.Schema({
-    result_date: {
+const galidisawarWinnerSchema = new mongoose.Schema({
+      result_date: {
         type: Date,
         required: [true, "Result date is required"],
     },
     winners: [{
-        user_id: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: "AppUser",
+        user: {
+            type: String,
             required: true
         },
-        game_id: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: "GalidisawarGame",
-            required: [true, "Game ID is required"]
+        game_name: {
+            type: String,
+            required: [true, "Game name is required"]
         },
-        bid_id: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: "GalidisawarBid",
+        game_type: {
+            type: String,
+            required: [true, "Game type is required"]
+        },
+        digit: {
+            type: String,
             required: true
         },
-        win_amount: {
+        winning_amount: {
             type: Number,
             required: true
         },
-        transaction_id: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: "Transaction"
+        bid_amount: {
+            type: Number,
+            required: true
         },
     }]
 
@@ -55,10 +57,10 @@ const starlineWinnerSchema = new mongoose.Schema({
 
 
 
-const StarlineWinner: Model<IStarlineWinner> = mongoose.models.StarlineWinner || 
-    mongoose.model<IStarlineWinner>('StarlineWinner', starlineWinnerSchema);
+const GalidisawarWinner: Model<IGalidisawarWinner> = mongoose.models.GalidisawarWinner || 
+    mongoose.model<IGalidisawarWinner>('GalidisawarWinner', galidisawarWinnerSchema);
 
-export default StarlineWinner;
+export default GalidisawarWinner;
 
 
 

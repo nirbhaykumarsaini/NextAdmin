@@ -9,21 +9,33 @@ import Transaction from '@/models/Transaction';
 import { Types } from 'mongoose';
 
 interface StarlineResultDocument {
-  result_date: string;
-  game_id: { game_name: string };
-  panna: string;
-  digit: string;
-  _id: Types.ObjectId;
-  created_at?: Date;
-  updated_at?: Date;
+    result_date: string;
+    game_id: { game_name: string };
+    panna: string;
+    digit: string;
+    _id: Types.ObjectId;
+    created_at?: Date;
+    updated_at?: Date;
+}
+
+interface WinnerData {
+    user: string;
+    game: string;
+    game_type: string;
+    amount: number;
+    winning_amount: number;
+    digit: string;
+    panna: string;
 }
 
 interface ProcessedWinner {
-    user_id: Types.ObjectId;
-    game_id: Types.ObjectId;
-    bid_id: Types.ObjectId;
-    win_amount: number;
-    transaction_id: Types.ObjectId;
+    user: string;
+    game_name: string;
+    game_type: string;
+    panna: string;
+    digit: string;
+    winning_amount: number;
+    bid_amount: number;
 }
 
 
@@ -76,43 +88,56 @@ export async function POST(request: NextRequest) {
         if (winners.length > 0) {
             // Process each winner to create transactions and update balances
             for (const winner of winners) {
-                const { user_id, game_id, bid_id, win_amount } = winner;
+                const { user, game, game_type, amount, winning_amount, digit: winnerDigit, panna: winnerPanna } = winner;
 
                 // Validate winner data
-                if (!user_id || !game_id || !bid_id || win_amount === undefined) {
+                if (!user || winning_amount === undefined) {
                     console.warn('Invalid winner data:', winner);
                     continue;
                 }
+                try {
 
-                // Create transaction for the win
-                const transaction = await Transaction.create({
-                    user_id: new Types.ObjectId(user_id),
-                    type: 'win',
-                    amount: win_amount,
-                    description: `Win from ${game_id}  on ${result_date}`,
-                    status: 'completed'
-                });
+                    const userDoc = await AppUser.findOne({ name: user });
+                    if (!userDoc) {
+                        console.warn(`User not found: ${user}`);
+                        continue;
+                    }
 
-                // Update user balance
-                await AppUser.findByIdAndUpdate(
-                    user_id,
-                    { $inc: { balance: win_amount } },
-                    { new: true }
-                );
+                    // Create transaction for the win
+                     await Transaction.create({
+                        user_id: userDoc._id,
+                        type: 'credit',
+                        amount: winning_amount,
+                        description: `Win from ${game}  on ${result_date}`,
+                        status: 'completed'
+                    });
 
-                processedWinners.push({
-                    user_id: new Types.ObjectId(user_id),
-                    game_id: new Types.ObjectId(game_id),
-                    bid_id: new Types.ObjectId(bid_id),
-                    win_amount,
-                    transaction_id: transaction._id
-                });
+                    // Update user balance
+                    await AppUser.findByIdAndUpdate(
+                        userDoc._id,
+                        { $inc: { balance: winning_amount } },
+                        { new: true }
+                    );
+
+                    processedWinners.push({
+                        user,
+                        game_name: game,
+                        game_type,
+                        panna: winnerPanna,
+                        digit: winnerDigit,
+                        winning_amount,
+                        bid_amount: amount
+                    });
+                } catch (error) {
+                    console.error('Error processing winner:', error);
+                    continue;
+                }
             }
 
             // Save winners to MainMarketWinner collection
             if (processedWinners.length > 0) {
                 await StarlineWinner.create({
-                    result_date,
+                    result_date: new Date(result_date),
                     winners: processedWinners
                 });
             }
@@ -151,7 +176,7 @@ export async function GET(request: NextRequest) {
 
         // Get all results with population
         const results = await StarlineResult.find(query)
-            .populate('game_id', 'game_name') 
+            .populate('game_id', 'game_name')
             .sort({ result_date: -1, createdAt: -1 })
             .lean() as unknown as StarlineResultDocument[];
 

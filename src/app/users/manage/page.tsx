@@ -86,7 +86,7 @@ export default function ManageUsers() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {users.map((user: User, index: number) => (
+            {users?.map((user: User, index: number) => (
               <TableRow key={user._id}>
                 <TableCell className="text-sm">
                   {index + 1}

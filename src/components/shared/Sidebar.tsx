@@ -47,8 +47,8 @@ export function Sidebar() {
       icon: <FiUsers className="h-5 w-5" />,
       submenu: [
         { href: "/users/manage", label: "Manage Users" },
-        { href: "/users/roles", label: "User Roles" },
-        { href: "/users/permissions", label: "Permissions" },
+        // { href: "/users/roles", label: "User Roles" },
+        // { href: "/users/permissions", label: "Permissions" },
       ],
     },
     {
