@@ -9,10 +9,9 @@ export async function POST(request: Request) {
     const body = await request.json();
 
     // Validation
-    if (!body.mobile_number || !body.otp || !body.newPassword) {
+    if (!body.mobile_number || !body.newPassword) {
       const missingFields = [];
       if (!body.mobile_number) missingFields.push('mobile_number');
-      if (!body.otp) missingFields.push('otp');
       if (!body.newPassword) missingFields.push('newPassword');
 
       throw new ApiError(
@@ -23,11 +22,6 @@ export async function POST(request: Request) {
     const user = await AppUser.findOne({ mobile_number: body.mobile_number });
     if (!user) {
       throw new ApiError('User not found');
-    }
-
-    // Verify OTP (using dummy OTP 1234)
-    if (body.otp !== '1234') {
-      throw new ApiError('Invalid OTP');
     }
 
     // Update password

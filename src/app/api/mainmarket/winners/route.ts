@@ -59,7 +59,7 @@ interface PopulatedMainMarketBid {
 }
 
 // Helper function to calculate winning amount
- function calculateWinningAmount(gameType: string, bidAmount: number, gameRates: GameRates): number {
+function calculateWinningAmount(gameType: string, bidAmount: number, gameRates: GameRates): number {
     const rateMap: Record<string, number> = {
         'single-digit': gameRates.single_digit_point,
         'jodi-digit': gameRates.jodi_digit_point,
@@ -277,24 +277,46 @@ export async function POST(request: Request) {
 
 // GET - Get all games
 export async function GET(request: Request) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const user_id = searchParams.get('user_id');
+    try {
+        // Establish database connection
+        await dbConnect();
 
-    let filter = {};
-    if (user_id !== null) {
-      filter = { user_id: user_id };
+        const { searchParams } = new URL(request.url);
+        const user_id = searchParams.get('user_id');
+
+        let filter = {};
+        if (user_id) {
+            filter = { user_id: user_id };
+        }
+
+        const winnersData = await MainMarketWinner.find(filter).maxTimeMS(15000);
+        
+        // Transform the data to a simpler format
+        const simplifiedData = winnersData.flatMap(winnerDoc => 
+            winnerDoc.winners.map(winner => ({
+                id: winner._id.toString(),
+                result_date: winnerDoc.result_date,
+                user: winner.user,
+                game_name: winner.game_name,
+                game_type: winner.game_type,
+                digit: winner.digit,
+                panna: winner.panna,
+                session: winner.session,
+                winning_amount: winner.winning_amount,
+                bid_amount: winner.bid_amount,
+                created_at: winnerDoc.createdAt
+            }))
+        );
+
+        return NextResponse.json({
+            status: true,
+            data: simplifiedData,
+        });
+    } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : 'Failed to fetch winners';
+        return NextResponse.json(
+            { status: false, message: errorMessage },
+            { status: 500 }
+        );
     }
-
-    const winners = await MainMarketWinner.find(filter);
-    return NextResponse.json({
-      status: true,
-      data: winners,
-    });
-  } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : 'Failed to fetch winners'
-    return NextResponse.json(
-      { status: false, message: errorMessage },
-    );
-  }
 }
