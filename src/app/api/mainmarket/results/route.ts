@@ -40,6 +40,7 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const { result_date, game_id, session, panna, digit, winners } = body;
+    console.log("winners,", winners)
 
     // Validate required fields
     if (!result_date) {
@@ -86,45 +87,61 @@ export async function POST(request: NextRequest) {
     let processedWinners: any[] = [];
 
     if (winners.length > 0) {
-      // Process each winner to create transactions and update balances
       for (const winner of winners) {
-        const { user_id, game_id, bid_id, win_amount } = winner;
+        const { user, game, game_type, amount, winning_amount, session: winnerSession, digit: winnerDigit, panna: winnerPanna } = winner;
 
         // Validate winner data
-        if (!user_id || !game_id || !bid_id || win_amount === undefined) {
+        if (!user || winning_amount === undefined) {
           console.warn('Invalid winner data:', winner);
           continue;
         }
 
-        // Create transaction for the win
-        const transaction = await Transaction.create({
-          user_id: new Types.ObjectId(user_id),
-          type: 'win',
-          amount: win_amount,
-          description: `Win from ${game_id} ${session} session on ${result_date}`,
-          status: 'completed'
-        });
+        try {
+          // Find the user by username/name since your data has 'user' not 'user_id'
+          const userDoc = await AppUser.findOne({ name: user });
+          if (!userDoc) {
+            console.warn(`User not found: ${user}`);
+            continue;
+          }
 
-        // Update user balance
-        await AppUser.findByIdAndUpdate(
-          user_id,
-          { $inc: { balance: win_amount } },
-          { new: true }
-        );
+          // Create transaction for the win
+          const transaction = await Transaction.create({
+            user_id: userDoc._id,
+            type: 'credit',
+            amount: winning_amount,
+            description: `Win from ${game_type} ${winnerSession} session on ${result_date}`,
+            status: 'completed'
+          });
 
-        processedWinners.push({
-          user_id: new Types.ObjectId(user_id),
-          game_id: new Types.ObjectId(game_id),
-          bid_id: new Types.ObjectId(bid_id),
-          win_amount,
-          transaction_id: transaction._id
-        });
+          // Update user balance
+          await AppUser.findByIdAndUpdate(
+            userDoc._id,
+            { $inc: { balance: winning_amount } },
+            { new: true }
+          );
+
+          // Add to processed winners array
+          processedWinners.push({
+            user,
+            game_name: game,
+            game_type,
+            panna: winnerPanna,
+            digit: winnerDigit,
+            session: winnerSession,
+            winning_amount,
+            bid_amount: amount
+          });
+
+        } catch (error) {
+          console.error('Error processing winner:', error);
+          continue;
+        }
       }
 
       // Save winners to MainMarketWinner collection
       if (processedWinners.length > 0) {
         await MainMarketWinner.create({
-          result_date,
+          result_date: new Date(result_date),
           winners: processedWinners
         });
       }
@@ -132,7 +149,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       status: true,
-      message: `Result created successfully`,
+      message: `Result created successfully with ${processedWinners.length} winners`,
     });
 
   } catch (error: unknown) {
@@ -142,7 +159,6 @@ export async function POST(request: NextRequest) {
       { status: false, message: errorMessage });
   }
 }
-
 // GET all results
 export async function GET(request: NextRequest) {
   try {

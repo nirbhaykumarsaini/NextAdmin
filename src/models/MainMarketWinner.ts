@@ -6,13 +6,16 @@ import '@/models/Transaction';
 
 export interface IMainMarketWinner extends Document {
     result_date: string;
-    winners:[
+    winners: [
         {
-            user_id:Types.ObjectId;
-            game_id:Types.ObjectId;
-            bid_id:Types.ObjectId;
-            win_amount:number;
-            transaction_id:Types.ObjectId;
+            user: String;
+            game_name: String;
+            game_type: String;
+            panna?: String;
+            digit?:Number;
+            session?: String;
+            winning_amount: Number;
+            bid_amount: Number;
         }
     ]
 }
@@ -24,28 +27,37 @@ const mainMarketWinnerSchema = new mongoose.Schema({
         required: [true, "Result date is required"],
     },
     winners: [{
-        user_id: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: "AppUser",
+        user: {
+            type: String,
             required: true
         },
-        game_id: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: "MainMarketGame",
-            required: [true, "Game ID is required"]
+        game_name: {
+            type: String,
+            required: [true, "Game name is required"]
         },
-        bid_id: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: "MainMarketBid",
-            required: true
+        game_type: {
+            type: String,
+            required: [true, "Game name is required"]
         },
-        win_amount: {
+        panna: {
+            type: String,
+            // required: true
+        },
+        digit: {
+            type: String,
+            // required: true
+        },
+        session: {
+            type: String,
+            // required: true
+        },
+        winning_amount: {
             type: Number,
             required: true
         },
-        transaction_id: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: "Transaction"
+        bid_amount: {
+            type: Number,
+            required: true
         },
     }]
 
@@ -55,7 +67,7 @@ const mainMarketWinnerSchema = new mongoose.Schema({
 
 
 
-const MainMarketWinner: Model<IMainMarketWinner> = mongoose.models.MainMarketWinner || 
+const MainMarketWinner: Model<IMainMarketWinner> = mongoose.models.MainMarketWinner ||
     mongoose.model<IMainMarketWinner>('MainMarketWinner', mainMarketWinnerSchema);
 
 export default MainMarketWinner;

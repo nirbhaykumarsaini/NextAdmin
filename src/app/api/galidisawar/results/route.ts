@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
             digit
         });
 
-        let processedWinners: any[] = [];
+        const processedWinners: any[] = [];
 
         if (winners.length > 0) {
             // Process each winner to create transactions and update balances

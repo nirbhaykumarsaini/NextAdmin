@@ -248,6 +248,9 @@ const MainMarketResult = () => {
 
     // Filter games that have results declared
     const getAvailableGames = () => {
+
+        const formattedDate = result_date ? format(result_date, "dd-MM-yyyy") : "";
+
         const gameOptions = games.map((game: IStarlineGame) => ({
             _id: game._id,
             name: game.game_name
@@ -255,7 +258,7 @@ const MainMarketResult = () => {
 
         // Filter out games that already have  results
         return gameOptions.filter(game => {
-            const gameResults = results?.find(r => r?.game_name === game?.name);
+            const gameResults = results?.find(r => r?.game_name === game?.name && r?.result_date === formattedDate);
             // Only show games that don't have declared result
             return !gameResults;
         });
@@ -444,7 +447,7 @@ const MainMarketResult = () => {
                                                 <TableCell>{winner?.user}</TableCell>
                                                 <TableCell>{winner?.game}</TableCell>
                                                 <TableCell>{winner?.game_type}</TableCell>
-                                                 <TableCell>{winner?.amount}</TableCell>
+                                                <TableCell>{winner?.amount}</TableCell>
                                                 <TableCell>{winner?.winning_amount}</TableCell>
                                             </TableRow>
                                         ))

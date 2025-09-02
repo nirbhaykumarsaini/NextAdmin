@@ -3,6 +3,7 @@ import dbConnect from '@/config/db';
 import MainMarketBid from '@/models/MainMarketBid';
 import mongoose, { Types } from 'mongoose';
 import MainMarketRate from '@/models/MainmarketRate';
+import MainMarketWinner from '@/models/MainMarketWinner';
 
 interface Winners {
     _id: string;
@@ -271,4 +272,29 @@ export async function POST(request: Request) {
             { status: false, message: errorMessage }
         );
     }
+}
+
+
+// GET - Get all games
+export async function GET(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const user_id = searchParams.get('user_id');
+
+    let filter = {};
+    if (user_id !== null) {
+      filter = { user_id: user_id };
+    }
+
+    const winners = await MainMarketWinner.find(filter);
+    return NextResponse.json({
+      status: true,
+      data: winners,
+    });
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Failed to fetch winners'
+    return NextResponse.json(
+      { status: false, message: errorMessage },
+    );
+  }
 }
