@@ -52,7 +52,7 @@ interface PopulatedMainMarketBid {
 }
 
 // Helper function to calculate winning amount
-export function calculateWinningAmount(gameType: string, bidAmount: number, gameRates: GameRates): number {
+function calculateWinningAmount(gameType: string, bidAmount: number, gameRates: GameRates): number {
     const rateMap: Record<string, number> = {
         'left-digit': gameRates.left_digit_point,
         'right-panna': gameRates.right_panna_point,
