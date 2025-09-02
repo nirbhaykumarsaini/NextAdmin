@@ -18,6 +18,14 @@ interface StarlineResultDocument {
   updated_at?: Date;
 }
 
+interface ProcessedWinner {
+    user_id: Types.ObjectId;
+    game_id: Types.ObjectId;
+    bid_id: Types.ObjectId;
+    win_amount: number;
+    transaction_id: Types.ObjectId;
+}
+
 
 // CREATE a new result
 export async function POST(request: NextRequest) {
@@ -63,7 +71,7 @@ export async function POST(request: NextRequest) {
             digit
         });
 
-        let processedWinners: any[] = [];
+        const processedWinners: ProcessedWinner[] = [];
 
         if (winners.length > 0) {
             // Process each winner to create transactions and update balances

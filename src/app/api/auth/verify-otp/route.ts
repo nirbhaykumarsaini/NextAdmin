@@ -72,11 +72,6 @@ export async function POST(request: Request) {
         throw new ApiError('Invalid OTP');
       }
 
-      // Generate token (might want to set shorter expiration for reset tokens)
-      const token = generateToken({
-        id: user._id.toString()
-      });
-
       return NextResponse.json({
         status: true,
         message: 'OTP verified successfully. You can now reset your password.',

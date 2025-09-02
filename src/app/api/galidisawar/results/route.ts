@@ -1,4 +1,3 @@
-
 import { NextRequest, NextResponse } from 'next/server';
 import GalidisawarResult from '@/models/GalidisawarResult';
 import connectDB from '@/config/db';
@@ -18,7 +17,20 @@ interface StarlineResultDocument {
     updated_at?: Date;
 }
 
+interface WinnerData {
+    user_id: string;
+    game_id: string;
+    bid_id: string;
+    win_amount: number;
+}
 
+interface ProcessedWinner {
+    user_id: Types.ObjectId;
+    game_id: Types.ObjectId;
+    bid_id: Types.ObjectId;
+    win_amount: number;
+    transaction_id: Types.ObjectId;
+}
 
 // CREATE a new result
 export async function POST(request: NextRequest) {
@@ -56,11 +68,11 @@ export async function POST(request: NextRequest) {
             digit
         });
 
-        const processedWinners: any[] = [];
+        const processedWinners: ProcessedWinner[] = [];
 
-        if (winners.length > 0) {
+        if (winners && winners.length > 0) {
             // Process each winner to create transactions and update balances
-            for (const winner of winners) {
+            for (const winner of winners as WinnerData[]) {
                 const { user_id, game_id, bid_id, win_amount } = winner;
 
                 // Validate winner data
@@ -74,7 +86,7 @@ export async function POST(request: NextRequest) {
                     user_id: new Types.ObjectId(user_id),
                     type: 'win',
                     amount: win_amount,
-                    description: `Win from ${game_id}  on ${result_date}`,
+                    description: `Win from ${game_id} on ${result_date}`,
                     status: 'completed'
                 });
 

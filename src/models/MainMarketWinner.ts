@@ -8,14 +8,14 @@ export interface IMainMarketWinner extends Document {
     result_date: string;
     winners: [
         {
-            user: String;
-            game_name: String;
-            game_type: String;
-            panna?: String;
-            digit?:Number;
-            session?: String;
-            winning_amount: Number;
-            bid_amount: Number;
+            user: string;
+            game_name: string;
+            game_type: string;
+            panna?: string;
+            digit?: string;
+            session?: string;
+            winning_amount: number;
+            bid_amount: number;
         }
     ]
 }

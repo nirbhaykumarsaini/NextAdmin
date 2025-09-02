@@ -7,7 +7,6 @@ import MainMarketWinner from '@/models/MainMarketWinner';
 import AppUser from '@/models/AppUser';
 import Transaction from '@/models/Transaction';
 
-
 interface SessionResult {
   panna: string;
   digit: string;
@@ -31,6 +30,28 @@ interface MainMarketResultDocument {
   _id: Types.ObjectId;
   created_at?: Date;
   updated_at?: Date;
+}
+
+interface WinnerData {
+  user: string;
+  game: string;
+  game_type: string;
+  amount: number;
+  winning_amount: number;
+  session: string;
+  digit: string;
+  panna: string;
+}
+
+interface ProcessedWinner {
+  user: string;
+  game_name: string;
+  game_type: string;
+  panna: string;
+  digit: string;
+  session: string;
+  winning_amount: number;
+  bid_amount: number;
 }
 
 // CREATE a new result
@@ -84,10 +105,10 @@ export async function POST(request: NextRequest) {
     });
 
     // Process winners if provided
-    let processedWinners: any[] = [];
+    const processedWinners: ProcessedWinner[] = [];
 
     if (winners.length > 0) {
-      for (const winner of winners) {
+      for (const winner of winners as WinnerData[]) {
         const { user, game, game_type, amount, winning_amount, session: winnerSession, digit: winnerDigit, panna: winnerPanna } = winner;
 
         // Validate winner data
@@ -150,6 +171,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       status: true,
       message: `Result created successfully with ${processedWinners.length} winners`,
+      result: newResult // Now using the newResult variable
     });
 
   } catch (error: unknown) {
