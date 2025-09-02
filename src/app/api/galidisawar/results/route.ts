@@ -26,6 +26,15 @@ interface WinnerData {
     digit?: string;
 }
 
+interface ProcessedWinner {
+  user: string;
+  game_name: string;
+  game_type: string;
+  digit: string | undefined;
+  winning_amount: number;
+  bid_amount: number;
+}
+
 
 // CREATE a new result
 export async function POST(request: NextRequest) {
@@ -48,7 +57,7 @@ export async function POST(request: NextRequest) {
         // Create result entry
         await GalidisawarResult.create({ result_date, game_id, digit });
 
-        const winnerDocs: any[] = [];
+        const winnerDocs: ProcessedWinner[] = [];
 
         if (winners && winners.length > 0) {
             for (const winner of winners as WinnerData[]) {
