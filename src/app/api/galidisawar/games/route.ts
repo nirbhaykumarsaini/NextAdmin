@@ -3,6 +3,7 @@ import GalidisawarGame from '@/models/GalidisawarGame';
 import GalidisawarResult from '@/models/GalidisawarResult';
 import connectDB from '@/config/db';
 import { format } from 'date-fns';
+import { Types } from 'mongoose';
 
 connectDB();
 
@@ -26,16 +27,20 @@ export async function GET() {
     // Create a map for quick lookup of results by game_id
     const resultsMap = new Map();
     todayResults.forEach(result => {
-      const gameId = result.game_id._id.toString();
+      // Check if game_id is populated (object) or just an ObjectId (string)
+      const gameId = typeof result.game_id === 'object' && result.game_id !== null 
+        ? (result.game_id as any)._id.toString() 
+        : result.game_id.toString();
+      
       resultsMap.set(gameId, {
-        digit: result.digit // Removed panna field since it doesn't exist in your schema
+        digit: result.digit
       });
     });
 
     // Combine game data with today's timing and results
     const todayData = games.map(game => {
       const todayDay = game.days.find((day: { day: string; }) => day.day === todayDayName);
-      const gameResult = resultsMap.get(game._id.toString()) || { digit: "**" }; // Adjusted default value
+      const gameResult = resultsMap.get(game._id.toString()) || { digit: "**" };
 
       return {
         game_id: game._id,
