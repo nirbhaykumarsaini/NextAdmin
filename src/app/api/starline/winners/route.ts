@@ -66,12 +66,11 @@ interface WinnerItem {
     _id?: Types.ObjectId;
 }
 
-interface MainMarketWinnerDocument {
+interface AggregationResult {
     _id: Types.ObjectId;
     result_date: Date;
-    winners: WinnerItem[];
+    winner: WinnerItem;
     createdAt: Date;
-    updatedAt: Date;
 }
 
 // GET - Get all games
@@ -82,7 +81,12 @@ export async function GET(request: Request) {
         const { searchParams } = new URL(request.url);
         const user_id = searchParams.get('user_id');
 
-        let aggregationPipeline: any[] = [];
+        type PipelineStage = 
+            | { $match: { 'winners.user'?: string } }
+            | { $unwind: string }
+            | { $project: { result_date: number; winner: string; createdAt: number } };
+
+        let aggregationPipeline: PipelineStage[] = [];
 
         if (user_id && mongoose.Types.ObjectId.isValid(user_id)) {
             // Find the user first
@@ -134,9 +138,9 @@ export async function GET(request: Request) {
             ];
         }
 
-        const winnersData = await StarlineWinner.aggregate(aggregationPipeline)
+        const winnersData = await StarlineWinner.aggregate(aggregationPipeline) as AggregationResult[];
 
-        const simplifiedData = winnersData.map((item: { winner: { _id: { toString: () => any; }; user: any; game_name: any; game_type: any; digit: any; panna: any; winning_amount: any; bid_amount: any; }; result_date: any; createdAt: any; }) => ({
+        const simplifiedData = winnersData.map((item) => ({
             id: item.winner._id?.toString() || new Types.ObjectId().toString(),
             result_date: item.result_date,
             user: item.winner.user,
