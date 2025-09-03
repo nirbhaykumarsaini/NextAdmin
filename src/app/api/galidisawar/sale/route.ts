@@ -24,13 +24,37 @@ interface GameTypeResult {
     [key: string]: DigitReportItem[];
 }
 
-// Type for MongoDB aggregation pipeline
-type PipelineStage = 
-    | { $match: FilterQuery<any> }
-    | { $unwind: string }
-    | { $group: any }
-    | { $project: any }
-    | { $sort: any };
+// Define proper types for MongoDB aggregation pipeline stages
+interface GroupStage {
+    $group: {
+        _id: string | Record<string, unknown>;
+        totalPoints: { $sum: string | number };
+        [key: string]: unknown;
+    };
+}
+
+interface ProjectStage {
+    $project: {
+        digit: { $toString: string };
+        point: string;
+        _id: number;
+        [key: string]: unknown;
+    };
+}
+
+interface MatchStage {
+    $match: FilterQuery<unknown>;
+}
+
+interface UnwindStage {
+    $unwind: string;
+}
+
+interface SortStage {
+    $sort: Record<string, 1 | -1>;
+}
+
+type PipelineStage = MatchStage | UnwindStage | GroupStage | ProjectStage | SortStage;
 
 export async function POST(request: Request) {
     try {
@@ -100,7 +124,7 @@ export async function POST(request: Request) {
                         totalPoints: { $sum: '$bids.bid_amount' }
                     }
                 },
-                { $match: { totalPoints: { $gt: 0 } } }, // Only include groups with total points > 0
+                { $match: { totalPoints: { $gt: 0 } } },
                 {
                     $project: {
                         digit: { $toString: '$_id' },
@@ -110,7 +134,7 @@ export async function POST(request: Request) {
                 }
             ];
 
-            const digitReport = await GalidisawarBid.aggregate(pipeline);
+            const digitReport = await GalidisawarBid.aggregate<DigitReportItem>(pipeline);
             return digitReport;
         };
 
