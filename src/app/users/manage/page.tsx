@@ -1,6 +1,6 @@
 "use client";
 
-import { FiEdit, FiTrash2, FiSearch } from "react-icons/fi";
+import { FiEdit, FiTrash2, FiSearch, FiEye } from "react-icons/fi";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -22,16 +22,24 @@ import {
 } from "@/components/ui/pagination";
 import { useEffect, useState } from "react";
 import axios from "axios";
+import { useRouter } from "next/navigation";
+
 
 export interface User {
-  id: string;
+  _id: string;
   name: string;
   mobile_number: string;
   balance: number;
   batting: boolean;
-  device_count: number;
   is_blocked: boolean;
-  // Add these if they exist in your actual response
+  devices: Array<{
+    _id: string;
+    device_model?: string;
+    os?: string;
+    browser?: string;
+    ip_address?: string;
+    last_login: string;
+  }>;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -39,6 +47,8 @@ export interface User {
 export default function ManageUsers() {
   const [users, setUsers] = useState<User[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const router = useRouter();
+
 
   useEffect(() => {
     getUsers();
@@ -57,6 +67,10 @@ export default function ManageUsers() {
         console.log(error);
       }
     }
+  };
+
+  const handleViewUser = (userId: string) => {
+    router.push(`/users/user-details/${userId}`);
   };
 
   // Filter users based on search term
@@ -99,73 +113,77 @@ export default function ManageUsers() {
               <TableHead>Batting</TableHead>
               <TableHead>Devices</TableHead>
               <TableHead>Status</TableHead>
-              {/* <TableHead>Joined Date</TableHead> */}
-              {/* <TableHead className="text-right">Actions</TableHead> */}
+              <TableHead>Last Login</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredUsers.map((user: User, index: number) => (
-              <TableRow key={user.id}>
-                <TableCell className="text-sm">
-                  {index + 1}
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-4">
-                    <Avatar className="h-9 w-9 capitalize">
-                      <AvatarFallback>
-                        {user.name?.charAt(0) || 'U'}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <div className="font-medium capitalize">
-                        {user.name}
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        ID: {user.id.slice(-6)}
+            {filteredUsers.map((user: User, index: number) => {
+              // Get the most recent login from devices
+              const lastLogin = user.devices && user.devices.length > 0
+                ? new Date(Math.max(...user.devices.map(d => new Date(d.last_login).getTime())))
+                : null;
+                
+              return (
+                <TableRow key={user._id}>
+                  <TableCell className="text-sm">
+                    {index + 1}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-4">
+                      <Avatar className="h-9 w-9 capitalize">
+                        <AvatarFallback>
+                          {user.name?.charAt(0) || 'U'}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <div className="font-medium capitalize">
+                          {user.name}
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          ID: {user._id.slice(-6)}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </TableCell>
-                <TableCell className="text-sm">
-                  {user.mobile_number}
-                </TableCell>
-                <TableCell className="text-sm font-medium">
-                  ₹{user.balance.toLocaleString()}
-                </TableCell>
-                <TableCell>
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                    user.batting 
-                      ? 'bg-green-100 text-green-800' 
-                      : 'bg-gray-100 text-gray-800'
-                  }`}>
-                    {user.batting ? 'Active' : 'Inactive'}
-                  </span>
-                </TableCell>
-                <TableCell className="text-sm">
-                  {user.device_count}
-                </TableCell>
-                <TableCell>
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                    user.is_blocked 
-                      ? 'bg-red-100 text-red-800' 
-                      : 'bg-green-100 text-green-800'
-                  }`}>
-                    {user.is_blocked ? 'Blocked' : 'Active'}
-                  </span>
-                </TableCell>
-                {/* <TableCell className="text-sm">
-                  {formatDate(user.createdAt)}
-                </TableCell> */}
-                {/* <TableCell className="text-right">
-                  <Button variant="ghost" size="icon" className="text-primary hover:text-primary/80">
-                    <FiEdit className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive/80">
-                    <FiTrash2 className="h-4 w-4" />
-                  </Button>
-                </TableCell> */}
-              </TableRow>
-            ))}
+                  </TableCell>
+                  <TableCell className="text-sm">
+                    {user.mobile_number}
+                  </TableCell>
+                  <TableCell className="text-sm font-medium">
+                    ₹{user.balance.toLocaleString()}
+                  </TableCell>
+                  <TableCell>
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      user.batting 
+                        ? 'bg-green-100 text-green-800' 
+                        : 'bg-gray-100 text-gray-800'
+                    }`}>
+                      {user.batting ? 'Active' : 'Inactive'}
+                    </span>
+                  </TableCell>
+                  <TableCell className="text-sm">
+                    {user.devices?.length || 0}
+                  </TableCell>
+                  <TableCell>
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      user.is_blocked 
+                        ? 'bg-red-100 text-red-800' 
+                        : 'bg-green-100 text-green-800'
+                    }`}>
+                      {user.is_blocked ? 'Blocked' : 'Active'}
+                    </span>
+                  </TableCell>
+                  <TableCell className="text-sm">
+                    {lastLogin ? formatDate(lastLogin.toISOString()) : 'N/A'}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Button onClick={() => handleViewUser(user._id)} variant="ghost" size="icon" className="text-blue-600 hover:text-blue-800">
+                      <FiEye className="h-4 w-4" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </div>

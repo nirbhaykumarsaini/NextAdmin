@@ -84,16 +84,7 @@ export async function GET(request: Request, { params }: {params: Promise<{id:str
 
     return NextResponse.json({
       status: true,
-      user: {
-        id: user._id,
-        name: user.name,
-        mobile_number: user.mobile_number,
-        is_blocked: user.is_blocked,
-        batting: user.batting,
-        devices: user.devices,
-        balance: user.balance,
-        created_at: user.created_at
-      }
+      data: user
     });
 
   } catch (error: unknown) {

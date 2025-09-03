@@ -12,7 +12,9 @@ import {
   FiTrendingUp,
   FiArrowUp,
   FiArrowDown,
-  FiLogOut
+  FiLogOut,
+  FiArrowDownRight,
+  FiArrowRight
 } from "react-icons/fi";
 import {
   BarChart,
@@ -80,10 +82,11 @@ export default function Dashboard() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
-          title="Total Revenue"
-          value="$24,780"
+          title="Total Users"
+          value="24,780"
           change="+12.5%"
-          icon={<FiDollarSign className="h-4 w-4 text-blue-500" />}
+
+          icon={<FiUserPlus className="h-4 w-4 text-green-500" />}
         />
         <StatCard
           title="Active Users"
@@ -92,17 +95,17 @@ export default function Dashboard() {
           icon={<FiUserPlus className="h-4 w-4 text-green-500" />}
         />
         <StatCard
-          title="Conversion Rate"
-          value="3.42%"
+          title="Total Bid Amount"
+          value="20,780"
           change="-0.8%"
           icon={<FiTrendingUp className="h-4 w-4 text-purple-500" />}
           negative
         />
         <StatCard
-          title="Avg. Session"
-          value="4m 32s"
+          title="Total Deposits"
+          value="24,780"
           change="+1.3%"
-          icon={<FiActivity className="h-4 w-4 text-orange-500" />}
+          icon={<FiDollarSign className="h-4 w-4 text-blue-500" />}
         />
       </div>
 
@@ -220,17 +223,20 @@ function StatCard({
           {icon}
         </div>
       </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold">{value}</div>
-        <p className={`text-xs mt-1 flex items-center ${negative ? 'text-red-500' : 'text-green-500'
-          }`}>
-          {change}
-          {negative ? (
-            <FiArrowDown className="h-3 w-3 ml-1" />
-          ) : (
-            <FiArrowUp className="h-3 w-3 ml-1" />
-          )}
-        </p>
+      <CardContent className="flex justify-between items-end">
+        <div>
+          <div className="text-2xl font-bold">{value}</div>
+          <p className={`text-xs mt-1 flex items-center ${negative ? 'text-red-500' : 'text-green-500'
+            }`}>
+            {change}
+            {negative ? (
+              <FiArrowDown className="h-3 w-3 ml-1" />
+            ) : (
+              <FiArrowUp className="h-3 w-3 ml-1" />
+            )}
+          </p>
+        </div>
+        <FiArrowRight className="h-5 w-5 ml-1 cursor-pointer" />
       </CardContent>
     </Card>
   );
