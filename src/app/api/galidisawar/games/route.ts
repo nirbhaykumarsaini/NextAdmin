@@ -6,6 +6,33 @@ import { format } from 'date-fns';
 
 connectDB();
 
+// Function to convert time to AM/PM format
+const convertToAMPM = (time: string): string => {
+  try {
+    // Check if time is already in AM/PM format
+    if (time.toLowerCase().includes('am') || time.toLowerCase().includes('pm')) {
+      return time;
+    }
+
+    // Split the time by colon
+    const [hours, minutes] = time.split(':').map(part => parseInt(part, 10));
+    
+    // Determine AM/PM
+    const period = hours >= 12 ? 'PM' : 'AM';
+    
+    // Convert to 12-hour format
+    const hours12 = hours % 12 || 12;
+    
+    // Format minutes with leading zero if needed
+    const formattedMinutes = minutes.toString().padStart(2, '0');
+    
+    return `${hours12}:${formattedMinutes} ${period}`;
+  } catch (error) {
+    // Return original time if conversion fails
+    return time;
+  }
+};
+
 // GET - Get today's market data with results
 export async function GET() {
   try {
@@ -39,6 +66,10 @@ export async function GET() {
     // Combine game data with today's timing and results
     const todayData = games.map(game => {
       const todayDay = game.days.find((day: { day: string; }) => day.day === todayDayName);
+      
+      // Convert open_time to AM/PM format if it exists
+      const formattedOpenTime = todayDay ? convertToAMPM(todayDay.open_time) : null;
+      
       const gameResult = resultsMap.get(game._id.toString()) || { digit: "**" };
 
       return {
@@ -46,7 +77,7 @@ export async function GET() {
         game_name: game.game_name,
         is_active: game.is_active,
         market_timing: todayDay ? {
-          open_time: todayDay.open_time,
+          open_time: formattedOpenTime, // Use formatted time
           market_status: todayDay.market_status
         } : null,
         result: gameResult
