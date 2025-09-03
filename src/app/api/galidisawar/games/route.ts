@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import MainMarketGame from '@/models/MainMarketGame';
-import MainMarketResult from '@/models/MainMarketResult';
+import GalidisawarGame from '@/models/GalidisawarGame';
+import GalidisawarResult from '@/models/GalidisawarResult';
 import connectDB from '@/config/db';
-import { startOfDay, format } from 'date-fns';
+import { format } from 'date-fns';
 
 connectDB();
 
@@ -16,10 +16,10 @@ export async function GET(request: NextRequest) {
     const todayDate = format(today, 'dd-MM-yyyy');
 
     // Find all active games
-    const games = await MainMarketGame.find({ is_active: true });
+    const games = await GalidisawarGame.find({ is_active: true });
     
     // Get today's results for all games
-    const todayResults = await MainMarketResult.find({
+    const todayResults = await GalidisawarResult.find({
       result_date: todayDate
     }).populate('game_id', 'game_name');
 
@@ -27,33 +27,25 @@ export async function GET(request: NextRequest) {
     const resultsMap = new Map();
     todayResults.forEach(result => {
       const gameId = result.game_id._id.toString();
-      if (!resultsMap.has(gameId)) {
-        resultsMap.set(gameId, {});
-      }
-      resultsMap.get(gameId)[result.session.toLowerCase()] = {
-        panna: result.panna,
-        digit: result.digit
-      };
+      resultsMap.set(gameId, {
+        digit: result.digit // Removed panna field since it doesn't exist in your schema
+      });
     });
 
     // Combine game data with today's timing and results
     const todayData = games.map(game => {
       const todayDay = game.days.find((day: { day: string; }) => day.day === todayDayName);
-      const gameResults = resultsMap.get(game._id.toString()) || {};
+      const gameResult = resultsMap.get(game._id.toString()) || { digit: "**" }; // Adjusted default value
 
       return {
         game_id: game._id,
         game_name: game.game_name,
-        is_active:game.is_active,
+        is_active: game.is_active,
         market_timing: todayDay ? {
           open_time: todayDay.open_time,
-          close_time: todayDay.close_time,
           market_status: todayDay.market_status
         } : null,
-        results: {
-          open: gameResults.open || "*** *",
-          close: gameResults.close || "* ***"
-        }
+        result: gameResult
       };
     });
 
@@ -65,6 +57,7 @@ export async function GET(request: NextRequest) {
     const errorMessage = error instanceof Error ? error.message : 'Failed to fetch today\'s market data';
     return NextResponse.json(
       { status: false, message: errorMessage },
+      { status: 500 }
     );
   }
 }
