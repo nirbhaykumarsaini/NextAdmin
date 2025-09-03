@@ -1,7 +1,28 @@
 import { NextResponse } from 'next/server';
 import dbConnect from '@/config/db';
 import StarlineBid from '@/models/StarlineBid';
-import mongoose from 'mongoose';
+import mongoose, { Types } from 'mongoose';
+
+// Define types for the aggregation match conditions
+interface MatchConditions {
+    'bids.game_type': string;
+    'bids.bid_amount': { $gt: number };
+    created_at?: {
+        $gte: Date;
+        $lte: Date;
+    };
+    'bids.game_id'?: Types.ObjectId;
+}
+
+// Define types for the digit report
+interface DigitReportItem {
+    digit: string;
+    point: number;
+}
+
+interface GameTypeResult {
+    [key: string]: DigitReportItem[];
+}
 
 export async function POST(request: Request) {
     try {
@@ -34,8 +55,8 @@ export async function POST(request: Request) {
         }
 
         // Function to get digit report for a specific game type (only where amount > 0)
-        const getDigitReport = async (type: string) => {
-            const matchConditions: any = {
+        const getDigitReport = async (type: string): Promise<DigitReportItem[]> => {
+            const matchConditions: MatchConditions = {
                 'bids.game_type': type,
                 'bids.bid_amount': { $gt: 0 } // Only include bids with amount > 0
             };
@@ -57,7 +78,7 @@ export async function POST(request: Request) {
             }
 
             const digitReport = await StarlineBid.aggregate([
-                { $match: matchConditions },
+                { $match: matchConditions as any }, // Cast to any for MongoDB aggregation
                 { $unwind: '$bids' },
                 { $match: { 
                     'bids.game_type': type,
@@ -83,7 +104,7 @@ export async function POST(request: Request) {
         };
 
         // Function to process and merge digit reports (simplified since we only have non-zero data)
-        const processDigitReport = async (type: string, digitReport: any[]) => {
+        const processDigitReport = async (type: string, digitReport: DigitReportItem[]): Promise<DigitReportItem[]> => {
             // Filter out any null or undefined digits
             const filteredReport = digitReport.filter(item => 
                 item.digit !== null && item.digit !== undefined && item.digit !== ''
@@ -109,7 +130,7 @@ export async function POST(request: Request) {
                 'triple-panna'
             ];
 
-            const result: Record<string, any[]> = {};
+            const result: GameTypeResult = {};
 
             // Process each game type in parallel
             await Promise.all(gameTypesToProcess.map(async (type) => {

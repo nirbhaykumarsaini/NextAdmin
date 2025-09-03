@@ -1,7 +1,28 @@
 import { NextResponse } from 'next/server';
 import dbConnect from '@/config/db';
 import GalidisawarBid from '@/models/GalidisawarBid';
-import mongoose from 'mongoose';
+import mongoose, { Types } from 'mongoose';
+
+// Define types for the aggregation match conditions
+interface MatchConditions {
+    'bids.game_type': string;
+    'bids.bid_amount': { $gt: number };
+    created_at?: {
+        $gte: Date;
+        $lte: Date;
+    };
+    'bids.game_id'?: Types.ObjectId;
+}
+
+// Define types for the digit report
+interface DigitReportItem {
+    digit: string;
+    point: number;
+}
+
+interface GameTypeResult {
+    [key: string]: DigitReportItem[];
+}
 
 export async function POST(request: Request) {
     try {
@@ -33,8 +54,8 @@ export async function POST(request: Request) {
         }
 
         // Function to get digit report for a specific game type (only where amount > 0)
-        const getDigitReport = async (type: string) => {
-            const matchConditions: any = {
+        const getDigitReport = async (type: string): Promise<DigitReportItem[]> => {
+            const matchConditions: MatchConditions = {
                 'bids.game_type': type,
                 'bids.bid_amount': { $gt: 0 } // Only include bids with amount > 0
             };
@@ -56,7 +77,7 @@ export async function POST(request: Request) {
             }
 
             const digitReport = await GalidisawarBid.aggregate([
-                { $match: matchConditions },
+                { $match: matchConditions as any }, // Cast to any for MongoDB aggregation
                 { $unwind: '$bids' },
                 {
                     $match: {
@@ -84,7 +105,7 @@ export async function POST(request: Request) {
         };
 
         // Function to initialize all digits for a game type
-        const initializeAllDigits = async (type: string) => {
+        const initializeAllDigits = (type: string): DigitReportItem[] => {
             switch (type) {
                 case 'left-digit':
                 case 'right-digit':
@@ -110,12 +131,12 @@ export async function POST(request: Request) {
                 'jodi-digit'
             ];
 
-            const result: Record<string, any[]> = {};
+            const result: GameTypeResult = {};
 
             // Process each game type in parallel
             await Promise.all(gameTypesToProcess.map(async (type) => {
                 const digitReport = await getDigitReport(type);
-                const allDigits = await initializeAllDigits(type);
+                const allDigits = initializeAllDigits(type);
                 
                 // Create a map of all possible digits with their points
                 const digitPointMap: Record<string, number> = {};
@@ -163,7 +184,7 @@ export async function POST(request: Request) {
 
         // Handle single game type case
         const digitReport = await getDigitReport(game_type);
-        const allDigits = await initializeAllDigits(game_type);
+        const allDigits = initializeAllDigits(game_type);
         
         // Create a map of all possible digits with their points
         const digitPointMap: Record<string, number> = {};

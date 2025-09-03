@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import dbConnect from '@/config/db';
 import ApiError from '@/lib/errors/APiError';
-import mongoose from 'mongoose';
 import MainMarketBid from '@/models/MainMarketBid';
 import GalidisawarBid from '@/models/GalidisawarBid';
 import StarlineBid from '@/models/StarlineBid';

@@ -1,12 +1,29 @@
 import { NextResponse } from 'next/server';
 import dbConnect from '@/config/db';
 import MainMarketBid from '@/models/MainMarketBid';
-import TriplePanna from '@/models/TriplePanna';
-import DoublePanna from '@/models/DoublePanna';
-import SinglePanna from '@/models/SinglePanna';
-import SingleDigit from '@/models/SingleDigit';
-import JodiDigit from '@/models/JodiDigit';
-import mongoose from 'mongoose';
+import mongoose, { Types } from 'mongoose';
+
+// Define types for the aggregation match conditions
+interface MatchConditions {
+    'bids.game_type': string;
+    'bids.bid_amount': { $gt: number };
+    created_at?: {
+        $gte: Date;
+        $lte: Date;
+    };
+    'bids.game_id'?: Types.ObjectId;
+    'bids.session'?: string;
+}
+
+// Define types for the digit report
+interface DigitReportItem {
+    digit: string;
+    point: number;
+}
+
+interface GameTypeResult {
+    [key: string]: DigitReportItem[];
+}
 
 export async function POST(request: Request) {
     try {
@@ -82,8 +99,8 @@ export async function POST(request: Request) {
         }
 
         // Function to get digit report for a specific game type (only where amount > 0)
-        const getDigitReport = async (type: string, sess?: string) => {
-            const matchConditions: any = {
+        const getDigitReport = async (type: string, sess?: string): Promise<DigitReportItem[]> => {
+            const matchConditions: MatchConditions = {
                 'bids.game_type': type,
                 'bids.bid_amount': { $gt: 0 } // Only include bids with amount > 0
             };
@@ -108,7 +125,7 @@ export async function POST(request: Request) {
                 matchConditions['bids.session'] = sess.toLowerCase();
             }
 
-            let groupField: any;
+            let groupField: string | Record<string, unknown>;
             switch (type) {
                 case 'single-digit':
                 case 'odd-even':
@@ -148,9 +165,9 @@ export async function POST(request: Request) {
             }
 
             const digitReport = await MainMarketBid.aggregate([
-                { $match: matchConditions },
+                { $match: matchConditions as any }, // Cast to any for MongoDB aggregation
                 { $unwind: '$bids' },
-                { $match: matchConditions },
+                { $match: matchConditions as any }, // Cast to any for MongoDB aggregation
                 {
                     $group: {
                         _id: groupField,
@@ -170,15 +187,8 @@ export async function POST(request: Request) {
             return digitReport;
         };
 
-        // Function to initialize all digits for a game type (not needed anymore since we only return non-zero data)
-        const initializeAllDigits = async (type: string) => {
-            // We don't need to initialize all digits anymore since we only return data with points > 0
-            return [];
-        };
-
         // Function to process and merge digit reports (simplified since we only have non-zero data)
-        const processDigitReport = async (type: string, digitReport: any[]) => {
-            // Filter out any null or undefined digits
+        const processDigitReport = async (type: string, digitReport: DigitReportItem[]): Promise<DigitReportItem[]> => {
             const filteredReport = digitReport.filter(item => 
                 item.digit !== null && item.digit !== undefined && item.digit !== ''
             );
@@ -214,7 +224,7 @@ export async function POST(request: Request) {
                 'red-bracket'
             ];
 
-            const result: Record<string, any[]> = {};
+            const result: GameTypeResult = {};
 
             // Process each game type in parallel
             await Promise.all(gameTypesToProcess.map(async (type) => {

@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import GalidisawarGame from '@/models/GalidisawarGame';
 import GalidisawarResult from '@/models/GalidisawarResult';
 import connectDB from '@/config/db';
@@ -7,7 +7,7 @@ import { format } from 'date-fns';
 connectDB();
 
 // GET - Get today's market data with results
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     // Get current day name and formatted date
     const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];

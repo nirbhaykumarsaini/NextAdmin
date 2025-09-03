@@ -18,16 +18,6 @@ interface StarlineResultDocument {
     updated_at?: Date;
 }
 
-interface WinnerData {
-    user: string;
-    game: string;
-    game_type: string;
-    amount: number;
-    winning_amount: number;
-    digit: string;
-    panna: string;
-}
-
 interface ProcessedWinner {
     user: string;
     game_name: string;
