@@ -78,7 +78,7 @@ export async function POST(request: Request) {
             }
 
             const digitReport = await StarlineBid.aggregate([
-                { $match: matchConditions as any }, // Cast to any for MongoDB aggregation
+                { $match: matchConditions as MatchConditions }, // Cast to any for MongoDB aggregation
                 { $unwind: '$bids' },
                 { $match: { 
                     'bids.game_type': type,
