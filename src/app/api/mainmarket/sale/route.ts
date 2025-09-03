@@ -167,7 +167,7 @@ export async function POST(request: Request) {
             const digitReport = await MainMarketBid.aggregate([
                 { $match: matchConditions as MatchConditions }, // Cast to any for MongoDB aggregation
                 { $unwind: '$bids' },
-                { $match: matchConditions as any }, // Cast to any for MongoDB aggregation
+                { $match: matchConditions as MatchConditions }, // Cast to any for MongoDB aggregation
                 {
                     $group: {
                         _id: groupField,
