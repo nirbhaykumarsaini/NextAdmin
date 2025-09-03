@@ -57,7 +57,7 @@ export default function UserDetailsPage() {
       } else {
         setError("Failed to fetch user details");
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       if(error instanceof Error){
         setError(error?.message || "An error occurred");
       }

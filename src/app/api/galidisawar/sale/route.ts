@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import dbConnect from '@/config/db';
 import GalidisawarBid from '@/models/GalidisawarBid';
-import mongoose, { Types } from 'mongoose';
+import mongoose, { Types, FilterQuery } from 'mongoose';
 
 // Define types for the aggregation match conditions
 interface MatchConditions {
@@ -23,6 +23,14 @@ interface DigitReportItem {
 interface GameTypeResult {
     [key: string]: DigitReportItem[];
 }
+
+// Type for MongoDB aggregation pipeline
+type PipelineStage = 
+    | { $match: FilterQuery<any> }
+    | { $unwind: string }
+    | { $group: any }
+    | { $project: any }
+    | { $sort: any };
 
 export async function POST(request: Request) {
     try {
@@ -76,8 +84,9 @@ export async function POST(request: Request) {
                 matchConditions['bids.game_id'] = new mongoose.Types.ObjectId(game_id);
             }
 
-            const digitReport = await GalidisawarBid.aggregate([
-                { $match: matchConditions as any }, // Cast to any for MongoDB aggregation
+            // Build the aggregation pipeline with proper typing
+            const pipeline: PipelineStage[] = [
+                { $match: matchConditions },
                 { $unwind: '$bids' },
                 {
                     $match: {
@@ -99,8 +108,9 @@ export async function POST(request: Request) {
                         _id: 0
                     }
                 }
-            ]);
+            ];
 
+            const digitReport = await GalidisawarBid.aggregate(pipeline);
             return digitReport;
         };
 
