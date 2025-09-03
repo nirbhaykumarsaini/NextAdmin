@@ -1,6 +1,6 @@
 "use client";
 
-import { FiSearch, FiEye, FiCheck, FiX, FiRefreshCw } from "react-icons/fi";
+import { FiSearch, FiEye, FiRefreshCw } from "react-icons/fi";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -107,9 +107,11 @@ export default function ManageUsers() {
       } else {
         toast.error(response.data.message || 'Failed to update batting status');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error updating batting:', error);
-      toast.error(error.response?.data?.message || 'Failed to update batting status');
+      if(axios.isAxiosError(error)) {
+        toast.error(error.response?.data?.message || 'Failed to update batting status');
+      }
     } finally {
       setLoadingStates(prev => ({ ...prev, [userId]: null }));
     }
@@ -139,9 +141,11 @@ export default function ManageUsers() {
       } else {
         toast.error(response.data.message || 'Failed to update user status');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error updating user block status:', error);
-      toast.error(error.response?.data?.message || 'Failed to update user status');
+      if(axios.isAxiosError(error)) {
+        toast.error(error.response?.data?.message || 'Failed to update user status');
+      }
     } finally {
       setLoadingStates(prev => ({ ...prev, [userId]: null }));
     }

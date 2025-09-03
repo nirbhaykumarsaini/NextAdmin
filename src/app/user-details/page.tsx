@@ -68,9 +68,11 @@ export default function UserDetailsPage() {
       } else {
         setError(response.data.message || "Failed to fetch user details");
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error fetching user details:", error);
-      setError(error.response?.data?.message || error.message || "An error occurred");
+      if(axios.isAxiosError(error)) {
+        setError(error.response?.data?.message || error.message || "An error occurred");
+      }
     } finally {
       setLoading(false);
     }
@@ -101,9 +103,11 @@ export default function UserDetailsPage() {
       } else {
         toast.error(response.data.message);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Add funds error:', error);
-      toast.error(error.response?.data?.message || 'Failed to add funds');
+      if(axios.isAxiosError(error)) {
+        toast.error(error.response?.data?.message || error.message || 'Failed to add funds');
+      }
     } finally {
       setFundLoading(false);
     }
@@ -139,9 +143,11 @@ export default function UserDetailsPage() {
       } else {
         toast.error(response.data.message);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Withdraw error:', error);
-      toast.error(error.response?.data?.message || 'Failed to withdraw funds');
+     if(axios.isAxiosError(error)) {
+        toast.error(error.response?.data?.message || error.message || 'Failed to withdraw funds');
+      }
     } finally {
       setFundLoading(false);
     }

@@ -15,7 +15,6 @@ import {
   FiLogOut,
   FiArrowRight,
   FiRefreshCw,
-  FiEye
 } from "react-icons/fi";
 import {
   BarChart,
@@ -97,9 +96,11 @@ export default function Dashboard() {
       } else {
         toast.error(response.data.message);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to fetch dashboard data:', error);
-      toast.error(error.response?.data?.message || 'Failed to fetch dashboard data');
+      if (axios.isAxiosError(error)) {
+        toast.error(error.response?.data?.message || 'Failed to fetch dashboard data');
+      }
     } finally {
       setLoading(false);
     }
@@ -108,7 +109,6 @@ export default function Dashboard() {
   const fetchTransactions = async () => {
     try {
       setLoading(true);
-      const params = new URLSearchParams();
 
       const response = await axios.get(`/api/transactions`, {
         headers: {
@@ -121,9 +121,12 @@ export default function Dashboard() {
       } else {
         toast.error(response.data.message);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to fetch transactions:', error);
-      toast.error(error.response?.data?.message || 'Failed to fetch transactions');
+      if (axios.isAxiosError(error)) {
+        toast.error(error.response?.data?.message || 'Failed to fetch transactions');
+      }
+      
     } finally {
       setLoading(false);
     }
@@ -154,7 +157,7 @@ export default function Dashboard() {
     );
   }
 
-  const { stats, charts, recentActivity } = data;
+  const { stats, charts } = data;
 
   return (
     <div className="space-y-6">

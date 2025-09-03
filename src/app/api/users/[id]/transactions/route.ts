@@ -4,6 +4,12 @@ import ApiError from '@/lib/errors/APiError';
 import Transaction from '@/models/Transaction';
 import mongoose from 'mongoose';
 
+interface GetTransactionsParams {
+    user_id:string;
+    type?: string;
+    status?: 'pending' | 'completed' | 'failed';
+}
+
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -25,7 +31,7 @@ export async function GET(
     const skip = (page - 1) * limit;
 
     // Build filter
-    const filter: any = { user_id: id, status: 'completed' };
+    const filter: GetTransactionsParams = { user_id: id, status: 'completed' };
     if (type && ['credit', 'debit'].includes(type)) {
       filter.type = type;
     }

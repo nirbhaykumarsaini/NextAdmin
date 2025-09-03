@@ -2,7 +2,11 @@ import { NextResponse } from 'next/server';
 import dbConnect from '@/config/db';
 import ApiError from '@/lib/errors/APiError';
 import Transaction from '@/models/Transaction';
-import mongoose from 'mongoose';
+import mongoose, { Types } from 'mongoose';
+
+interface GetTransactionsParams {
+    user_id?:Types.ObjectId;
+}
 
 export async function GET(request: Request) {
   try {
@@ -13,7 +17,7 @@ export async function GET(request: Request) {
     const userId = searchParams.get('user_id');
 
     // Build filter object
-    const filter: any = { };
+    const filter: GetTransactionsParams = { };
     
     
     if (userId && mongoose.Types.ObjectId.isValid(userId)) {
