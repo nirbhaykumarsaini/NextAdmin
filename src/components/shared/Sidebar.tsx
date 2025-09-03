@@ -48,15 +48,6 @@ export function Sidebar() {
       icon: <FiUser className="h-5 w-5" />,
       label: "Manage Users",
     },
-    // {
-    //   label: "Users",
-    //   icon: <FiUsers className="h-5 w-5" />,
-    //   submenu: [
-    //     { href: "/users/manage", label: "Manage Users" },
-    //     { href: "/users/roles", label: "User Roles" },
-    //     { href: "/users/permissions", label: "Permissions" },
-    //   ],
-    // },
     {
       label: "Game Management",
       icon: <FiGlobe className="h-5 w-5" />,

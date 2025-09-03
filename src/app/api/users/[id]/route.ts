@@ -93,7 +93,7 @@ export async function GET(request: Request, { params }: {params: Promise<{id:str
         balance: user.balance,
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
-        // devices: user.devices
+        devices: user.devices
       }
     });
 

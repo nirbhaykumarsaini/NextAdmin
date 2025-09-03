@@ -1,6 +1,6 @@
 "use client";
 
-import { FiEdit, FiTrash2, FiSearch, FiEye } from "react-icons/fi";
+import { FiSearch, FiEye, FiCheck, FiX, FiRefreshCw } from "react-icons/fi";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -23,7 +23,10 @@ import {
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
-
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export interface User {
   _id: string;
@@ -47,15 +50,20 @@ export interface User {
 export default function ManageUsers() {
   const [users, setUsers] = useState<User[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [loadingStates, setLoadingStates] = useState<{ [key: string]: 'batting' | 'blocking' | null }>({});
+  const [isLoading, setIsLoading] = useState(true);
+  const [refreshLoading, setRefreshLoading] = useState(false);
   const router = useRouter();
-
 
   useEffect(() => {
     getUsers();
   }, []);
 
-  const getUsers = async () => {
+  const getUsers = async (showLoading = true) => {
     try {
+      if (showLoading) setIsLoading(true);
+      setRefreshLoading(true);
+      
       const response = await axios.get("/api/users", {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('accessToken')}`
@@ -63,14 +71,80 @@ export default function ManageUsers() {
       });
       setUsers(response.data.data || response.data);
     } catch (error: unknown) {
-      if (error instanceof Error) {
-        console.log(error);
-      }
+      console.error("Failed to fetch users:", error);
+      toast.error("Failed to fetch users");
+    } finally {
+      setIsLoading(false);
+      setRefreshLoading(false);
     }
   };
 
   const handleViewUser = (userId: string) => {
-    router.push(`/users/user-details/${userId}`);
+    router.push(`/user-details?userId=${userId}`);
+  };
+
+  const toggleBatting = async (userId: string, currentStatus: boolean) => {
+    setLoadingStates(prev => ({ ...prev, [userId]: 'batting' }));
+    
+    try {
+      const response = await axios.patch(`/api/users/${userId}`, {
+        batting: !currentStatus
+      }, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('accessToken')}`
+        }
+      });
+
+      if (response.data.status) {
+        setUsers(prevUsers => 
+          prevUsers.map(user => 
+            user._id === userId 
+              ? { ...user, batting: !currentStatus }
+              : user
+          )
+        );
+        toast.success(`Batting ${!currentStatus ? 'enabled' : 'disabled'} successfully`);
+      } else {
+        toast.error(response.data.message || 'Failed to update batting status');
+      }
+    } catch (error: any) {
+      console.error('Error updating batting:', error);
+      toast.error(error.response?.data?.message || 'Failed to update batting status');
+    } finally {
+      setLoadingStates(prev => ({ ...prev, [userId]: null }));
+    }
+  };
+
+  const toggleBlockUser = async (userId: string, currentStatus: boolean) => {
+    setLoadingStates(prev => ({ ...prev, [userId]: 'blocking' }));
+    
+    try {
+      const response = await axios.patch(`/api/users/${userId}`, {
+        is_blocked: !currentStatus
+      }, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('accessToken')}`
+        }
+      });
+
+      if (response.data.status) {
+        setUsers(prevUsers => 
+          prevUsers.map(user => 
+            user._id === userId 
+              ? { ...user, is_blocked: !currentStatus }
+              : user
+          )
+        );
+        toast.success(`User ${!currentStatus ? 'blocked' : 'unblocked'} successfully`);
+      } else {
+        toast.error(response.data.message || 'Failed to update user status');
+      }
+    } catch (error: any) {
+      console.error('Error updating user block status:', error);
+      toast.error(error.response?.data?.message || 'Failed to update user status');
+    } finally {
+      setLoadingStates(prev => ({ ...prev, [userId]: null }));
+    }
   };
 
   // Filter users based on search term
@@ -85,11 +159,55 @@ export default function ManageUsers() {
     return new Date(dateString).toLocaleDateString();
   };
 
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <Skeleton className="h-8 w-48" />
+          <Skeleton className="h-10 w-[300px]" />
+        </div>
+
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                {Array.from({ length: 10 }).map((_, i) => (
+                  <TableHead key={i}>
+                    <Skeleton className="h-4 w-20" />
+                  </TableHead>
+                ))}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {Array.from({ length: 5 }).map((_, rowIndex) => (
+                <TableRow key={rowIndex}>
+                  {Array.from({ length: 10 }).map((_, cellIndex) => (
+                    <TableCell key={cellIndex}>
+                      <Skeleton className="h-4 w-full" />
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <h2 className="text-2xl font-bold tracking-tight">Users Management</h2>
-        <div className="relative w-full md:w-auto">
+        <div className="flex items-center gap-3">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => getUsers(false)}
+            disabled={refreshLoading}
+          >
+            <FiRefreshCw className={`h-4 w-4 ${refreshLoading ? 'animate-spin' : ''}`} />
+          </Button>
           <div className="relative">
             <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
@@ -111,6 +229,7 @@ export default function ManageUsers() {
               <TableHead>Mobile Number</TableHead>
               <TableHead>Balance</TableHead>
               <TableHead>Batting</TableHead>
+              <TableHead>Block User</TableHead>
               <TableHead>Devices</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Last Login</TableHead>
@@ -119,10 +238,10 @@ export default function ManageUsers() {
           </TableHeader>
           <TableBody>
             {filteredUsers.map((user: User, index: number) => {
-              // Get the most recent login from devices
               const lastLogin = user.devices && user.devices.length > 0
                 ? new Date(Math.max(...user.devices.map(d => new Date(d.last_login).getTime())))
                 : null;
+              const isLoading = loadingStates[user._id];
                 
               return (
                 <TableRow key={user._id}>
@@ -153,13 +272,28 @@ export default function ManageUsers() {
                     ₹{user.balance.toLocaleString()}
                   </TableCell>
                   <TableCell>
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      user.batting 
-                        ? 'bg-green-100 text-green-800' 
-                        : 'bg-gray-100 text-gray-800'
-                    }`}>
-                      {user.batting ? 'Active' : 'Inactive'}
-                    </span>
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        checked={user.batting}
+                        onCheckedChange={() => toggleBatting(user._id, user.batting)}
+                        disabled={isLoading === 'batting'}
+                      />
+                      <Label className="text-sm">
+                        {user.batting ? 'On' : 'Off'}
+                      </Label>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        checked={!user.is_blocked}
+                        onCheckedChange={() => toggleBlockUser(user._id, user.is_blocked)}
+                        disabled={isLoading === 'blocking'}
+                      />
+                      <Label className="text-sm">
+                        {user.is_blocked ? 'Blocked' : 'Active'}
+                      </Label>
+                    </div>
                   </TableCell>
                   <TableCell className="text-sm">
                     {user.devices?.length || 0}
@@ -177,9 +311,17 @@ export default function ManageUsers() {
                     {lastLogin ? formatDate(lastLogin.toISOString()) : 'N/A'}
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button onClick={() => handleViewUser(user._id)} variant="ghost" size="icon" className="text-blue-600 hover:text-blue-800">
-                      <FiEye className="h-4 w-4" />
-                    </Button>
+                    <div className="flex justify-end space-x-2">
+                      <Button 
+                        onClick={() => handleViewUser(user._id)} 
+                        variant="ghost" 
+                        size="icon" 
+                        className="cursor-pointer text-blue-600 hover:text-blue-800"
+                        title="View User Details"
+                      >
+                        <FiEye className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               );
@@ -190,7 +332,7 @@ export default function ManageUsers() {
 
       {filteredUsers.length === 0 && (
         <div className="text-center py-8 text-muted-foreground">
-          No users found
+          {users.length === 0 ? "No users found" : "No users match your search"}
         </div>
       )}
 

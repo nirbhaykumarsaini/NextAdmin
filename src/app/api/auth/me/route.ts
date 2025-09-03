@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/config/db';
 import User from '@/models/User';
 import { verifyToken } from '@/lib/auth/jwt';
-import Role from '@/models/Role';
 
 // Ensure DB is connected
 await connectDB();
@@ -33,10 +32,6 @@ export async function GET(request: NextRequest) {
         { status: false, message: 'User not found' });
     }
 
-    // Fetch role with only needed fields (excluding users, createdAt, updatedAt, __v)
-    const roleWithPermissions = await Role.findOne({ role_name: user.role })
-      .select('permissions') // keep only what you want
-      .populate('permissions', 'permission_name permission_key');
 
     return NextResponse.json({
       status: true,
@@ -44,7 +39,6 @@ export async function GET(request: NextRequest) {
         _id: user._id,
         username: user.username,
         role: user.role,
-        permissions: roleWithPermissions?.permissions ? roleWithPermissions?.permissions : [],
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
       },

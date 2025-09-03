@@ -139,10 +139,10 @@ const AccountSettings = () => {
     }
   };
 
-  // Don't render form until data is loaded to prevent controlled/uncontrolled issues
-  if (!isDataLoaded) {
-    return <div>Loading...</div>;
-  }
+  // // Don't render form until data is loaded to prevent controlled/uncontrolled issues
+  // if (!isDataLoaded) {
+  //   return <div>Loading...</div>;
+  // }
 
   return (
     <div className="space-y-6">

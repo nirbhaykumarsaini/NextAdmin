@@ -3,9 +3,9 @@ import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit'
 import axios from 'axios'
 
 export interface User {
-  id: string
+  _id: string
   username: string
-  role: 'admin' | 'user'
+  role: 'admin'
 }
 
 export interface AuthState {
@@ -36,33 +36,6 @@ const initialState: AuthState = {
   error: null,
 }
 
-// Async thunk for login
-export const fetchUserProfile = createAsyncThunk(
-  'auth/me',
-  async (_, { rejectWithValue }) => {
-    try {
-      const response = await axios.get<LoginResponse>('/api/auth/me',{
-        headers:{
-          Authorization:`Bearer ${localStorage.getItem("accessToken")}`
-        }
-      })
-      const result = response.data
-
-      if (!result.status) {
-        return rejectWithValue(result.message || 'Login failed')
-      }
-      return result
-    } catch (error: unknown) {
-      let errorMessage = 'Login failed';
-      if (axios.isAxiosError(error)) {
-        errorMessage = error.response?.data?.message || error.message || 'Login failed';
-      } else if (error instanceof Error) {
-        errorMessage = error.message;
-      }
-      return rejectWithValue(errorMessage)
-    }
-  }
-)
 
 // Async thunk for login
 export const loginUser = createAsyncThunk(
@@ -176,24 +149,7 @@ const authSlice = createSlice({
 })
 
 
-// Add permission checking utilities
-export const hasPermission = (user: User | null): boolean => {
-  if (!user) return false;
-  // For admin users, grant all permissions
-  if (user.role === 'admin') return true;
-  
-  // For regular users, check their specific permissions
-  // This would require storing user permissions in the auth state
-  return false;
-};
 
-export const hasAnyPermission = (user: User | null, permissionKeys: string[]): boolean => {
-  if (!user) return false;
-  if (user.role === 'admin') return true;
-  
-  // Check if user has any of the required permissions
-  return permissionKeys.some(() => hasPermission(user));
-};
 
 export const { clearError, setCredentials, initializeAuth } = authSlice.actions
 export default authSlice.reducer
