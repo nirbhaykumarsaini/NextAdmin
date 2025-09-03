@@ -74,6 +74,92 @@ interface MainMarketWinnerDocument {
     updatedAt: Date;
 }
 
+// GET - Get all games
+export async function GET(request: Request) {
+    try {
+        await dbConnect();
+
+        const { searchParams } = new URL(request.url);
+        const user_id = searchParams.get('user_id');
+
+        let aggregationPipeline: any[] = [];
+
+        if (user_id && mongoose.Types.ObjectId.isValid(user_id)) {
+            // Find the user first
+            const user = await AppUser.findById(user_id).select('name');
+            if (!user) {
+                return NextResponse.json({
+                    status: true,
+                    data: [],
+                    message: 'User not found'
+                });
+            }
+
+            // Use aggregation to filter winners by username
+            aggregationPipeline = [
+                {
+                    $match: {
+                        'winners.user': user.name
+                    }
+                },
+                {
+                    $unwind: '$winners'
+                },
+                {
+                    $match: {
+                        'winners.user': user.name
+                    }
+                },
+                {
+                    $project: {
+                        result_date: 1,
+                        winner: '$winners',
+                        createdAt: 1
+                    }
+                }
+            ];
+        } else {
+            // Get all winners without filtering
+            aggregationPipeline = [
+                {
+                    $unwind: '$winners'
+                },
+                {
+                    $project: {
+                        result_date: 1,
+                        winner: '$winners',
+                        createdAt: 1
+                    }
+                }
+            ];
+        }
+
+        const winnersData = await StarlineWinner.aggregate(aggregationPipeline)
+
+        const simplifiedData = winnersData.map((item: { winner: { _id: { toString: () => any; }; user: any; game_name: any; game_type: any; digit: any; panna: any; winning_amount: any; bid_amount: any; }; result_date: any; createdAt: any; }) => ({
+            id: item.winner._id?.toString() || new Types.ObjectId().toString(),
+            result_date: item.result_date,
+            user: item.winner.user,
+            game_name: item.winner.game_name,
+            game_type: item.winner.game_type,
+            digit: item.winner.digit,
+            panna: item.winner.panna,
+            winning_amount: item.winner.winning_amount,
+            bid_amount: item.winner.bid_amount,
+            created_at: item.createdAt
+        }));
+
+        return NextResponse.json({
+            status: true,
+            data: simplifiedData,
+        });
+    } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : 'Failed to fetch winners';
+        return NextResponse.json(
+            { status: false, message: errorMessage }
+        );
+    }
+}
 // Helper function to calculate winning amount
  function calculateWinningAmount(gameType: string, bidAmount: number, gameRates: GameRates): number {
     const rateMap: Record<string, number> = {
@@ -226,89 +312,3 @@ export async function POST(request: Request) {
 }
 
 
-// GET - Get all games
-export async function GET(request: Request) {
-    try {
-        await dbConnect();
-
-        const { searchParams } = new URL(request.url);
-        const user_id = searchParams.get('user_id');
-
-        let aggregationPipeline: any[] = [];
-
-        if (user_id && mongoose.Types.ObjectId.isValid(user_id)) {
-            // Find the user first
-            const user = await AppUser.findById(user_id).select('name');
-            if (!user) {
-                return NextResponse.json({
-                    status: true,
-                    data: [],
-                    message: 'User not found'
-                });
-            }
-
-            // Use aggregation to filter winners by username
-            aggregationPipeline = [
-                {
-                    $match: {
-                        'winners.user': user.name
-                    }
-                },
-                {
-                    $unwind: '$winners'
-                },
-                {
-                    $match: {
-                        'winners.user': user.name
-                    }
-                },
-                {
-                    $project: {
-                        result_date: 1,
-                        winner: '$winners',
-                        createdAt: 1
-                    }
-                }
-            ];
-        } else {
-            // Get all winners without filtering
-            aggregationPipeline = [
-                {
-                    $unwind: '$winners'
-                },
-                {
-                    $project: {
-                        result_date: 1,
-                        winner: '$winners',
-                        createdAt: 1
-                    }
-                }
-            ];
-        }
-
-        const winnersData = await StarlineWinner.aggregate(aggregationPipeline)
-
-        const simplifiedData = winnersData.map((item: { winner: { _id: { toString: () => any; }; user: any; game_name: any; game_type: any; digit: any; panna: any; winning_amount: any; bid_amount: any; }; result_date: any; createdAt: any; }) => ({
-            id: item.winner._id?.toString() || new Types.ObjectId().toString(),
-            result_date: item.result_date,
-            user: item.winner.user,
-            game_name: item.winner.game_name,
-            game_type: item.winner.game_type,
-            digit: item.winner.digit,
-            panna: item.winner.panna,
-            winning_amount: item.winner.winning_amount,
-            bid_amount: item.winner.bid_amount,
-            created_at: item.createdAt
-        }));
-
-        return NextResponse.json({
-            status: true,
-            data: simplifiedData,
-        });
-    } catch (error: unknown) {
-        const errorMessage = error instanceof Error ? error.message : 'Failed to fetch winners';
-        return NextResponse.json(
-            { status: false, message: errorMessage }
-        );
-    }
-}
