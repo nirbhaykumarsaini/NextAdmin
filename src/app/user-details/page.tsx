@@ -102,9 +102,11 @@ function UserDetailsContent() {
       } else {
         toast.error(response.data.message);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Add funds error:', error);
-      toast.error(error.response?.data?.message || 'Failed to add funds');
+      if(axios.isAxiosError(error)) {
+        toast.error(error.response?.data?.message || error.message || 'Failed to add funds');
+      }
     } finally {
       setFundLoading(false);
     }
@@ -140,9 +142,11 @@ function UserDetailsContent() {
       } else {
         toast.error(response.data.message);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Withdraw error:', error);
-      toast.error(error.response?.data?.message || 'Failed to withdraw funds');
+      if(axios.isAxiosError(error)) {
+        toast.error(error.response?.data?.message || error.message || 'Failed to withdraw funds');
+      }
     } finally {
       setFundLoading(false);
     }
