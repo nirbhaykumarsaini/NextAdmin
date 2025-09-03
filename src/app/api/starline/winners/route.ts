@@ -4,6 +4,8 @@ import StarlineBid from '@/models/StarlineBid';
 import mongoose, { Types } from 'mongoose';
 import StarlineRate from '@/models/StarlineRate';
 import StarlineWinner from '@/models/StarlineWinner';
+import AppUser from '@/models/AppUser';
+
 
 interface Winners {
     _id: string;
@@ -227,34 +229,77 @@ export async function POST(request: Request) {
 // GET - Get all games
 export async function GET(request: Request) {
     try {
-        // Establish database connection
         await dbConnect();
 
         const { searchParams } = new URL(request.url);
         const user_id = searchParams.get('user_id');
 
-        let filter = {};
-        if (user_id) {
-            filter = { user_id: user_id };
+        let aggregationPipeline: any[] = [];
+
+        if (user_id && mongoose.Types.ObjectId.isValid(user_id)) {
+            // Find the user first
+            const user = await AppUser.findById(user_id).select('name');
+            if (!user) {
+                return NextResponse.json({
+                    status: true,
+                    data: [],
+                    message: 'User not found'
+                });
+            }
+
+            // Use aggregation to filter winners by username
+            aggregationPipeline = [
+                {
+                    $match: {
+                        'winners.user': user.name
+                    }
+                },
+                {
+                    $unwind: '$winners'
+                },
+                {
+                    $match: {
+                        'winners.user': user.name
+                    }
+                },
+                {
+                    $project: {
+                        result_date: 1,
+                        winner: '$winners',
+                        createdAt: 1
+                    }
+                }
+            ];
+        } else {
+            // Get all winners without filtering
+            aggregationPipeline = [
+                {
+                    $unwind: '$winners'
+                },
+                {
+                    $project: {
+                        result_date: 1,
+                        winner: '$winners',
+                        createdAt: 1
+                    }
+                }
+            ];
         }
 
-        const winnersData = await StarlineWinner.find(filter).maxTimeMS(15000) as unknown as MainMarketWinnerDocument[];
+        const winnersData = await StarlineWinner.aggregate(aggregationPipeline)
 
-        // Transform the data to a simpler format
-        const simplifiedData = winnersData.flatMap(winnerDoc =>
-            winnerDoc.winners.map(winner => ({
-                id: winner._id?.toString() || new Types.ObjectId().toString(),
-                result_date: winnerDoc.result_date,
-                user: winner.user,
-                game_name: winner.game_name,
-                game_type: winner.game_type,
-                digit: winner.digit,
-                panna: winner.panna,
-                winning_amount: winner.winning_amount,
-                bid_amount: winner.bid_amount,
-                created_at: winnerDoc.createdAt
-            }))
-        );
+        const simplifiedData = winnersData.map((item: { winner: { _id: { toString: () => any; }; user: any; game_name: any; game_type: any; digit: any; panna: any; winning_amount: any; bid_amount: any; }; result_date: any; createdAt: any; }) => ({
+            id: item.winner._id?.toString() || new Types.ObjectId().toString(),
+            result_date: item.result_date,
+            user: item.winner.user,
+            game_name: item.winner.game_name,
+            game_type: item.winner.game_type,
+            digit: item.winner.digit,
+            panna: item.winner.panna,
+            winning_amount: item.winner.winning_amount,
+            bid_amount: item.winner.bid_amount,
+            created_at: item.createdAt
+        }));
 
         return NextResponse.json({
             status: true,
