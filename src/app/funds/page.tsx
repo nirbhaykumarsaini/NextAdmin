@@ -44,13 +44,9 @@ interface PaginationData {
   hasPrev: boolean;
 }
 
-interface FundsProps {
-  userId: string;
-  onBalanceUpdate: (newBalance: number) => void;
-  currentBalance: number;
-}
 
-const Funds: React.FC<FundsProps> = ({ userId, onBalanceUpdate, currentBalance }) => {
+
+export default function Funds() {
   const [funds, setFunds] = useState<Fund[]>([]);
   const [fundPagination, setFundPagination] = useState<PaginationData | null>(null);
   const [dataLoading, setDataLoading] = useState(false);
@@ -58,7 +54,7 @@ const Funds: React.FC<FundsProps> = ({ userId, onBalanceUpdate, currentBalance }
 
   useEffect(() => {
     fetchFunds(1);
-  }, [userId]);
+  }, []);
 
   const fetchFunds = async (page: number = 1) => {
     try {
@@ -236,4 +232,3 @@ const Funds: React.FC<FundsProps> = ({ userId, onBalanceUpdate, currentBalance }
   );
 };
 
-export default Funds;
