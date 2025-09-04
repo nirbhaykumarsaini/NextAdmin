@@ -158,10 +158,16 @@ export default function ManageUsers() {
   );
 
   // Format date function
-  const formatDate = (dateString?: string) => {
-    if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleDateString();
-  };
+   const formatDate = (dateString: string) => {
+  return new Date(dateString).toLocaleString("en-US", {
+    year: "numeric",
+    month: "short",  // or "long" for full month name
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true, // ensures AM/PM format
+  });
+};
 
   if (isLoading) {
     return (

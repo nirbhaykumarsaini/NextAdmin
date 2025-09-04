@@ -1,4 +1,5 @@
 import mongoose, { Schema, Types } from "mongoose";
+import "@/models/AppUser";
 
 export interface ITransaction {
   user_id: Types.ObjectId;

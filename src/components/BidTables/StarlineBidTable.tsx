@@ -22,6 +22,17 @@ interface MainBidTableProps {
   onEditBid: (bid: Bid) => void
 }
 
+ const formatDate = (dateString: string) => {
+  return new Date(dateString).toLocaleString("en-US", {
+    year: "numeric",
+    month: "short",  // or "long" for full month name
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true, // ensures AM/PM format
+  });
+};
+
 const StarlineTable = ({ bids, loading, formatGameType, formatCurrency, onEditBid }: MainBidTableProps) => {
   return (
     <div className="bg-card rounded-lg border shadow-sm overflow-hidden">
@@ -62,7 +73,7 @@ const StarlineTable = ({ bids, loading, formatGameType, formatCurrency, onEditBi
             bids.map((bid, index) => (
               <TableRow key={`${bid._id}-${index}`}>
                 <TableCell>{index + 1}</TableCell>
-                <TableCell>{format(new Date(bid.created_at), 'dd-MM-yyyy HH:mm')}</TableCell>
+                <TableCell>{formatDate(bid.created_at)}</TableCell>
                 <TableCell>{bid.name || 'N/A'}</TableCell>
                 <TableCell>{bid.game_name || 'N/A'}</TableCell>
                 <TableCell>

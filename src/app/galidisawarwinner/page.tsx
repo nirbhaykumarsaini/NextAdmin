@@ -50,7 +50,7 @@ export default function MainMarketWinner() {
             setLoading(true);
             const response = await fetch('/api/galidisawar/winners');
             const data = await response.json();
-            
+
             if (data.status) {
                 setWinners(data.data);
             } else {
@@ -77,10 +77,13 @@ export default function MainMarketWinner() {
     const paginatedWinners = filteredWinners.slice(startIndex, startIndex + itemsPerPage);
 
     const formatDate = (dateString: string) => {
-        return new Date(dateString).toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric'
+        return new Date(dateString).toLocaleString("en-US", {
+            year: "numeric",
+            month: "short",  // or "long" for full month name
+            day: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: true, // ensures AM/PM format
         });
     };
 
@@ -189,8 +192,8 @@ export default function MainMarketWinner() {
                 <Pagination>
                     <PaginationContent>
                         <PaginationItem>
-                            <PaginationPrevious 
-                                href="#" 
+                            <PaginationPrevious
+                                href="#"
                                 onClick={(e) => {
                                     e.preventDefault();
                                     setCurrentPage(prev => Math.max(prev - 1, 1));
@@ -198,7 +201,7 @@ export default function MainMarketWinner() {
                                 className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
                             />
                         </PaginationItem>
-                        
+
                         {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
                             <PaginationItem key={page}>
                                 <PaginationLink
@@ -213,10 +216,10 @@ export default function MainMarketWinner() {
                                 </PaginationLink>
                             </PaginationItem>
                         ))}
-                        
+
                         <PaginationItem>
-                            <PaginationNext 
-                                href="#" 
+                            <PaginationNext
+                                href="#"
                                 onClick={(e) => {
                                     e.preventDefault();
                                     setCurrentPage(prev => Math.min(prev + 1, totalPages));

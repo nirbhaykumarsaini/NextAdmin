@@ -152,9 +152,17 @@ function UserDetailsContent() {
     }
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString();
-  };
+ const formatDate = (dateString: string) => {
+  return new Date(dateString).toLocaleString("en-US", {
+    year: "numeric",
+    month: "short",  // or "long" for full month name
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true, // ensures AM/PM format
+  });
+};
+
 
   if (loading) {
     return (
@@ -272,12 +280,12 @@ function UserDetailsContent() {
   }
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
+    <div className="container mx-auto space-y-6">
       <div className="flex items-center gap-4">
-        <Button variant="outline" size="icon" onClick={() => router.back()}>
+        <Button className="cursor-pointer" variant="outline" size="icon" onClick={() => router.back()}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
-        <h1 className="text-3xl font-bold tracking-tight">User Details</h1>
+        <h1 className="text-xl font-bold tracking-tight">User Details</h1>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">

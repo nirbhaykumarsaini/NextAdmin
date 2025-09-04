@@ -6,6 +6,7 @@ import GalidisawarBid from '@/models/GalidisawarBid';
 import StarlineBid from '@/models/StarlineBid';
 import AppUser from '@/models/AppUser';
 import Transaction from '@/models/Transaction';
+import mongoose from 'mongoose';
 
 export async function GET(request: Request) {
   try {
@@ -23,7 +24,7 @@ export async function GET(request: Request) {
     const endDate = new Date();
     endDate.setHours(23, 59, 59, 999);
 
-    // Fetch all data in parallel
+    // Fetch all data in parallel for better performance:cite[7]
     const [
       totalUsers,
       activeUsers,
@@ -31,6 +32,7 @@ export async function GET(request: Request) {
       totalGalidisawarBids,
       totalStarlineBids,
       totalDeposits,
+      totalWithdrawals,
       recentTransactions,
       userGrowthData,
       revenueData
@@ -38,7 +40,7 @@ export async function GET(request: Request) {
       // Total Users
       AppUser.countDocuments(),
       
-      // Active Users (users who placed bids in last 7 days)
+      // Active Users (users with activity in the selected date range)
       AppUser.countDocuments({
         $or: [
           { 'devices.last_login': { $gte: startDate } },
@@ -76,6 +78,18 @@ export async function GET(request: Request) {
       Transaction.aggregate([
         { 
           $match: { 
+            type: 'credit',
+            status: 'completed',
+            created_at: { $gte: startDate }
+          } 
+        },
+        { $group: { _id: null, total: { $sum: '$amount' } } }
+      ]),
+      
+      // Total Withdrawals
+      Transaction.aggregate([
+        { 
+          $match: { 
             type: 'debit',
             status: 'completed',
             created_at: { $gte: startDate }
@@ -95,6 +109,11 @@ export async function GET(request: Request) {
       
       // User growth data for chart
       AppUser.aggregate([
+        {
+          $match: {
+            createdAt: { $gte: startDate }
+          }
+        },
         {
           $group: {
             _id: {
@@ -134,6 +153,9 @@ export async function GET(request: Request) {
       (totalGalidisawarBids[0]?.total || 0) +
       (totalStarlineBids[0]?.total || 0);
 
+    // Calculate net flow (deposits - withdrawals)
+    const netFlow = (totalDeposits[0]?.total || 0) - (totalWithdrawals[0]?.total || 0);
+
     // Format user growth data for chart
     const formattedUserGrowth = userGrowthData.map(item => ({
       name: `${item._id.month}/${item._id.day}`,
@@ -160,7 +182,9 @@ export async function GET(request: Request) {
         totalUsers,
         activeUsers,
         totalBidAmount,
-        totalDeposits: totalDeposits[0]?.total || 0
+        totalDeposits: totalDeposits[0]?.total || 0,
+        totalWithdrawals: totalWithdrawals[0]?.total || 0,
+        netFlow
       },
       charts: {
         userGrowth: formattedUserGrowth,

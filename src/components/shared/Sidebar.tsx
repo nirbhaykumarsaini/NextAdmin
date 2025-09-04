@@ -108,15 +108,15 @@ export function Sidebar() {
       ],
     },
 
-    // {
-    //   label: "Bid Backup",
-    //   icon: <FiGlobe className="h-5 w-5" />,
-    //   submenu: [
-    //     { href: "/mainmarketbidbackup", label: "Main Market Bid Backup" },
-    //     { href: "/starlinebidbackup", label: "Starline Bid Backup" },
-    //     { href: "/galidisawarbidbackup", label: "Galidisawar Bid Backup" },
-    //   ],
-    // },
+    {
+      label: "Bid Backup",
+      icon: <FiGlobe className="h-5 w-5" />,
+      submenu: [
+        { href: "/mainmarketbidbackup", label: "Main Market Bid Backup" },
+        { href: "/starlinebidbackup", label: "Starline Bid Backup" },
+        { href: "/galidisawarbidbackup", label: "Galidisawar Bid Backup" },
+      ],
+    },
     {
       href: "/deletebidreport",
       icon: <FiWind className="h-5 w-5" />,
@@ -154,8 +154,8 @@ export function Sidebar() {
         { href: "/notice", label: "Notice" },
         { href: "/howtoplay", label: "How to Play" },
         { href: "/maintenance", label: "Maintenance" },
-        // { href: "/notification", label: "Notification" },
-        // { href: "/referrals", label: "Referrals" },
+        { href: "/notification", label: "Notification" },
+        { href: "/referrals", label: "Referrals" },
       ],
     },
 

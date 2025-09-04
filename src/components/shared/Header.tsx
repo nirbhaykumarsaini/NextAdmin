@@ -15,7 +15,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetTrigger } from "@/components/ui/sheet";
 import { User, logoutUser } from "@/redux/slices/authSlice";
-import { useAppDispatch, useAppSelector } from "@/hooks/redux";
+import { useAppDispatch } from "@/hooks/redux";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 import { toast } from "sonner";
@@ -118,13 +118,13 @@ export default function Header({ }) {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <Button variant="ghost" size="icon" className="relative">
+          {/* <Button variant="ghost" size="icon" className="relative">
             <FiBell className="h-5 w-5" />
             <Badge className="absolute -right-1 -top-1 h-3 w-3 p-0" variant="destructive" />
-          </Button>
+          </Button> */}
 
           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
+            <DropdownMenuTrigger asChild className=" cursor-pointer">
               <Button variant="ghost" className="gap-2 pl-2">
                 <Avatar className="h-8 w-8">
                   <AvatarImage src="/avatars/john-doe.png" />

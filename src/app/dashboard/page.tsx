@@ -15,6 +15,8 @@ import {
   FiLogOut,
   FiArrowRight,
   FiRefreshCw,
+  FiUsers,
+  FiBarChart2
 } from "react-icons/fi";
 import {
   BarChart,
@@ -23,7 +25,9 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  ResponsiveContainer
+  ResponsiveContainer,
+  LineChart,
+  Line
 } from 'recharts';
 import { useAppDispatch } from "@/hooks/redux";
 import { logoutUser } from "@/redux/slices/authSlice";
@@ -39,6 +43,8 @@ interface DashboardData {
     activeUsers: number;
     totalBidAmount: number;
     totalDeposits: number;
+    totalWithdrawals: number;
+    netFlow: number;
   };
   charts: {
     userGrowth: Array<{ name: string; value: number }>;
@@ -56,18 +62,41 @@ interface DashboardData {
   };
 }
 
+interface StatCardProps {
+  title: string;
+  value: string;
+  change: string;
+  icon: React.ReactNode;
+  negative?: boolean;
+}
 
-interface Transaction {
-  id: string;
-  userId: string;
-  userName: string;
-  userMobile: string;
-  amount: number;
-  type: 'credit' | 'debit';
-  description?: string;
-  status: string;
-  createdAt: string;
-  formattedTime: string;
+function StatCard({ title, value, change, icon, negative = false }: StatCardProps) {
+  return (
+    <Card className="bg-white dark:bg-gray-800 hover:shadow-md transition-shadow duration-200">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <p className="text-sm font-medium text-muted-foreground">
+          {title}
+        </p>
+        <div className="h-4 w-4 text-muted-foreground">
+          {icon}
+        </div>
+      </CardHeader>
+      <CardContent className="flex justify-between items-end">
+        <div>
+          <div className="text-2xl font-bold">{value}</div>
+          <p className={`text-xs mt-1 flex items-center ${negative ? 'text-red-500' : 'text-green-500'}`}>
+            {change}
+            {negative ? (
+              <FiArrowDown className="h-3 w-3 ml-1" />
+            ) : (
+              <FiArrowUp className="h-3 w-3 ml-1" />
+            )}
+          </p>
+        </div>
+        <FiArrowRight className="h-5 w-5 ml-1 cursor-pointer opacity-70 hover:opacity-100 transition-opacity" />
+      </CardContent>
+    </Card>
+  );
 }
 
 export default function Dashboard() {
@@ -75,8 +104,7 @@ export default function Dashboard() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState('7');
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-
+  const [activeChart, setActiveChart] = useState('revenue');
 
   useEffect(() => {
     fetchDashboardData();
@@ -90,54 +118,26 @@ export default function Dashboard() {
           Authorization: `Bearer ${localStorage.getItem('accessToken')}`
         }
       });
-
+      
       if (response.data.status) {
         setData(response.data.data);
       } else {
         toast.error(response.data.message);
       }
-    } catch (error: unknown) {
+    } catch (error: any) {
       console.error('Failed to fetch dashboard data:', error);
-      if (axios.isAxiosError(error)) {
-        toast.error(error.response?.data?.message || 'Failed to fetch dashboard data');
-      }
+      toast.error(error.response?.data?.message || 'Failed to fetch dashboard data');
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchTransactions = async () => {
-    try {
-      setLoading(true);
-
-      const response = await axios.get(`/api/transactions`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('accessToken')}`
-        }
-      });
-
-      if (response.data.status) {
-        setTransactions(response.data.data.transactions.slice(0, 3)); // Show only the latest 5 transactions
-      } else {
-        toast.error(response.data.message);
-      }
-    } catch (error: unknown) {
-      console.error('Failed to fetch transactions:', error);
-      if (axios.isAxiosError(error)) {
-        toast.error(error.response?.data?.message || 'Failed to fetch transactions');
-      }
-      
-    } finally {
-      setLoading(false);
-    }
+  // Calculate percentage changes (you would typically get this from your API)
+  const calculateChange = (current: number, previous: number) => {
+    if (previous === 0) return '+100%';
+    const change = ((current - previous) / previous) * 100;
+    return `${change >= 0 ? '+' : ''}${change.toFixed(1)}%`;
   };
-
-
-  useEffect(() => {
-    fetchTransactions();
-  }, [])
-
-  console.log('Transactions:', transactions);
 
   if (loading) {
     return <DashboardSkeleton />;
@@ -157,7 +157,7 @@ export default function Dashboard() {
     );
   }
 
-  const { stats, charts } = data;
+  const { stats, charts, recentActivity } = data;
 
   return (
     <div className="space-y-6">
@@ -168,7 +168,7 @@ export default function Dashboard() {
             Welcome back, Admin!
           </h2>
           <p className="text-muted-foreground">
-            Here&apos;s what&apos;s happening with your platform today.
+            Here's what's happening with your platform today.
           </p>
         </div>
         <div className="flex items-center space-x-2">
@@ -198,26 +198,27 @@ export default function Dashboard() {
         <StatCard
           title="Total Users"
           value={stats.totalUsers.toLocaleString()}
-          change="+12.5%"
-          icon={<FiUserPlus className="h-4 w-4 text-green-500" />}
+          change={calculateChange(stats.totalUsers, stats.totalUsers * 0.9)} // Example calculation
+          icon={<FiUsers className="h-4 w-4 text-blue-500" />}
         />
         <StatCard
           title="Active Users"
           value={stats.activeUsers.toLocaleString()}
-          change="+8.2%"
-          icon={<FiActivity className="h-4 w-4 text-blue-500" />}
+          change={calculateChange(stats.activeUsers, stats.activeUsers * 0.85)} // Example calculation
+          icon={<FiActivity className="h-4 w-4 text-green-500" />}
         />
         <StatCard
           title="Total Bid Amount"
           value={`₹${stats.totalBidAmount.toLocaleString()}`}
-          change="+15.3%"
+          change={calculateChange(stats.totalBidAmount, stats.totalBidAmount * 0.88)} // Example calculation
           icon={<FiTrendingUp className="h-4 w-4 text-purple-500" />}
         />
         <StatCard
-          title="Total Deposits"
-          value={`₹${stats.totalDeposits.toLocaleString()}`}
-          change="+10.1%"
+          title="Net Flow"
+          value={`₹${stats.netFlow.toLocaleString()}`}
+          change={calculateChange(stats.netFlow, stats.netFlow * 0.92)} // Example calculation
           icon={<FiDollarSign className="h-4 w-4 text-yellow-500" />}
+          negative={stats.netFlow < 0}
         />
       </div>
 
@@ -227,54 +228,97 @@ export default function Dashboard() {
           <Card className="bg-white dark:bg-gray-800">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
-                Revenue Overview
+                Performance Overview
               </CardTitle>
-              <Tabs defaultValue="revenue" className="space-y-4">
+              <Tabs value={activeChart} onValueChange={setActiveChart} className="space-y-4">
                 <TabsList>
                   <TabsTrigger value="revenue">Revenue</TabsTrigger>
-                  <TabsTrigger value="users">Users</TabsTrigger>
+                  <TabsTrigger value="users">User Growth</TabsTrigger>
                 </TabsList>
               </Tabs>
             </CardHeader>
             <CardContent className="pl-2">
               <div className="h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={charts.revenue}>
-                    <CartesianGrid
-                      strokeDasharray="3 3"
-                      vertical={false}
-                      stroke="hsl(var(--muted))"
-                      strokeOpacity={0.3}
-                    />
-                    <XAxis
-                      dataKey="name"
-                      axisLine={false}
-                      tickLine={false}
-                      stroke="hsl(var(--muted-foreground))"
-                      fontSize={12}
-                    />
-                    <YAxis
-                      axisLine={false}
-                      tickLine={false}
-                      stroke="hsl(var(--muted-foreground))"
-                      fontSize={12}
-                    />
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: 'hsl(var(--background))',
-                        borderColor: 'hsl(var(--border))',
-                        borderRadius: 'var(--radius)',
-                        boxShadow: 'var(--shadow)'
-                      }}
-                      formatter={(value) => [`₹${value}`, 'Amount']}
-                    />
-                    <Bar
-                      dataKey="value"
-                      fill="hsl(var(--primary))"
-                      radius={[4, 4, 0, 0]}
-                      barSize={24}
-                    />
-                  </BarChart>
+                  {activeChart === 'revenue' ? (
+                    <BarChart data={charts.revenue}>
+                      <CartesianGrid
+                        strokeDasharray="3 3"
+                        vertical={false}
+                        stroke="hsl(var(--muted))"
+                        strokeOpacity={0.3}
+                      />
+                      <XAxis
+                        dataKey="name"
+                        axisLine={false}
+                        tickLine={false}
+                        stroke="hsl(var(--muted-foreground))"
+                        fontSize={12}
+                      />
+                      <YAxis
+                        axisLine={false}
+                        tickLine={false}
+                        stroke="hsl(var(--muted-foreground))"
+                        fontSize={12}
+                        tickFormatter={(value) => `₹${value}`}
+                      />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: 'hsl(var(--card))',
+                          borderColor: 'hsl(var(--border))',
+                          borderRadius: 'var(--radius)',
+                          boxShadow: 'var(--shadow)',
+                          color: 'hsl(var(--card-foreground))'
+                        }}
+                        formatter={(value) => [`₹${value}`, 'Amount']}
+                      />
+                      <Bar
+                        dataKey="value"
+                        fill="hsl(var(--primary))"
+                        radius={[4, 4, 0, 0]}
+                        barSize={24}
+                      />
+                    </BarChart>
+                  ) : (
+                    <LineChart data={charts.userGrowth}>
+                      <CartesianGrid
+                        strokeDasharray="3 3"
+                        vertical={false}
+                        stroke="hsl(var(--muted))"
+                        strokeOpacity={0.3}
+                      />
+                      <XAxis
+                        dataKey="name"
+                        axisLine={false}
+                        tickLine={false}
+                        stroke="hsl(var(--muted-foreground))"
+                        fontSize={12}
+                      />
+                      <YAxis
+                        axisLine={false}
+                        tickLine={false}
+                        stroke="hsl(var(--muted-foreground))"
+                        fontSize={12}
+                      />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: 'hsl(var(--card))',
+                          borderColor: 'hsl(var(--border))',
+                          borderRadius: 'var(--radius)',
+                          boxShadow: 'var(--shadow)',
+                          color: 'hsl(var(--card-foreground))'
+                        }}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="value"
+                        stroke="hsl(var(--primary))"
+                        strokeWidth={2}
+                        dot={{ fill: 'hsl(var(--primary))', r: 4 }}
+                        activeDot={{ r: 6, strokeWidth: 0 }}
+                      />
+                    </LineChart>
+                  )}
                 </ResponsiveContainer>
               </div>
             </CardContent>
@@ -282,103 +326,37 @@ export default function Dashboard() {
         </div>
 
         <div>
-          <Card className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-sm">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-lg font-semibold flex items-center gap-2">
-                  <FiActivity className="h-5 w-5 text-blue-500" />
-                  Recent Activity
-                </CardTitle>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={fetchTransactions}
-                  className="h-8 w-8 p-0"
-                >
-                  <FiActivity className="h-4 w-4" />
-                </Button>
-              </div>
+          <Card className="bg-white dark:bg-gray-800">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FiActivity className="h-5 w-5" />
+                Recent Activity
+              </CardTitle>
             </CardHeader>
-
-            <CardContent className="space-y-4">
-              {transactions.length === 0 ? (
-                <div className="text-center py-6">
-                  <div className="text-muted-foreground mb-2">No recent activity</div>
-                  <p className="text-sm text-gray-500">Transactions will appear here</p>
-                </div>
-              ) : (
-                transactions.map((transaction) => (
-                  <div key={transaction.id} className="flex items-center gap-3 group  dark:hover:bg-gray-750 p-2 rounded-lg transition-colors">
-                    <Avatar className="h-10 w-10 border-2 border-white dark:border-gray-800 shadow-sm">
-                      <AvatarFallback className="bg-gradient-to-br from-blue-100 to-blue-200 text-blue-800 text-sm font-medium">
-                        {transaction.userName.charAt(0).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <p className="text-sm font-medium truncate">
-                          {transaction.userName}
-                        </p>
-                        <Badge
-                          variant="outline"
-                          className={`text-xs px-2 py-0.5 ${transaction.type === 'credit'
-                              ? 'bg-green-50 text-green-700 border-green-200'
-                              : 'bg-red-50 text-red-700 border-red-200'
-                            }`}
-                        >
-                          {transaction.type === 'credit' ? (
-                            <FiArrowUp className="h-3 w-3 mr-1" />
-                          ) : (
-                            <FiArrowDown className="h-3 w-3 mr-1" />
-                          )}
-                          {transaction.type}
-                        </Badge>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <p className={`text-sm font-semibold ${transaction.type === 'credit'
-                            ? 'text-green-600'
-                            : 'text-red-600'
-                          }`}>
-                          {transaction.type === 'credit' ? '+' : '-'}₹{transaction.amount.toLocaleString()}
-                        </p>
-                        <span className="text-xs text-muted-foreground">•</span>
-                        <p className="text-xs text-muted-foreground truncate">
-                          {transaction.formattedTime}
-                        </p>
-                      </div>
-
-                      {transaction.description && (
-                        <p className="text-xs text-muted-foreground truncate mt-1">
-                          {transaction.description}
-                        </p>
-                      )}
-                    </div>
-
-                    <Badge
-                      variant="outline"
-                      className="bg-blue-50 text-blue-700 border-blue-200 text-xs whitespace-nowrap"
-                    >
-                      {transaction.status}
-                    </Badge>
+            <CardContent className="grid gap-4">
+              {recentActivity.map((item) => (
+                <div key={item.id} className="flex items-center gap-4">
+                  <Avatar className="h-9 w-9">
+                    <AvatarFallback>{item.user.charAt(0)}</AvatarFallback>
+                  </Avatar>
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium leading-none">
+                      {item.user} {item.action}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      ₹{item.amount} • {item.time}
+                    </p>
                   </div>
-                ))
-              )}
-
-              {/* {transactions.length > 0 && (
-                <div className="pt-2 border-t border-gray-100 dark:border-gray-700">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="w-full text-xs text-muted-foreground hover:text-foreground"
-                    onClick={() => window.location.href = '/transactions'}
-                  >
-                    <FiEye className="h-3 w-3 mr-1" />
-                    View all transactions
-                  </Button>
                 </div>
-              )} */}
+              ))}
+              {recentActivity.length === 0 && (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  No recent activity
+                </p>
+              )}
+              <Button variant="ghost" className="w-full mt-2">
+                View all activity
+              </Button>
             </CardContent>
           </Card>
         </div>
@@ -386,7 +364,6 @@ export default function Dashboard() {
     </div>
   );
 }
-
 
 function DashboardSkeleton() {
   return (
@@ -449,47 +426,5 @@ function DashboardSkeleton() {
         </div>
       </div>
     </div>
-  );
-}
-
-function StatCard({
-  title,
-  value,
-  change,
-  icon,
-  negative = false
-}: {
-  title: string;
-  value: string;
-  change: string;
-  icon: React.ReactNode;
-  negative?: boolean;
-}) {
-  return (
-    <Card className="bg-white dark:bg-gray-800">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <p className="text-sm font-medium text-muted-foreground">
-          {title}
-        </p>
-        <div className="h-4 w-4 text-muted-foreground">
-          {icon}
-        </div>
-      </CardHeader>
-      <CardContent className="flex justify-between items-end">
-        <div>
-          <div className="text-2xl font-bold">{value}</div>
-          <p className={`text-xs mt-1 flex items-center ${negative ? 'text-red-500' : 'text-green-500'
-            }`}>
-            {change}
-            {negative ? (
-              <FiArrowDown className="h-3 w-3 ml-1" />
-            ) : (
-              <FiArrowUp className="h-3 w-3 ml-1" />
-            )}
-          </p>
-        </div>
-        <FiArrowRight className="h-5 w-5 ml-1 cursor-pointer" />
-      </CardContent>
-    </Card>
   );
 }
