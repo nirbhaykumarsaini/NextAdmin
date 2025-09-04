@@ -62,6 +62,11 @@ export function Sidebar() {
       icon: <FiFileText className="h-5 w-5" />,
       label: "Withdrawal",
     },
+     {
+      href: "/funds",
+      icon: <FiFileText className="h-5 w-5" />,
+      label: "Funds",
+    },
     {
       label: "Game Rates",
       icon: <FiGlobe className="h-5 w-5" />,
