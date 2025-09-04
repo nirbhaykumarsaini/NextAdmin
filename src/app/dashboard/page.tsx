@@ -124,9 +124,11 @@ export default function Dashboard() {
       } else {
         toast.error(response.data.message);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to fetch dashboard data:', error);
-      toast.error(error.response?.data?.message || 'Failed to fetch dashboard data');
+      if(axios.isAxiosError(error)){
+        toast.error(error.response?.data?.message || 'Failed to fetch dashboard data');
+      }
     } finally {
       setLoading(false);
     }
@@ -168,7 +170,7 @@ export default function Dashboard() {
             Welcome back, Admin!
           </h2>
           <p className="text-muted-foreground">
-            Here's what's happening with your platform today.
+            Here&lsquo;s what&lsquo;s happening with your platform today.
           </p>
         </div>
         <div className="flex items-center space-x-2">
