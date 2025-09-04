@@ -68,3 +68,58 @@ export async function PATCH(request: Request, { params }:{params: Promise<{id:st
   }
 }
 
+export async function GET(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  try {
+    await dbConnect();
+
+    const { id } = params; // ✅ get id from params
+    console.log('User ID:', id);
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      throw new ApiError('Invalid user ID');
+    }
+
+    const user = await AppUser.findById(id);
+    if (!user) {
+      throw new ApiError('User not found');
+    }
+
+    return NextResponse.json({
+      status: true,
+      data: {
+        id: user._id,
+        name: user.name,
+        mobile_number: user.mobile_number,
+        is_blocked: user.is_blocked,
+        batting: user.batting,
+        balance: user.balance,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
+        devices: user.devices,
+      },
+    });
+  } catch (error: unknown) {
+    if (error instanceof ApiError) {
+      return NextResponse.json(
+        { status: false, message: error.message },
+        { status: 400 }
+      );
+    }
+
+    if (error instanceof Error) {
+      return NextResponse.json(
+        { status: false, message: error.message || 'Internal server error' },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json(
+      { status: false, message: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
