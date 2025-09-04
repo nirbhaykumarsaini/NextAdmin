@@ -13,6 +13,66 @@ interface WithdrawRequest {
 }
 
 
+export async function GET(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    await dbConnect();
+    const { id } = await params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      throw new ApiError('Invalid user ID');
+    }
+
+    const { searchParams } = new URL(request.url);
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '10');
+    const skip = (page - 1) * limit;
+
+    const [withdrawals, totalCount] = await Promise.all([
+      Withdrawal.find({ user_id: id })
+        .populate('user_id', 'name mobile_number')
+        .sort({ created_at: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      Withdrawal.countDocuments({ user_id: id })
+    ]);
+
+    const totalPages = Math.ceil(totalCount / limit);
+
+    return NextResponse.json({
+      status: true,
+      message: 'Withdrawals fetched successfully',
+      data: {
+        withdrawals,
+        pagination: {
+          currentPage: page,
+          totalPages,
+          totalCount,
+          hasNext: page < totalPages,
+          hasPrev: page > 1
+        }
+      }
+    });
+  } catch (error: unknown) {
+    console.error('Get Withdrawals Error:', error);
+
+    if (error instanceof ApiError) {
+      return NextResponse.json(
+        { status: false, message: error.message },
+        { status: error.statusCode }
+      );
+    }
+
+    const errorMessage = error instanceof Error ? error.message : 'Failed to fetch withdrawals';
+    return NextResponse.json(
+      { status: false, message: errorMessage },
+      { status: 500 }
+    );
+  }
+}
 
 export async function POST(
   request: Request,
@@ -141,44 +201,4 @@ export async function POST(
   }
 }
 
-export async function GET(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    await dbConnect();
-
-    const { id } = await params;
-
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      throw new ApiError('Invalid user ID');
-    }
-
-    // ✅ Check user exists
-    const user = await AppUser.findById(id);
-    if (!user) {
-      throw new ApiError('User not found');
-    }
-
-    // ✅ Fetch withdrawals of user
-    const withdrawals = await Withdrawal.find({ user_id: id })
-      .sort({ createdAt: -1 }) // latest first
-      .lean();
-
-    return NextResponse.json({
-      status: true,
-      data: withdrawals,
-    });
-  } catch (error: unknown) {
-    console.error('Withdrawal GET Error:', error);
-
-    if (error instanceof ApiError) {
-      return NextResponse.json({ status: false, message: error.message });
-    }
-
-    const errorMessage =
-      error instanceof Error ? error.message : 'Failed to fetch withdrawals';
-    return NextResponse.json({ status: false, message: errorMessage });
-  }
-}
 

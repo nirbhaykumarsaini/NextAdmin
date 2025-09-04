@@ -8,9 +8,32 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, User, Phone, CreditCard, Cpu, Calendar, Shield, Plus, Minus } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  ArrowLeft, User, Phone, CreditCard, Cpu, Calendar, Shield,
+  Plus, Minus, Download, Filter, Search,
+  MessageCircle
+} from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationPrevious,
+  PaginationLink,
+  PaginationNext,
+  PaginationEllipsis,
+} from "@/components/ui/pagination";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 interface UserDevice {
   _id: string;
@@ -29,28 +52,80 @@ interface UserDetails {
   batting: boolean;
   is_blocked: boolean;
   devices: UserDevice[];
-  createdAt?: string;
-  updatedAt?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
-// Create a component that uses useSearchParams
+interface Fund {
+  _id: string;
+  amount: number;
+  description: string;
+  status: string;
+  created_at: string;
+}
+
+interface Withdrawal {
+  _id: string;
+  amount: number;
+  description: string;
+  status: string;
+  created_at: string;
+  user_id: {
+    name: string;
+    mobile_number: string;
+  };
+}
+
+interface Transaction {
+  _id: string;
+  amount: number;
+  type: string;
+  description: string;
+  status: string;
+  created_at: string;
+}
+
+interface PaginationData {
+  currentPage: number;
+  totalPages: number;
+  totalCount: number;
+  hasNext: boolean;
+  hasPrev: boolean;
+}
+
 function UserDetailsContent() {
   const params = useParams();
   const router = useRouter();
+  const [activeTab, setActiveTab] = useState("overview");
   const [user, setUser] = useState<UserDetails | null>(null);
+  const [funds, setFunds] = useState<Fund[]>([]);
+  const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [fundLoading, setFundLoading] = useState(false);
+  const [dataLoading, setDataLoading] = useState(false);
   const [error, setError] = useState("");
   const [amount, setAmount] = useState("");
   const [description, setDescription] = useState("");
+  const [fundPagination, setFundPagination] = useState<PaginationData | null>(null);
+  const [withdrawalPagination, setWithdrawalPagination] = useState<PaginationData | null>(null);
+  const [transactionPagination, setTransactionPagination] = useState<PaginationData | null>(null);
+
   const searchParams = useSearchParams();
   const userId = searchParams.get("userId") || params.id as string;
+  console.log(userId)
 
   useEffect(() => {
     if (userId) {
       fetchUserDetails(userId);
     }
   }, [userId]);
+
+  useEffect(() => {
+    if (userId && activeTab) {
+      fetchTabData(activeTab);
+    }
+  }, [userId, activeTab]);
 
   const fetchUserDetails = async (userId: string) => {
     try {
@@ -63,7 +138,7 @@ function UserDetailsContent() {
       });
 
       if (response.data.status) {
-        setUser(response.data.data || response.data.user);
+        setUser(response.data.data);
       } else {
         setError(response.data.message || "Failed to fetch user details");
       }
@@ -74,6 +149,50 @@ function UserDetailsContent() {
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchTabData = async (tab: string, page: number = 1) => {
+    try {
+      setDataLoading(true);
+      let response;
+
+      switch (tab) {
+        case "funds":
+          response = await axios.get(`/api/users/${userId}/add-fund?page=${page}&limit=10`, {
+            headers: { Authorization: `Bearer ${localStorage.getItem('accessToken')}` }
+          });
+          if (response.data.status) {
+            setFunds(response.data.data.funds);
+            setFundPagination(response.data.data.pagination);
+          }
+          break;
+
+        case "withdrawals":
+          response = await axios.get(`/api/users/${userId}/withdraw?page=${page}&limit=10`, {
+            headers: { Authorization: `Bearer ${localStorage.getItem('accessToken')}` }
+          });
+          if (response.data.status) {
+            setWithdrawals(response.data.data.withdrawals);
+            setWithdrawalPagination(response.data.data.pagination);
+          }
+          break;
+
+        case "transactions":
+          response = await axios.get(`/api/users/${userId}/transactions?page=${page}&limit=10`, {
+            headers: { Authorization: `Bearer ${localStorage.getItem('accessToken')}` }
+          });
+          if (response.data.status) {
+            setTransactions(response.data.data.transactions);
+            setTransactionPagination(response.data.data.pagination);
+          }
+          break;
+      }
+    } catch (error: unknown) {
+      console.error(`Error fetching ${tab}:`, error);
+      toast.error(`Failed to fetch ${tab}`);
+    } finally {
+      setDataLoading(false);
     }
   };
 
@@ -99,6 +218,8 @@ function UserDetailsContent() {
         setUser(prev => prev ? { ...prev, balance: response.data.data.newBalance } : null);
         setAmount("");
         setDescription("");
+        fetchTabData("funds", 1); // Refresh funds list
+        fetchTabData("transactions", 1); // Refresh transactions list
       } else {
         toast.error(response.data.message);
       }
@@ -139,6 +260,8 @@ function UserDetailsContent() {
         setUser(prev => prev ? { ...prev, balance: response.data.data.newBalance } : null);
         setAmount("");
         setDescription("");
+        fetchTabData("withdrawals", 1); // Refresh withdrawals list
+        fetchTabData("transactions", 1); // Refresh transactions list
       } else {
         toast.error(response.data.message);
       }
@@ -155,99 +278,88 @@ function UserDetailsContent() {
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleString("en-US", {
       year: "numeric",
-      month: "short",  // or "long" for full month name
+      month: "short",
       day: "2-digit",
       hour: "2-digit",
       minute: "2-digit",
-      hour12: true, // ensures AM/PM format
+      hour12: true,
     });
   };
 
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR'
+    }).format(amount);
+  };
+
+
+  const formatPhoneForWhatsApp = (phoneNumber: string): string => {
+  // Remove all non-digit characters except plus sign
+  let cleaned = phoneNumber.replace(/[^\d+]/g, '');
+  
+  // If the number doesn't start with +, assume it's an Indian number and add +91
+  if (!cleaned.startsWith('+')) {
+    // If it starts with 0, remove the 0
+    if (cleaned.startsWith('0')) {
+      cleaned = cleaned.substring(1);
+    }
+    // Add country code if it's not present
+    if (!cleaned.startsWith('+') && cleaned.length === 10) {
+      cleaned = '+91' + cleaned;
+    }
+  }
+  
+  return cleaned;
+};
+  const renderPagination = (pagination: PaginationData | null, tab: string) => {
+    if (!pagination || pagination.totalPages <= 1) return null;
+
+    const pages = [];
+    const maxVisiblePages = 5;
+    let startPage = Math.max(1, pagination.currentPage - Math.floor(maxVisiblePages / 2));
+    let endPage = Math.min(pagination.totalPages, startPage + maxVisiblePages - 1);
+
+    if (endPage - startPage + 1 < maxVisiblePages) {
+      startPage = Math.max(1, endPage - maxVisiblePages + 1);
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(
+        <PaginationItem key={i}>
+          <PaginationLink
+            isActive={i === pagination.currentPage}
+            onClick={() => fetchTabData(tab, i)}
+          >
+            {i}
+          </PaginationLink>
+        </PaginationItem>
+      );
+    }
+
+    return (
+      <Pagination>
+        <PaginationContent>
+          <PaginationItem>
+            <PaginationPrevious
+              onClick={() => fetchTabData(tab, pagination.currentPage - 1)}
+              className={!pagination.hasPrev ? "pointer-events-none opacity-50" : ""}
+            />
+          </PaginationItem>
+          {pages}
+          <PaginationItem>
+            <PaginationNext
+              onClick={() => fetchTabData(tab, pagination.currentPage + 1)}
+              className={!pagination.hasNext ? "pointer-events-none opacity-50" : ""}
+            />
+          </PaginationItem>
+        </PaginationContent>
+      </Pagination>
+    );
+  };
 
   if (loading) {
-    return (
-      <div className="container mx-auto space-y-6">
-        {/* Back Button Skeleton */}
-        <div className="flex items-center gap-4">
-          <Skeleton className="h-10 w-10 rounded-md" />
-          <Skeleton className="h-8 w-48" />
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* User Info Card Skeleton */}
-          <Card className="lg:col-span-1">
-            <CardHeader>
-              <Skeleton className="h-6 w-32" />
-              <Skeleton className="h-4 w-48" />
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="flex items-center gap-3">
-                  <Skeleton className="h-5 w-5 rounded-full" />
-                  <div className="space-y-2 flex-1">
-                    <Skeleton className="h-4 w-20" />
-                    <Skeleton className="h-6 w-full" />
-                  </div>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-
-          {/* Fund Management Skeleton */}
-          <Card className="lg:col-span-1">
-            <CardHeader>
-              <Skeleton className="h-6 w-40" />
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <Skeleton key={i} className="h-10 w-full" />
-              ))}
-              <div className="flex gap-2">
-                <Skeleton className="h-10 flex-1" />
-                <Skeleton className="h-10 flex-1" />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Devices Card Skeleton */}
-          <Card className="lg:col-span-2">
-            <CardHeader>
-              <Skeleton className="h-6 w-40" />
-              <Skeleton className="h-4 w-56" />
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {Array.from({ length: 2 }).map((_, i) => (
-                  <div key={i} className="border rounded-lg p-4 space-y-3">
-                    <Skeleton className="h-5 w-32" />
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                      {Array.from({ length: 1 }).map((_, j) => (
-                        <div key={j} className="space-y-1">
-                          <Skeleton className="h-3 w-16" />
-                          <Skeleton className="h-4 w-24" />
-                        </div>
-                      ))}
-                    </div>
-                    <Skeleton className="h-4 w-40" />
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Batting Status Card Skeleton */}
-        <Card>
-          <CardHeader>
-            <Skeleton className="h-6 w-32" />
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <Skeleton className="h-6 w-20" />
-            <Skeleton className="h-4 w-64" />
-          </CardContent>
-        </Card>
-      </div>
-    );
+    return <UserDetailsSkeleton />;
   }
 
   if (error) {
@@ -280,12 +392,12 @@ function UserDetailsContent() {
   }
 
   return (
-    <div className="container mx-auto space-y-6">
+    <div className="container mx-auto space-y-6 p-4">
       <div className="flex items-center gap-4">
         <Button className="cursor-pointer" variant="outline" size="icon" onClick={() => router.back()}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
-        <h1 className="text-xl font-bold tracking-tight">User Details</h1>
+        <h1 className="text-2xl font-bold tracking-tight">User Details</h1>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
@@ -306,9 +418,26 @@ function UserDetailsContent() {
 
             <div className="flex items-center gap-3">
               <Phone className="h-5 w-5 text-muted-foreground" />
-              <div>
-                <p className="text-sm font-medium">Mobile Number</p>
-                <p className="text-lg font-semibold">{user.mobile_number}</p>
+              <div className="flex items-center gap-3">
+                <Phone className="h-5 w-5 text-muted-foreground" />
+                <div className="flex-1">
+                  <p className="text-sm font-medium">Mobile Number</p>
+                  <div className="flex items-center justify-between">
+                    <p className="text-lg font-semibold pr-3">{user.mobile_number}</p>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 rounded-full bg-green-50 hover:bg-green-100 cursor-pointer"
+                      onClick={() => {
+                        const whatsappNumber = formatPhoneForWhatsApp(user.mobile_number);
+                        window.open(`https://wa.me/${whatsappNumber}`, '_blank');
+                      }}
+                      title="Send WhatsApp message"
+                    >
+                      <MessageCircle className="h-4 w-4 text-green-600" />
+                    </Button>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -316,7 +445,7 @@ function UserDetailsContent() {
               <CreditCard className="h-5 w-5 text-muted-foreground" />
               <div>
                 <p className="text-sm font-medium">Balance</p>
-                <p className="text-lg font-semibold">₹{user.balance.toLocaleString()}</p>
+                <p className="text-lg font-semibold">{formatCurrency(user.balance)}</p>
               </div>
             </div>
 
@@ -449,7 +578,7 @@ function UserDetailsContent() {
                 </div>
               ))}
 
-              {!user.devices || user.devices.length === 0 && (
+              {(!user.devices || user.devices.length === 0) && (
                 <div className="text-center py-8 text-muted-foreground">
                   No devices found for this user
                 </div>
@@ -473,14 +602,320 @@ function UserDetailsContent() {
           </p>
         </CardContent>
       </Card>
+
+      {/* Tabs for Funds, Withdrawals, Transactions */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full ">
+        <TabsList className="grid w-full grid-cols-4 bg-white dark:bg-gray-800">
+          <TabsTrigger className="cursor-pointer" value="overview ">Overview</TabsTrigger>
+          <TabsTrigger className="cursor-pointer" value="funds">Funds</TabsTrigger>
+          <TabsTrigger className="cursor-pointer" value="withdrawals">Withdrawals</TabsTrigger>
+          <TabsTrigger className="cursor-pointer" value="transactions">Transactions</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="overview" className="space-y-4">
+          <Card className="bg-white dark:bg-gray-800">
+            <CardHeader>
+              <CardTitle>Account Summary</CardTitle>
+              <CardDescription>Recent activity overview</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="border rounded-lg p-4">
+                  <h3 className="font-semibold">Total Funds Added</h3>
+                  <p className="text-2xl font-bold text-green-600">
+                    {formatCurrency(funds.reduce((sum, fund) => sum + fund.amount, 0))}
+                  </p>
+                </div>
+                <div className="border rounded-lg p-4">
+                  <h3 className="font-semibold">Total Withdrawals</h3>
+                  <p className="text-2xl font-bold text-red-600">
+                    {formatCurrency(withdrawals.reduce((sum, withdrawal) => sum + withdrawal.amount, 0))}
+                  </p>
+                </div>
+                <div className="border rounded-lg p-4">
+                  <h3 className="font-semibold">Current Balance</h3>
+                  <p className="text-2xl font-bold text-blue-600">
+                    {formatCurrency(user.balance)}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="funds">
+          <Card className="bg-white dark:bg-gray-800">
+            <CardHeader>
+              <CardTitle>Fund History</CardTitle>
+              <CardDescription>All fund transactions for this user</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {dataLoading ? (
+                <div className="space-y-4">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <Skeleton key={i} className="h-12 w-full" />
+                  ))}
+                </div>
+              ) : (
+                <>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Amount</TableHead>
+                        <TableHead>Description</TableHead>
+                        <TableHead>Status</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {funds.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={4} className="text-center">
+                            No funds found
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        funds.map((fund) => (
+                          <TableRow key={fund._id}>
+                            <TableCell>{formatDate(fund.created_at)}</TableCell>
+                            <TableCell className="text-green-600 font-medium">
+                              +{formatCurrency(fund.amount)}
+                            </TableCell>
+                            <TableCell>{fund.description}</TableCell>
+                            <TableCell>
+                              <Badge variant={fund.status === 'completed' ? 'default' : 'secondary'}>
+                                {fund.status}
+                              </Badge>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                  {renderPagination(fundPagination, "funds")}
+                </>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="withdrawals">
+          <Card className="bg-white dark:bg-gray-800">
+            <CardHeader>
+              <CardTitle>Withdrawal History</CardTitle>
+              <CardDescription>All withdrawal requests for this user</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {dataLoading ? (
+                <div className="space-y-4">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <Skeleton key={i} className="h-12 w-full" />
+                  ))}
+                </div>
+              ) : (
+                <>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Amount</TableHead>
+                        <TableHead>Description</TableHead>
+                        <TableHead>Status</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {withdrawals.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={4} className="text-center">
+                            No withdrawals found
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        withdrawals.map((withdrawal) => (
+                          <TableRow key={withdrawal._id}>
+                            <TableCell>{formatDate(withdrawal.created_at)}</TableCell>
+                            <TableCell className="text-red-600 font-medium">
+                              -{formatCurrency(withdrawal.amount)}
+                            </TableCell>
+                            <TableCell>{withdrawal.description}</TableCell>
+                            <TableCell>
+                              <Badge
+                                variant={
+                                  withdrawal.status === 'completed' ? 'default' :
+                                    withdrawal.status === 'pending' ? 'secondary' : 'destructive'
+                                }
+                              >
+                                {withdrawal.status}
+                              </Badge>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                  {renderPagination(withdrawalPagination, "withdrawals")}
+                </>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="transactions">
+          <Card className="bg-white dark:bg-gray-800">
+            <CardHeader>
+              <CardTitle>Transaction History</CardTitle>
+              <CardDescription>All transactions for this user</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {dataLoading ? (
+                <div className="space-y-4">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <Skeleton key={i} className="h-12 w-full" />
+                  ))}
+                </div>
+              ) : (
+                <>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Type</TableHead>
+                        <TableHead>Amount</TableHead>
+                        <TableHead>Description</TableHead>
+                        <TableHead>Status</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {transactions.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={5} className="text-center">
+                            No transactions found
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        transactions.map((transaction) => (
+                          <TableRow key={transaction._id}>
+                            <TableCell>{formatDate(transaction.created_at)}</TableCell>
+                            <TableCell>
+                              <Badge variant={transaction.type === 'credit' ? 'default' : 'secondary'}>
+                                {transaction.type}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className={
+                              transaction.type === 'credit' ? 'text-green-600 font-medium' : 'text-red-600 font-medium'
+                            }>
+                              {transaction.type === 'credit' ? '+' : '-'}{formatCurrency(transaction.amount)}
+                            </TableCell>
+                            <TableCell>{transaction.description}</TableCell>
+                            <TableCell>
+                              <Badge variant={
+                                transaction.status === 'completed' ? 'default' :
+                                  transaction.status === 'pending' ? 'secondary' : 'destructive'
+                              }>
+                                {transaction.status}
+                              </Badge>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                  {renderPagination(transactionPagination, "transactions")}
+                </>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
 
-// Main export with Suspense boundary
+// Skeleton component for loading state
+function UserDetailsSkeleton() {
+  return (
+    <div className="container mx-auto space-y-6">
+      <div className="flex items-center gap-4">
+        <Skeleton className="h-10 w-10 rounded-md" />
+        <Skeleton className="h-8 w-48" />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <Card className="lg:col-span-1 bg-white dark:bg-gray-800">
+          <CardHeader>
+            <Skeleton className="h-6 w-32" />
+            <Skeleton className="h-4 w-48" />
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-3">
+                <Skeleton className="h-5 w-5 rounded-full" />
+                <div className="space-y-2 flex-1">
+                  <Skeleton className="h-4 w-20" />
+                  <Skeleton className="h-6 w-full" />
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+
+        <Card className="lg:col-span-1 bg-white dark:bg-gray-800">
+          <CardHeader>
+            <Skeleton className="h-6 w-40" />
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Skeleton key={i} className="h-10 w-full" />
+            ))}
+            <div className="flex gap-2">
+              <Skeleton className="h-10 flex-1" />
+              <Skeleton className="h-10 flex-1" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="lg:col-span-2 bg-white dark:bg-gray-800">
+          <CardHeader>
+            <Skeleton className="h-6 w-40" />
+            <Skeleton className="h-4 w-56" />
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {Array.from({ length: 2 }).map((_, i) => (
+                <div key={i} className="border rounded-lg p-4 space-y-3">
+                  <Skeleton className="h-5 w-32" />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    {Array.from({ length: 4 }).map((_, j) => (
+                      <div key={j} className="space-y-1">
+                        <Skeleton className="h-3 w-16" />
+                        <Skeleton className="h-4 w-24" />
+                      </div>
+                    ))}
+                  </div>
+                  <Skeleton className="h-4 w-40" />
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card className="bg-white dark:bg-gray-800">
+        <CardHeader>
+          <Skeleton className="h-6 w-32" />
+        </CardHeader>
+        <CardContent className="space-y-2">
+          <Skeleton className="h-6 w-20" />
+          <Skeleton className="h-4 w-64" />
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 export default function UserDetailsPage() {
   return (
-    <Suspense>
+    <Suspense fallback={<UserDetailsSkeleton />}>
       <UserDetailsContent />
     </Suspense>
   );

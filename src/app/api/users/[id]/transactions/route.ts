@@ -7,7 +7,7 @@ import mongoose from 'mongoose';
 interface GetTransactionsParams {
     user_id:string;
     type?: string;
-    status?: 'pending' | 'completed' | 'failed';
+    status?: string;
 }
 
 export async function GET(
@@ -16,31 +16,35 @@ export async function GET(
 ) {
   try {
     await dbConnect();
-    
     const { id } = await params;
-    
+
     if (!mongoose.Types.ObjectId.isValid(id)) {
-      throw new ApiError('Invalid user ID');
+      throw new ApiError('Invalid user ID', 400);
     }
 
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '10');
     const type = searchParams.get('type');
+    const status = searchParams.get('status');
 
     const skip = (page - 1) * limit;
 
     // Build filter
-    const filter: GetTransactionsParams = { user_id: id, status: 'completed' };
+    const filter: GetTransactionsParams = { user_id: id };
     if (type && ['credit', 'debit'].includes(type)) {
       filter.type = type;
+    }
+    if (status && ['pending', 'completed', 'failed'].includes(status)) {
+      filter.status = status;
     }
 
     const [transactions, totalCount] = await Promise.all([
       Transaction.find(filter)
         .sort({ created_at: -1 })
         .skip(skip)
-        .limit(limit),
+        .limit(limit)
+        .lean(),
       Transaction.countDocuments(filter)
     ]);
 
@@ -48,16 +52,9 @@ export async function GET(
 
     return NextResponse.json({
       status: true,
-      message: 'User transactions fetched successfully',
+      message: 'Transactions fetched successfully',
       data: {
-        transactions: transactions.map(transaction => ({
-          id: transaction._id,
-          amount: transaction.amount,
-          type: transaction.type,
-          description: transaction.description,
-          status: transaction.status,
-          createdAt: transaction.created_at
-        })),
+        transactions,
         pagination: {
           currentPage: page,
           totalPages,
@@ -67,18 +64,17 @@ export async function GET(
         }
       }
     });
-
   } catch (error: unknown) {
-    console.error('Get User Transactions Error:', error);
-    
+    console.error('Get Transactions Error:', error);
+
     if (error instanceof ApiError) {
       return NextResponse.json(
         { status: false, message: error.message },
-        { status: 400 }
+        { status: error.statusCode }
       );
     }
 
-    const errorMessage = error instanceof Error ? error.message : 'Failed to fetch user transactions';
+    const errorMessage = error instanceof Error ? error.message : 'Failed to fetch transactions';
     return NextResponse.json(
       { status: false, message: errorMessage },
       { status: 500 }

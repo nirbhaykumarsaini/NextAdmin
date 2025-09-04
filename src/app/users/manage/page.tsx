@@ -259,14 +259,14 @@ export default function ManageUsers() {
                     {index + 1}
                   </TableCell>
                   <TableCell>
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-4 cursor-pointer"  onClick={() => handleViewUser(user._id)} >
                       <Avatar className="h-9 w-9 capitalize">
                         <AvatarFallback>
                           {user.name?.charAt(0) || 'U'}
                         </AvatarFallback>
                       </Avatar>
                       <div>
-                        <div className="font-medium capitalize">
+                        <div className="font-medium capitalize hover:underline text-blue-500">
                           {user.name}
                         </div>
                         <div className="text-sm text-muted-foreground">

@@ -36,6 +36,9 @@ import axios from "axios";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { Url } from "next/dist/shared/lib/router/router";
 
 interface DashboardData {
   stats: {
@@ -64,13 +67,14 @@ interface DashboardData {
 
 interface StatCardProps {
   title: string;
+  link: string;
   value: string;
   change: string;
   icon: React.ReactNode;
   negative?: boolean;
 }
 
-function StatCard({ title, value, change, icon, negative = false }: StatCardProps) {
+function StatCard({ title, value, change, link, icon, negative = false }: StatCardProps) {
   return (
     <Card className="bg-white dark:bg-gray-800 hover:shadow-md transition-shadow duration-200">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -93,7 +97,9 @@ function StatCard({ title, value, change, icon, negative = false }: StatCardProp
             )}
           </p>
         </div>
-        <FiArrowRight className="h-5 w-5 ml-1 cursor-pointer opacity-70 hover:opacity-100 transition-opacity" />
+        <Link href={link}>
+          <FiArrowRight className="h-5 w-5 ml-1 cursor-pointer opacity-70 hover:opacity-100 transition-opacity" />
+        </Link>
       </CardContent>
     </Card>
   );
@@ -105,6 +111,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState('7');
   const [activeChart, setActiveChart] = useState('revenue');
+  const router = useRouter();
 
   useEffect(() => {
     fetchDashboardData();
@@ -118,7 +125,7 @@ export default function Dashboard() {
           Authorization: `Bearer ${localStorage.getItem('accessToken')}`
         }
       });
-      
+
       if (response.data.status) {
         setData(response.data.data);
       } else {
@@ -126,7 +133,7 @@ export default function Dashboard() {
       }
     } catch (error: unknown) {
       console.error('Failed to fetch dashboard data:', error);
-      if(axios.isAxiosError(error)){
+      if (axios.isAxiosError(error)) {
         toast.error(error.response?.data?.message || 'Failed to fetch dashboard data');
       }
     } finally {
@@ -160,6 +167,8 @@ export default function Dashboard() {
   }
 
   const { stats, charts, recentActivity } = data;
+
+
 
   return (
     <div className="space-y-6">
@@ -198,6 +207,7 @@ export default function Dashboard() {
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
+          link="/users/manage"
           title="Total Users"
           value={stats.totalUsers.toLocaleString()}
           change={calculateChange(stats.totalUsers, stats.totalUsers * 0.9)} // Example calculation
@@ -205,17 +215,20 @@ export default function Dashboard() {
         />
         <StatCard
           title="Active Users"
+          link="/users/manage"
           value={stats.activeUsers.toLocaleString()}
           change={calculateChange(stats.activeUsers, stats.activeUsers * 0.85)} // Example calculation
           icon={<FiActivity className="h-4 w-4 text-green-500" />}
         />
         <StatCard
+          link="/mainmarketbidreports"
           title="Total Bid Amount"
           value={`₹${stats.totalBidAmount.toLocaleString()}`}
           change={calculateChange(stats.totalBidAmount, stats.totalBidAmount * 0.88)} // Example calculation
           icon={<FiTrendingUp className="h-4 w-4 text-purple-500" />}
         />
         <StatCard
+          link="/withdrawal"
           title="Net Flow"
           value={`₹${stats.netFlow.toLocaleString()}`}
           change={calculateChange(stats.netFlow, stats.netFlow * 0.92)} // Example calculation
@@ -272,7 +285,7 @@ export default function Dashboard() {
                           boxShadow: 'var(--shadow)',
                           color: 'hsl(var(--card-foreground))'
                         }}
-                         cursor={{ fill: 'hsl(var(--muted))', opacity: 0.0 }}
+                        cursor={{ fill: 'hsl(var(--muted))', opacity: 0.0 }}
                         formatter={(value) => [`₹${value}`, 'Amount']}
                       />
                       <Bar
@@ -415,7 +428,7 @@ function DashboardSkeleton() {
               <Skeleton className="h-6 w-32" />
             </CardHeader>
             <CardContent className="space-y-4">
-              {Array.from({ length: 5 }).map((_, i) => (
+              {Array.from({ length: 6 }).map((_, i) => (
                 <div key={i} className="flex items-center gap-4">
                   <Skeleton className="h-9 w-9 rounded-full" />
                   <div className="space-y-2 flex-1">
