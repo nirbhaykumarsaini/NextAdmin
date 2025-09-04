@@ -70,12 +70,12 @@ export async function PATCH(request: Request, { params }:{params: Promise<{id:st
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await dbConnect();
 
-    const { id } = params; // ✅ get id from params
+    const { id } = await params; // ✅ get id from params
     console.log('User ID:', id);
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
