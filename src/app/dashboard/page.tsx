@@ -230,12 +230,12 @@ export default function Dashboard() {
           <Card className="bg-white dark:bg-gray-800">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
-                Performance Overview
+                Revenue Overview
               </CardTitle>
               <Tabs value={activeChart} onValueChange={setActiveChart} className="space-y-4">
-                <TabsList>
+                <TabsList className="bg-white dark:bg-gray-800">
                   <TabsTrigger value="revenue">Revenue</TabsTrigger>
-                  <TabsTrigger value="users">User Growth</TabsTrigger>
+                  {/* <TabsTrigger value="users">User Growth</TabsTrigger> */}
                 </TabsList>
               </Tabs>
             </CardHeader>
@@ -272,6 +272,7 @@ export default function Dashboard() {
                           boxShadow: 'var(--shadow)',
                           color: 'hsl(var(--card-foreground))'
                         }}
+                         cursor={{ fill: 'hsl(var(--muted))', opacity: 0.0 }}
                         formatter={(value) => [`₹${value}`, 'Amount']}
                       />
                       <Bar

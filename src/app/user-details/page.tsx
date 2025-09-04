@@ -61,7 +61,7 @@ function UserDetailsContent() {
           Authorization: `Bearer ${localStorage.getItem('accessToken')}`
         }
       });
-      
+
       if (response.data.status) {
         setUser(response.data.data || response.data.user);
       } else {
@@ -69,7 +69,7 @@ function UserDetailsContent() {
       }
     } catch (error: unknown) {
       console.error("Error fetching user details:", error);
-      if(axios.isAxiosError(error)) {
+      if (axios.isAxiosError(error)) {
         setError(error.response?.data?.message || error.message || "An error occurred");
       }
     } finally {
@@ -104,7 +104,7 @@ function UserDetailsContent() {
       }
     } catch (error: unknown) {
       console.error('Add funds error:', error);
-      if(axios.isAxiosError(error)) {
+      if (axios.isAxiosError(error)) {
         toast.error(error.response?.data?.message || error.message || 'Failed to add funds');
       }
     } finally {
@@ -144,7 +144,7 @@ function UserDetailsContent() {
       }
     } catch (error: unknown) {
       console.error('Withdraw error:', error);
-      if(axios.isAxiosError(error)) {
+      if (axios.isAxiosError(error)) {
         toast.error(error.response?.data?.message || error.message || 'Failed to withdraw funds');
       }
     } finally {
@@ -152,21 +152,21 @@ function UserDetailsContent() {
     }
   };
 
- const formatDate = (dateString: string) => {
-  return new Date(dateString).toLocaleString("en-US", {
-    year: "numeric",
-    month: "short",  // or "long" for full month name
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: true, // ensures AM/PM format
-  });
-};
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleString("en-US", {
+      year: "numeric",
+      month: "short",  // or "long" for full month name
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true, // ensures AM/PM format
+    });
+  };
 
 
   if (loading) {
     return (
-      <div className="container mx-auto py-6 space-y-6">
+      <div className="container mx-auto space-y-6">
         {/* Back Button Skeleton */}
         <div className="flex items-center gap-4">
           <Skeleton className="h-10 w-10 rounded-md" />
@@ -199,7 +199,7 @@ function UserDetailsContent() {
               <Skeleton className="h-6 w-40" />
             </CardHeader>
             <CardContent className="space-y-4">
-              {Array.from({ length: 3 }).map((_, i) => (
+              {Array.from({ length: 5 }).map((_, i) => (
                 <Skeleton key={i} className="h-10 w-full" />
               ))}
               <div className="flex gap-2">
@@ -217,11 +217,11 @@ function UserDetailsContent() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {Array.from({ length: 3 }).map((_, i) => (
+                {Array.from({ length: 2 }).map((_, i) => (
                   <div key={i} className="border rounded-lg p-4 space-y-3">
                     <Skeleton className="h-5 w-32" />
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                      {Array.from({ length: 4 }).map((_, j) => (
+                      {Array.from({ length: 1 }).map((_, j) => (
                         <div key={j} className="space-y-1">
                           <Skeleton className="h-3 w-16" />
                           <Skeleton className="h-4 w-24" />
@@ -362,7 +362,7 @@ function UserDetailsContent() {
                 disabled={fundLoading}
               />
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="description">Description (Optional)</Label>
               <Input
@@ -373,7 +373,7 @@ function UserDetailsContent() {
                 disabled={fundLoading}
               />
             </div>
-            
+
             <div className="flex gap-3">
               <Button
                 onClick={handleAddFunds}
@@ -393,7 +393,7 @@ function UserDetailsContent() {
                 Withdraw
               </Button>
             </div>
-            
+
             {user.is_blocked && (
               <p className="text-sm text-red-500 text-center">
                 Cannot manage funds for blocked users
@@ -418,7 +418,7 @@ function UserDetailsContent() {
                         <Cpu className="h-4 w-4 text-muted-foreground" />
                         <span className="font-medium">Device {index + 1}</span>
                       </div>
-                      
+
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
                         <div>
                           <span className="text-muted-foreground">Model: </span>
@@ -438,7 +438,7 @@ function UserDetailsContent() {
                         </div>
                       </div>
                     </div>
-                    
+
                     <div className="text-right text-sm text-muted-foreground">
                       <div className="flex items-center gap-1">
                         <Calendar className="h-3 w-3" />
@@ -448,7 +448,7 @@ function UserDetailsContent() {
                   </div>
                 </div>
               ))}
-              
+
               {!user.devices || user.devices.length === 0 && (
                 <div className="text-center py-8 text-muted-foreground">
                   No devices found for this user
@@ -480,65 +480,7 @@ function UserDetailsContent() {
 // Main export with Suspense boundary
 export default function UserDetailsPage() {
   return (
-    <Suspense fallback={<div className="container mx-auto py-6 space-y-6">
-      <div className="flex items-center gap-4">
-        <div className="h-10 w-10 bg-gray-200 rounded-md animate-pulse"></div>
-        <div className="h-8 w-48 bg-gray-200 rounded animate-pulse"></div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* User Info Card Skeleton */}
-        <div className="lg:col-span-1 bg-white dark:bg-gray-800 rounded-lg border p-6 space-y-4">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="flex items-center gap-3">
-              <div className="h-5 w-5 bg-gray-200 rounded-full animate-pulse"></div>
-              <div className="space-y-2 flex-1">
-                <div className="h-4 w-20 bg-gray-200 rounded animate-pulse"></div>
-                <div className="h-6 w-full bg-gray-200 rounded animate-pulse"></div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Fund Management Skeleton */}
-        <div className="lg:col-span-1 bg-white dark:bg-gray-800 rounded-lg border p-6 space-y-4">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="h-10 w-full bg-gray-200 rounded animate-pulse"></div>
-          ))}
-          <div className="flex gap-2">
-            <div className="h-10 flex-1 bg-gray-200 rounded animate-pulse"></div>
-            <div className="h-10 flex-1 bg-gray-200 rounded animate-pulse"></div>
-          </div>
-        </div>
-
-        {/* Devices Card Skeleton */}
-        <div className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-lg border p-6">
-          <div className="space-y-4">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="border rounded-lg p-4 space-y-3">
-                <div className="h-5 w-32 bg-gray-200 rounded animate-pulse"></div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  {Array.from({ length: 4 }).map((_, j) => (
-                    <div key={j} className="space-y-1">
-                      <div className="h-3 w-16 bg-gray-200 rounded animate-pulse"></div>
-                      <div className="h-4 w-24 bg-gray-200 rounded animate-pulse"></div>
-                    </div>
-                  ))}
-                </div>
-                <div className="h-4 w-40 bg-gray-200 rounded animate-pulse"></div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Batting Status Card Skeleton */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg border p-6">
-        <div className="h-6 w-32 bg-gray-200 rounded animate-pulse mb-4"></div>
-        <div className="h-6 w-20 bg-gray-200 rounded animate-pulse mb-2"></div>
-        <div className="h-4 w-64 bg-gray-200 rounded animate-pulse"></div>
-      </div>
-    </div>}>
+    <Suspense>
       <UserDetailsContent />
     </Suspense>
   );
