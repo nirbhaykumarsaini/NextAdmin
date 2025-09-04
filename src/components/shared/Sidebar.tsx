@@ -4,7 +4,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   FiHome,
-  FiUsers,
   FiSettings,
   FiFileText,
   FiChevronLeft,
@@ -30,11 +29,12 @@ export function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [openItems, setOpenItems] = useState<Record<string, boolean>>({});
 
+  // ✅ ensures only one menu is open at a time
   const toggleItem = (label: string) => {
-    setOpenItems(prev => ({
-      ...prev,
-      [label]: !prev[label]
-    }));
+    setOpenItems(prev => {
+      const isCurrentlyOpen = !!prev[label];
+      return { [label]: !isCurrentlyOpen };
+    });
   };
 
   const navItems = [
@@ -43,7 +43,7 @@ export function Sidebar() {
       icon: <FiHome className="h-5 w-5" />,
       label: "Dashboard",
     },
-     {
+    {
       href: "/users/manage",
       icon: <FiUser className="h-5 w-5" />,
       label: "Manage Users",
@@ -107,16 +107,6 @@ export function Sidebar() {
         { href: "/galidisawarbidreports", label: "Galidisawar Bid Report" },
       ],
     },
-
-    {
-      label: "Bid Backup",
-      icon: <FiGlobe className="h-5 w-5" />,
-      submenu: [
-        { href: "/mainmarketbidbackup", label: "Main Market Bid Backup" },
-        { href: "/starlinebidbackup", label: "Starline Bid Backup" },
-        { href: "/galidisawarbidbackup", label: "Galidisawar Bid Backup" },
-      ],
-    },
     {
       href: "/deletebidreport",
       icon: <FiWind className="h-5 w-5" />,
@@ -154,12 +144,8 @@ export function Sidebar() {
         { href: "/notice", label: "Notice" },
         { href: "/howtoplay", label: "How to Play" },
         { href: "/maintenance", label: "Maintenance" },
-        { href: "/notification", label: "Notification" },
-        { href: "/referrals", label: "Referrals" },
       ],
     },
-
-
   ];
 
   return (
@@ -170,10 +156,12 @@ export function Sidebar() {
       )}
     >
       <div className="flex h-full flex-col p-2">
-        <div className={cn(
-          "flex items-center justify-between p-2 mb-4",
-          isCollapsed ? "flex-col gap-2" : ""
-        )}>
+        <div
+          className={cn(
+            "flex items-center justify-between p-2 mb-4",
+            isCollapsed ? "flex-col gap-2" : ""
+          )}
+        >
           {!isCollapsed && (
             <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
               AdminPro
@@ -210,7 +198,9 @@ export function Sidebar() {
                     )}
                     title={isCollapsed ? item.label : undefined}
                   >
-                    <span className={cn("flex-shrink-0", isCollapsed ? "" : "mr-3")}>
+                    <span
+                      className={cn("flex-shrink-0", isCollapsed ? "" : "mr-3")}
+                    >
                       {item.icon}
                     </span>
                     {!isCollapsed && <span>{item.label}</span>}
@@ -226,31 +216,44 @@ export function Sidebar() {
                 return (
                   <Collapsible
                     key={item.label}
-                    open={isCollapsed ? false : openItems[item.label] || hasActiveChild}
+                    open={
+                      isCollapsed
+                        ? false
+                        : openItems[item.label] || hasActiveChild
+                    }
                     onOpenChange={() => toggleItem(item.label)}
                     disabled={isCollapsed}
                   >
                     <CollapsibleTrigger
                       className={cn(
                         "flex w-full items-center justify-between rounded-md p-2 text-sm font-medium transition-colors mb-2 cursor-pointer",
-                        hasActiveChild
-                          ? "bg-muted"
-                          : "hover:bg-muted/50",
+                        hasActiveChild ? "bg-muted" : "hover:bg-muted/50",
                         isCollapsed ? "justify-center" : ""
                       )}
                       title={isCollapsed ? item.label : undefined}
                     >
                       <div className="flex items-center">
-                        <span className={cn("flex-shrink-0", isCollapsed ? "" : "mr-3")}>
+                        <span
+                          className={cn(
+                            "flex-shrink-0",
+                            isCollapsed ? "" : "mr-3"
+                          )}
+                        >
                           {item.icon}
                         </span>
-                        {!isCollapsed && <span className="text-base font-normal">{item.label}</span>}
+                        {!isCollapsed && (
+                          <span className="text-base font-normal">
+                            {item.label}
+                          </span>
+                        )}
                       </div>
                       {!isCollapsed && (
                         <FiChevronDown
                           className={cn(
                             "h-4 w-4 transition-transform",
-                            openItems[item.label] || hasActiveChild ? "rotate-180" : ""
+                            openItems[item.label] || hasActiveChild
+                              ? "rotate-180"
+                              : ""
                           )}
                         />
                       )}
@@ -268,7 +271,7 @@ export function Sidebar() {
                                 : "hover:bg-muted/50"
                             )}
                           >
-                            <span >{subItem.label}</span>
+                            <span>{subItem.label}</span>
                           </Link>
                         ))}
                       </CollapsibleContent>
@@ -281,14 +284,12 @@ export function Sidebar() {
             })}
           </nav>
         </ScrollArea>
-
-        
       </div>
     </div>
   );
 }
 
-// Mobile version
+// ✅ Mobile version
 export function MobileSidebar() {
   const [open, setOpen] = useState(false);
 
