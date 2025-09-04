@@ -54,9 +54,7 @@ const Funds: React.FC<FundsProps> = ({ userId, onBalanceUpdate, currentBalance }
   const [funds, setFunds] = useState<Fund[]>([]);
   const [fundPagination, setFundPagination] = useState<PaginationData | null>(null);
   const [dataLoading, setDataLoading] = useState(false);
-  const [fundLoading, setFundLoading] = useState(false);
-  const [amount, setAmount] = useState("");
-  const [description, setDescription] = useState("");
+
 
   useEffect(() => {
     fetchFunds(1);
@@ -83,41 +81,7 @@ const Funds: React.FC<FundsProps> = ({ userId, onBalanceUpdate, currentBalance }
     }
   };
 
-  const handleAddFunds = async () => {
-    if (!amount || parseFloat(amount) <= 0) {
-      toast.error("Please enter a valid amount");
-      return;
-    }
-
-    try {
-      setFundLoading(true);
-      const response = await axios.post(`/api/users/${userId}/add-fund`, {
-        amount: parseFloat(amount),
-        description: description || `Funds added by admin`
-      }, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('accessToken')}`
-        }
-      });
-
-      if (response.data.status) {
-        toast.success(response.data.message);
-        onBalanceUpdate(response.data.data.newBalance);
-        setAmount("");
-        setDescription("");
-        fetchFunds(1); // Refresh funds list
-      } else {
-        toast.error(response.data.message);
-      }
-    } catch (error: unknown) {
-      console.error('Add funds error:', error);
-      if (axios.isAxiosError(error)) {
-        toast.error(error.response?.data?.message || error.message || 'Failed to add funds');
-      }
-    } finally {
-      setFundLoading(false);
-    }
-  };
+ 
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleString("en-US", {
@@ -143,7 +107,7 @@ const Funds: React.FC<FundsProps> = ({ userId, onBalanceUpdate, currentBalance }
     const pages = [];
     const maxVisiblePages = 5;
     let startPage = Math.max(1, fundPagination.currentPage - Math.floor(maxVisiblePages / 2));
-    let endPage = Math.min(fundPagination.totalPages, startPage + maxVisiblePages - 1);
+    const endPage = Math.min(fundPagination.totalPages, startPage + maxVisiblePages - 1);
 
     if (endPage - startPage + 1 < maxVisiblePages) {
       startPage = Math.max(1, endPage - maxVisiblePages + 1);
