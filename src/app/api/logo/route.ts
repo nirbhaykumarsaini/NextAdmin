@@ -64,20 +64,45 @@ export async function POST(request: NextRequest) {
     }
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
     try {
         await connectDB();
 
         const appConfig = await AppConfig.findOne();
 
+        if (!appConfig) {
+            return NextResponse.json({
+                status: true,
+                data: null
+            });
+        }
+
+        // Get the base URL from the request
+        const protocol = request.headers.get('x-forwarded-proto') || 'http';
+        const host = request.headers.get('host');
+        const baseUrl = `${protocol}://${host}`;
+
+        // Create complete logo image URL
+        const completeLogoUrl = appConfig.logo_image 
+            ? `${baseUrl}${appConfig.logo_image}`
+            : null;
+
+        // Return app config data with complete logo URL
+        const appConfigData = {
+            ...appConfig.toObject(),
+            logo_image_url: completeLogoUrl,
+            logo_image: appConfig.logo_image // Keep the relative path as well
+        };
+
         return NextResponse.json({
             status: true,
-            data: appConfig
+            data: appConfigData
         });
-    } catch (error:unknown) {
-        const errorMessage = error instanceof Error ? error.message :  'Failed to retrive app config'
+    } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : 'Failed to retrieve app config'
         return NextResponse.json(
             { status: false, message: errorMessage },
+            { status: 500 }
         );
     }
 }

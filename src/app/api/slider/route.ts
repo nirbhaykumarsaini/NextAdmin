@@ -60,20 +60,45 @@ export async function POST(request: NextRequest) {
     }
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
     try {
         await connectDB();
 
         const slider = await Slider.findOne();
 
+        if (!slider) {
+            return NextResponse.json({
+                status: true,
+                data: null
+            });
+        }
+
+        // Get the base URL from the request
+        const protocol = request.headers.get('x-forwarded-proto') || 'http';
+        const host = request.headers.get('host');
+        const baseUrl = `${protocol}://${host}`;
+
+        // Create complete image URL
+        const completeImageUrl = slider.slider_image 
+            ? `${baseUrl}${slider.slider_image}`
+            : null;
+
+        // Return slider data with complete image URL
+        const sliderData = {
+            ...slider.toObject(),
+            slider_image_url: completeImageUrl,
+            slider_image: slider.slider_image // Keep the relative path as well if needed
+        };
+
         return NextResponse.json({
             status: true,
-            data: slider
+            data: sliderData
         });
     } catch (error: unknown) {
-        const errorMessage = error instanceof Error ? error.message : 'Failed to retrive app config'
+        const errorMessage = error instanceof Error ? error.message : 'Failed to retrieve app config'
         return NextResponse.json(
-            { status: false, message: errorMessage},
+            { status: false, message: errorMessage },
+            { status: 500 }
         );
     }
 }

@@ -28,12 +28,11 @@ const userSchema = new Schema<IUserDocument, Model<IUserDocument>>(
     role: { 
       type: String, 
       enum: ['admin'], 
-      default: 'user' 
+      default: 'admin' 
     }
   },
   { 
     timestamps: true,
-   
   }
 );
 

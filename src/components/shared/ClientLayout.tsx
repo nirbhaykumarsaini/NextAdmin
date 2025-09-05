@@ -8,7 +8,6 @@ import { ThemeProvider } from "@/providers/theme-provider";
 import { Breadcrumb } from '../ui/breadcrumb';
 import { Toaster } from "@/components/ui/sonner";
 import { Providers } from '@/providers/auth-provider';
-import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { useAppSelector } from '@/hooks/redux';
 
 export function ClientLayout({ children }: { children: React.ReactNode }) {
@@ -21,7 +20,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
   return (
     <ThemeProvider
       attribute="class"
-      defaultTheme="system"
+      defaultTheme="dark"
       enableSystem
       disableTransitionOnChange
     >
