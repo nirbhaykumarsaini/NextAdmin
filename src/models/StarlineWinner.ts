@@ -8,6 +8,7 @@ export interface IStarlineWinner extends Document {
     result_date: string;
     winners: [
         {
+            user_id:Types.ObjectId;
             user: string;
             game_name: string;
             game_type: string;
@@ -28,6 +29,11 @@ const starlineWinnerSchema = new mongoose.Schema({
     winners: [{
         user: {
             type: String,
+            required: true
+        },
+        user_id: {
+            type: String,
+            ref: "AppUser",
             required: true
         },
         game_name: {

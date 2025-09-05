@@ -4,10 +4,12 @@ import '@/models/MainMarketGame';
 import '@/models/MainMarketBid';
 import '@/models/Transaction';
 
+
 export interface IMainMarketWinner extends Document {
     result_date: string;
     winners: [
         {
+            user_id:Types.ObjectId;
             user: string;
             game_name: string;
             game_type: string;
@@ -29,6 +31,11 @@ const mainMarketWinnerSchema = new mongoose.Schema({
     winners: [{
         user: {
             type: String,
+            required: true
+        },
+        user_id: {
+            type: Types.ObjectId,
+            ref:"AppUser",
             required: true
         },
         game_name: {

@@ -18,6 +18,7 @@ interface StarlineResultDocument {
 }
 
 interface WinnerData {
+    user_id:Types.ObjectId;
     user: string;
     game_type: string;
     game: string;
@@ -27,12 +28,13 @@ interface WinnerData {
 }
 
 interface ProcessedWinner {
-  user: string;
-  game_name: string;
-  game_type: string;
-  digit: string | undefined;
-  winning_amount: number;
-  bid_amount: number;
+    user_id: Types.ObjectId;
+    user: string;
+    game_name: string;
+    game_type: string;
+    digit: string | undefined;
+    winning_amount: number;
+    bid_amount: number;
 }
 
 
@@ -61,7 +63,7 @@ export async function POST(request: NextRequest) {
 
         if (winners && winners.length > 0) {
             for (const winner of winners as WinnerData[]) {
-                const { user, game, amount, winning_amount, game_type, digit } = winner;
+                const { user, user_id, game, amount, winning_amount, game_type, digit } = winner;
 
                 if (!user || !game || !game_type || winning_amount === undefined) {
                     console.warn('Invalid winner data:', winner);
@@ -75,7 +77,7 @@ export async function POST(request: NextRequest) {
                     userId = new Types.ObjectId(user);
 
                     // Create transaction only if valid userId
-                     await Transaction.create({
+                    await Transaction.create({
                         user_id: userId,
                         type: 'win',
                         amount: winning_amount,
@@ -95,7 +97,8 @@ export async function POST(request: NextRequest) {
 
                 // Save winner entry regardless (string or ObjectId)
                 winnerDocs.push({
-                    user, // keep as provided (string)
+                    user_id,
+                    user, 
                     game_name: game,
                     game_type,
                     digit,

@@ -7,6 +7,7 @@ import ApiError from '@/lib/errors/APiError';
 import GalidisawarWinner from '@/models/GalidisawarWinner';
 
 interface Winners {
+    user_id: Types.ObjectId;
     _id: string;
     user: string;
     created_at: string;
@@ -184,6 +185,7 @@ export async function POST(request: Request) {
 
                     winningBids.push({
                         _id: mainBid._id.toString(),
+                        user_id: mainBid.user_id._id,
                         user: mainBid.user_id.name,
                         created_at: mainBid.created_at.toISOString(),
                         game_type: bid.game_type,

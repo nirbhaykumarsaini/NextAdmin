@@ -8,6 +8,7 @@ import AppUser from '@/models/AppUser';
 
 
 interface Winners {
+    user_id:Types.ObjectId;
     _id: string;
     user: string;
     created_at: string;
@@ -55,6 +56,7 @@ interface PopulatedMainMarketBid {
 }
 
 interface WinnerItem {
+    user_id:Types.ObjectId;
     user: string;
     game_name: string;
     game_type: string;
@@ -285,6 +287,7 @@ export async function POST(request: Request) {
                     winningBids.push({
                         _id: mainBid._id.toString(),
                         user: mainBid.user_id.name,
+                        user_id: mainBid.user_id._id,
                         created_at: mainBid.created_at.toISOString(),
                         game_type: bid.game_type,
                         game: bid.game_id.game_name,

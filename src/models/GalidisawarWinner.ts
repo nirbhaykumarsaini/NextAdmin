@@ -8,6 +8,7 @@ export interface IGalidisawarWinner extends Document {
     result_date: string;
     winners: [
         {
+            user_id: Types.ObjectId;
             user: string;
             game_name: string;
             game_type: string;
@@ -20,13 +21,18 @@ export interface IGalidisawarWinner extends Document {
 
 
 const galidisawarWinnerSchema = new mongoose.Schema({
-      result_date: {
+    result_date: {
         type: Date,
         required: [true, "Result date is required"],
     },
     winners: [{
         user: {
             type: String,
+            required: true
+        },
+        user_id: {
+            type: Types.ObjectId,
+            ref: "AppUser",
             required: true
         },
         game_name: {
@@ -57,7 +63,7 @@ const galidisawarWinnerSchema = new mongoose.Schema({
 
 
 
-const GalidisawarWinner: Model<IGalidisawarWinner> = mongoose.models.GalidisawarWinner || 
+const GalidisawarWinner: Model<IGalidisawarWinner> = mongoose.models.GalidisawarWinner ||
     mongoose.model<IGalidisawarWinner>('GalidisawarWinner', galidisawarWinnerSchema);
 
 export default GalidisawarWinner;

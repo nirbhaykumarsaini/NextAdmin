@@ -5,23 +5,22 @@ import Transaction from '@/models/Transaction';
 import mongoose, { Types } from 'mongoose';
 
 interface GetTransactionsParams {
-    user_id?:Types.ObjectId;
+  user_id?: Types.ObjectId;
 }
 
-export async function GET(request: Request) {
+export async function POST(request: Request) {
   try {
     await dbConnect();
 
-    // Get query parameters
-    const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('user_id');
+    const body = await request.json()
+    const { user_id } = body;
 
     // Build filter object
-    const filter: GetTransactionsParams = { };
-    
-    
-    if (userId && mongoose.Types.ObjectId.isValid(userId)) {
-      filter.user_id = new mongoose.Types.ObjectId(userId);
+    const filter: GetTransactionsParams = {};
+
+
+    if (user_id && mongoose.Types.ObjectId.isValid(user_id)) {
+      filter.user_id = new mongoose.Types.ObjectId(user_id);
     }
 
     // Get transactions with pagination
@@ -48,13 +47,13 @@ export async function GET(request: Request) {
           createdAt: transaction.created_at,
           formattedTime: formatTimeAgo(transaction.created_at)
         })),
-       
+
       }
     });
 
   } catch (error: unknown) {
     console.error('Transactions API Error:', error);
-    
+
     if (error instanceof ApiError) {
       return NextResponse.json(
         { status: false, message: error.message },

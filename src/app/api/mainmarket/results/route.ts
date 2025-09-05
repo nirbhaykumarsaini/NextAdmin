@@ -33,6 +33,7 @@ interface MainMarketResultDocument {
 }
 
 interface WinnerData {
+  user_id:Types.ObjectId;
   user: string;
   game: string;
   game_type: string;
@@ -44,6 +45,7 @@ interface WinnerData {
 }
 
 interface ProcessedWinner {
+  user_id:Types.ObjectId;
   user: string;
   game_name: string;
   game_type: string;
@@ -109,7 +111,7 @@ export async function POST(request: NextRequest) {
 
     if (winners.length > 0) {
       for (const winner of winners as WinnerData[]) {
-        const { user, game, game_type, amount, winning_amount, session: winnerSession, digit: winnerDigit, panna: winnerPanna } = winner;
+        const { user, user_id, game, game_type, amount, winning_amount, session: winnerSession, digit: winnerDigit, panna: winnerPanna } = winner;
 
         // Validate winner data
         if (!user || winning_amount === undefined) {
@@ -119,9 +121,9 @@ export async function POST(request: NextRequest) {
 
         try {
           // Find the user by username/name since your data has 'user' not 'user_id'
-          const userDoc = await AppUser.findOne({ name: user });
+          const userDoc = await AppUser.findOne({ _id: user_id });
           if (!userDoc) {
-            console.warn(`User not found: ${user}`);
+            console.warn(`User not found`);
             continue;
           }
 
@@ -144,6 +146,7 @@ export async function POST(request: NextRequest) {
           // Add to processed winners array
           processedWinners.push({
             user,
+            user_id,
             game_name: game,
             game_type,
             panna: winnerPanna,

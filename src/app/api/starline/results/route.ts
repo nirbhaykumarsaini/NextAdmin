@@ -19,6 +19,7 @@ interface StarlineResultDocument {
 }
 
 interface ProcessedWinner {
+    user_id:Types.ObjectId;
     user: string;
     game_name: string;
     game_type: string;
@@ -78,7 +79,7 @@ export async function POST(request: NextRequest) {
         if (winners.length > 0) {
             // Process each winner to create transactions and update balances
             for (const winner of winners) {
-                const { user, game, game_type, amount, winning_amount, digit: winnerDigit, panna: winnerPanna } = winner;
+                const { user,user_id, game, game_type, amount, winning_amount, digit: winnerDigit, panna: winnerPanna } = winner;
 
                 // Validate winner data
                 if (!user || winning_amount === undefined) {
@@ -110,6 +111,7 @@ export async function POST(request: NextRequest) {
                     );
 
                     processedWinners.push({
+                        user_id,
                         user,
                         game_name: game,
                         game_type,
