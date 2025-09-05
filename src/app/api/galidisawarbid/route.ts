@@ -107,7 +107,7 @@ export async function POST(request: Request) {
             throw new ApiError('User not found');
         }
 
-        if (!user.is_blocked) {
+        if (user.is_blocked) {
             throw new ApiError('User account is blocked');
         }
 
@@ -274,7 +274,7 @@ export async function PUT(request: Request) {
             throw new ApiError('User not found');
         }
 
-        if (!user.is_blocked) {
+        if (user.is_blocked) {
             throw new ApiError('User account is blocked');
         }
 

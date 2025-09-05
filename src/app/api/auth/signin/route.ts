@@ -42,7 +42,7 @@ export async function POST(request: Request) {
     }
 
     // Check if user is blocked
-    if (!user.is_blocked) {
+    if (user.is_blocked) {
       throw new ApiError('Your account has been blocked. Please contact support.');
     }
 

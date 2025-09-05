@@ -1,4 +1,6 @@
 import mongoose, { Document, Schema, Types } from 'mongoose';
+import '@/models/AppUser'
+import '@/models/GalidisawarGame'
 
 export interface IBid {
   digit?: string;

@@ -25,10 +25,7 @@ export async function GET(
       status: true,
       data: transformBids(bids),
     });
-  } catch (error: unknown) {
-    if (error instanceof ApiError) {
-      return NextResponse.json({ status: false, message: error.message });
-    }
-    return NextResponse.json({ status: false, message: "Failed to fetch user bids" });
+  } catch (error: any) {
+    return NextResponse.json({ status: false, message: error.message || "Failed to fetch user bids" });
   }
 }

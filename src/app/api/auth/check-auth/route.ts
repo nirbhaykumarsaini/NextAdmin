@@ -21,7 +21,7 @@ export async function POST(request: Request) {
             return NextResponse.json({ status: false, message: 'No account found with this mobile number', exists: false });
         }
 
-        if (!user.is_blocked) {
+        if (user.is_blocked) {
             return NextResponse.json({ status: false, message: 'Your account has been blocked. Please contact support.' });
         }
 

@@ -1,4 +1,7 @@
 import mongoose, { Document, Schema, Types } from 'mongoose';
+import '@/models/AppUser'
+import '@/models/StarlineGame'
+
 
 export interface IBid {
   digit?: string;

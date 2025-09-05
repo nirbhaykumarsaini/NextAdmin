@@ -195,10 +195,10 @@ const Bids: React.FC<BidsProps> = ({ userId }) => {
         </CardHeader>
         <CardContent>
           <Tabs value={activeBidTab} onValueChange={setActiveBidTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-3 mb-6">
+            <TabsList className="grid w-full grid-cols-3 mb-6 bg-white dark:bg-gray-900">
               <TabsTrigger value="main">Main Market</TabsTrigger>
-              <TabsTrigger value="starline">Starline</TabsTrigger>
-              <TabsTrigger value="gali">Gali Disawar</TabsTrigger>
+              <TabsTrigger value="starline">Starline </TabsTrigger>
+              <TabsTrigger value="gali">Galidisawar</TabsTrigger>
             </TabsList>
 
             <TabsContent value="main">

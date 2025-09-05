@@ -12,8 +12,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   ArrowLeft, User, Phone, CreditCard, Cpu, Calendar, Shield,
   Plus, Minus, Download, Filter, Search,
-  MessageCircle
+  MessageCircle, TrendingUp, TrendingDown, Activity
 } from "lucide-react";
+import { FaWhatsapp } from 'react-icons/fa'
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import {
@@ -86,6 +87,12 @@ interface Transaction {
   created_at: string;
 }
 
+interface Bid {
+  _id: string;
+  bid_amount: number;
+  created_at: string;
+}
+
 interface PaginationData {
   currentPage: number;
   totalPages: number;
@@ -102,9 +109,13 @@ function UserDetailsContent() {
   const [funds, setFunds] = useState<Fund[]>([]);
   const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [mainBids, setMainBids] = useState<Bid[]>([]);
+  const [starlineBids, setStarlineBids] = useState<Bid[]>([]);
+  const [galiBids, setGaliBids] = useState<Bid[]>([]);
   const [loading, setLoading] = useState(true);
   const [fundLoading, setFundLoading] = useState(false);
   const [dataLoading, setDataLoading] = useState(false);
+  const [bidsLoading, setBidsLoading] = useState(false);
   const [error, setError] = useState("");
   const [amount, setAmount] = useState("");
   const [description, setDescription] = useState("");
@@ -114,17 +125,22 @@ function UserDetailsContent() {
 
   const searchParams = useSearchParams();
   const userId = searchParams.get("userId") || params.id as string;
-  console.log(userId)
 
   useEffect(() => {
     if (userId) {
       fetchUserDetails(userId);
+      fetchAllBids(userId); // Fetch all bids for overview
     }
   }, [userId]);
 
   useEffect(() => {
     if (userId && activeTab) {
-      fetchTabData(activeTab);
+      if (activeTab === "overview") {
+        // Fetch overview data when switching back to overview tab
+        fetchAllBids(userId);
+      } else {
+        fetchTabData(activeTab);
+      }
     }
   }, [userId, activeTab]);
 
@@ -150,6 +166,61 @@ function UserDetailsContent() {
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchAllBids = async (userId: string) => {
+    try {
+      setBidsLoading(true);
+
+      // Fetch bids from all markets
+      const [mainResponse, starlineResponse, galiResponse] = await Promise.all([
+        axios.get(`/api/mainmarketbid/user/${userId}`, {
+          headers: { Authorization: `Bearer ${localStorage.getItem('accessToken')}` }
+        }),
+        axios.get(`/api/starlinebid/user/${userId}`, {
+          headers: { Authorization: `Bearer ${localStorage.getItem('accessToken')}` }
+        }),
+        axios.get(`/api/galidisawarbid/user/${userId}`, {
+          headers: { Authorization: `Bearer ${localStorage.getItem('accessToken')}` }
+        })
+      ]);
+
+      if (mainResponse.data.status) setMainBids(mainResponse.data.data);
+      if (starlineResponse.data.status) setStarlineBids(starlineResponse.data.data);
+      if (galiResponse.data.status) setGaliBids(galiResponse.data.data);
+
+      let response;
+
+      response = await axios.get(`/api/users/${userId}/add-fund`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('accessToken')}` }
+      });
+      if (response.data.status) {
+        setFunds(response.data.data.funds);
+        setFundPagination(response.data.data.pagination);
+      }
+
+      response = await axios.get(`/api/users/${userId}/withdraw`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('accessToken')}` }
+      });
+      if (response.data.status) {
+        setWithdrawals(response.data.data.withdrawals);
+        setWithdrawalPagination(response.data.data.pagination);
+      }
+
+      response = await axios.get(`/api/users/${userId}/transactions`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('accessToken')}` }
+      });
+      if (response.data.status) {
+        setTransactions(response.data.data.transactions);
+        setTransactionPagination(response.data.data.pagination);
+      }
+
+    } catch (error: unknown) {
+      console.error("Error fetching bids:", error);
+      toast.error("Failed to fetch bids data");
+    } finally {
+      setBidsLoading(false);
     }
   };
 
@@ -219,8 +290,9 @@ function UserDetailsContent() {
         setUser(prev => prev ? { ...prev, balance: response.data.data.newBalance } : null);
         setAmount("");
         setDescription("");
-        fetchTabData("funds", 1); // Refresh funds list
-        fetchTabData("transactions", 1); // Refresh transactions list
+        fetchTabData("funds", 1);
+        fetchTabData("transactions", 1);
+        fetchAllBids(userId); // Refresh bids data
       } else {
         toast.error(response.data.message);
       }
@@ -261,8 +333,9 @@ function UserDetailsContent() {
         setUser(prev => prev ? { ...prev, balance: response.data.data.newBalance } : null);
         setAmount("");
         setDescription("");
-        fetchTabData("withdrawals", 1); // Refresh withdrawals list
-        fetchTabData("transactions", 1); // Refresh transactions list
+        fetchTabData("withdrawals", 1);
+        fetchTabData("transactions", 1);
+        fetchAllBids(userId); // Refresh bids data
       } else {
         toast.error(response.data.message);
       }
@@ -294,18 +367,13 @@ function UserDetailsContent() {
     }).format(amount);
   };
 
-
   const formatPhoneForWhatsApp = (phoneNumber: string): string => {
-    // Remove all non-digit characters except plus sign
     let cleaned = phoneNumber.replace(/[^\d+]/g, '');
 
-    // If the number doesn't start with +, assume it's an Indian number and add +91
     if (!cleaned.startsWith('+')) {
-      // If it starts with 0, remove the 0
       if (cleaned.startsWith('0')) {
         cleaned = cleaned.substring(1);
       }
-      // Add country code if it's not present
       if (!cleaned.startsWith('+') && cleaned.length === 10) {
         cleaned = '+91' + cleaned;
       }
@@ -313,6 +381,18 @@ function UserDetailsContent() {
 
     return cleaned;
   };
+
+  // Calculate total amounts for overview
+  const totalFunds = funds.reduce((sum, fund) => sum + fund.amount, 0);
+  const totalWithdrawals = withdrawals.reduce((sum, withdrawal) => sum + withdrawal.amount, 0);
+  const totalTransactions = transactions.reduce((sum, transaction) => sum + transaction.amount, 0);
+
+  // Calculate total bid amounts from all markets
+  const totalMainBids = mainBids.reduce((sum, bid) => sum + bid.bid_amount, 0);
+  const totalStarlineBids = starlineBids.reduce((sum, bid) => sum + bid.bid_amount, 0);
+  const totalGaliBids = galiBids.reduce((sum, bid) => sum + bid.bid_amount, 0);
+  const totalBidsAmount = totalMainBids + totalStarlineBids + totalGaliBids;
+
   const renderPagination = (pagination: PaginationData | null, tab: string) => {
     if (!pagination || pagination.totalPages <= 1) return null;
 
@@ -418,7 +498,6 @@ function UserDetailsContent() {
             </div>
 
             <div className="flex items-center gap-3">
-              <Phone className="h-5 w-5 text-muted-foreground" />
               <div className="flex items-center gap-3">
                 <Phone className="h-5 w-5 text-muted-foreground" />
                 <div className="flex-1">
@@ -435,7 +514,7 @@ function UserDetailsContent() {
                       }}
                       title="Send WhatsApp message"
                     >
-                      <MessageCircle className="h-4 w-4 text-green-600" />
+                      <FaWhatsapp className="h-4 w-4 text-green-600" />
                     </Button>
                   </div>
                 </div>
@@ -605,9 +684,9 @@ function UserDetailsContent() {
       </Card>
 
       {/* Tabs for Funds, Withdrawals, Transactions */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full ">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-5 bg-white dark:bg-gray-800">
-          <TabsTrigger className="cursor-pointer" value="overview ">Overview</TabsTrigger>
+          <TabsTrigger className="cursor-pointer" value="overview">Overview</TabsTrigger>
           <TabsTrigger className="cursor-pointer" value="funds">Funds</TabsTrigger>
           <TabsTrigger className="cursor-pointer" value="withdrawals">Withdrawals</TabsTrigger>
           <TabsTrigger className="cursor-pointer" value="transactions">Transactions</TabsTrigger>
@@ -618,27 +697,85 @@ function UserDetailsContent() {
           <Card className="bg-white dark:bg-gray-800">
             <CardHeader>
               <CardTitle>Account Summary</CardTitle>
-              <CardDescription>Recent activity overview</CardDescription>
+              <CardDescription>Complete overview of user activity</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {/* Total Funds */}
                 <div className="border rounded-lg p-4">
-                  <h3 className="font-semibold">Total Funds Added</h3>
+                  <div className="flex items-center gap-3 mb-2">
+                    <TrendingUp className="h-5 w-5 text-green-600" />
+                    <h3 className="font-semibold">Total Funds Added</h3>
+                  </div>
                   <p className="text-2xl font-bold text-green-600">
-                    {formatCurrency(funds.reduce((sum, fund) => sum + fund.amount, 0))}
+                    {formatCurrency(totalFunds)}
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {funds.length} transactions
                   </p>
                 </div>
+
+                {/* Total Withdrawals */}
                 <div className="border rounded-lg p-4">
-                  <h3 className="font-semibold">Total Withdrawals</h3>
+                  <div className="flex items-center gap-3 mb-2">
+                    <TrendingDown className="h-5 w-5 text-red-600" />
+                    <h3 className="font-semibold">Total Withdrawals</h3>
+                  </div>
                   <p className="text-2xl font-bold text-red-600">
-                    {formatCurrency(withdrawals.reduce((sum, withdrawal) => sum + withdrawal.amount, 0))}
+                    {formatCurrency(totalWithdrawals)}
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {withdrawals.length} transactions
                   </p>
                 </div>
+
+                {/* Total Transactions */}
                 <div className="border rounded-lg p-4">
-                  <h3 className="font-semibold">Current Balance</h3>
+                  <div className="flex items-center gap-3 mb-2">
+                    <Activity className="h-5 w-5 text-blue-600" />
+                    <h3 className="font-semibold">Total Transactions</h3>
+                  </div>
                   <p className="text-2xl font-bold text-blue-600">
-                    {formatCurrency(user.balance)}
+                    {formatCurrency(totalTransactions)}
                   </p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {transactions.length} transactions
+                  </p>
+                </div>
+
+                {/* Total Bids Amount */}
+                <div className="border rounded-lg p-4">
+                  <div className="flex items-center gap-3 mb-2">
+                    <CreditCard className="h-5 w-5 text-purple-600" />
+                    <h3 className="font-semibold">Total Bids Amount</h3>
+                  </div>
+                  <p className="text-2xl font-bold text-purple-600">
+                    {formatCurrency(totalBidsAmount)}
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {mainBids.length + starlineBids.length + galiBids.length} bids across all markets
+                  </p>
+                </div>
+              </div>
+
+              {/* Market Breakdown */}
+              <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="border rounded-lg p-4">
+                  <h4 className="font-medium mb-2">Main Market Bids</h4>
+                  <p className="text-lg font-semibold">{formatCurrency(totalMainBids)}</p>
+                  <p className="text-sm text-muted-foreground">{mainBids.length} bids</p>
+                </div>
+
+                <div className="border rounded-lg p-4">
+                  <h4 className="font-medium mb-2">Starline Bids</h4>
+                  <p className="text-lg font-semibold">{formatCurrency(totalStarlineBids)}</p>
+                  <p className="text-sm text-muted-foreground">{starlineBids.length} bids</p>
+                </div>
+
+                <div className="border rounded-lg p-4">
+                  <h4 className="font-medium mb-2">Gali Disawar Bids</h4>
+                  <p className="text-lg font-semibold">{formatCurrency(totalGaliBids)}</p>
+                  <p className="text-sm text-muted-foreground">{galiBids.length} bids</p>
                 </div>
               </div>
             </CardContent>
