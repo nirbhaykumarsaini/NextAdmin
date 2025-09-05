@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import dbConnect from '@/config/db';
-import { Types } from 'mongoose';
+import mongoose, { Types } from 'mongoose';
 import StarlineWinner from '@/models/StarlineWinner';
 
 interface WinnerItem {
@@ -22,6 +22,7 @@ interface AggregationResult {
     createdAt: Date;
 }
 
+
 export async function POST(request: Request) {
     try {
         await dbConnect();
@@ -29,7 +30,7 @@ export async function POST(request: Request) {
         const body = await request.json();
         const user_id = body.user_id; // Assuming the request body has { user_id: "..." }
 
-        let aggregationPipeline: any[] = [];
+        let aggregationPipeline: mongoose.PipelineStage[] = [];
 
         if (user_id) {
             // Since user_id is stored as String in the schema, we can filter directly

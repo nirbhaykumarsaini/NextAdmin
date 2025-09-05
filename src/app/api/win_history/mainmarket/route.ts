@@ -32,7 +32,7 @@ export async function POST(request: Request) {
         const body = await request.json();
         const user_id = body.user_id; // Assuming the request body has { user_id: "..." }
 
-        let aggregationPipeline: any[] = [];
+        let aggregationPipeline: mongoose.PipelineStage[] = [];
 
         if (user_id && mongoose.Types.ObjectId.isValid(user_id)) {
             // Filter by user_id directly in the aggregation pipeline
