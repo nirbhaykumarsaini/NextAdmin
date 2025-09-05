@@ -11,7 +11,7 @@ export async function GET(
   try {
     await dbConnect();
 
-    const {user_id} = await params;
+    const { user_id } = await params;
     if (!user_id) throw new ApiError("User ID is required");
 
     // Cast the result to BidDocument[] to handle the lean() return type
@@ -25,7 +25,9 @@ export async function GET(
       status: true,
       data: transformBids(bids),
     });
-  } catch (error: any) {
-    return NextResponse.json({ status: false, message: error.message || "Failed to fetch user bids" });
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      return NextResponse.json({ status: false, message: error.message || "Failed to fetch user bids" });
+    }
   }
 }
