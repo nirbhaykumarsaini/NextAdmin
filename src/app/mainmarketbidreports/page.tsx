@@ -232,7 +232,7 @@ const MainMarketBidReports = () => {
             </div>
 
             {/* Enhanced Filter Form */}
-            <div className="bg-card rounded-lg p-6 shadow-sm border">
+            <div className=" rounded-lg">
                 <form onSubmit={handleSearch} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                     
                     {/* Date Range Filters */}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, Suspense } from "react";
+import { useEffect, useState, Suspense, useCallback } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
@@ -34,6 +34,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import Bids from "@/components/BidTables/BidTable";
 
 interface UserDevice {
   _id: string;
@@ -295,23 +296,23 @@ function UserDetailsContent() {
 
 
   const formatPhoneForWhatsApp = (phoneNumber: string): string => {
-  // Remove all non-digit characters except plus sign
-  let cleaned = phoneNumber.replace(/[^\d+]/g, '');
-  
-  // If the number doesn't start with +, assume it's an Indian number and add +91
-  if (!cleaned.startsWith('+')) {
-    // If it starts with 0, remove the 0
-    if (cleaned.startsWith('0')) {
-      cleaned = cleaned.substring(1);
+    // Remove all non-digit characters except plus sign
+    let cleaned = phoneNumber.replace(/[^\d+]/g, '');
+
+    // If the number doesn't start with +, assume it's an Indian number and add +91
+    if (!cleaned.startsWith('+')) {
+      // If it starts with 0, remove the 0
+      if (cleaned.startsWith('0')) {
+        cleaned = cleaned.substring(1);
+      }
+      // Add country code if it's not present
+      if (!cleaned.startsWith('+') && cleaned.length === 10) {
+        cleaned = '+91' + cleaned;
+      }
     }
-    // Add country code if it's not present
-    if (!cleaned.startsWith('+') && cleaned.length === 10) {
-      cleaned = '+91' + cleaned;
-    }
-  }
-  
-  return cleaned;
-};
+
+    return cleaned;
+  };
   const renderPagination = (pagination: PaginationData | null, tab: string) => {
     if (!pagination || pagination.totalPages <= 1) return null;
 
@@ -605,11 +606,12 @@ function UserDetailsContent() {
 
       {/* Tabs for Funds, Withdrawals, Transactions */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full ">
-        <TabsList className="grid w-full grid-cols-4 bg-white dark:bg-gray-800">
+        <TabsList className="grid w-full grid-cols-5 bg-white dark:bg-gray-800">
           <TabsTrigger className="cursor-pointer" value="overview ">Overview</TabsTrigger>
           <TabsTrigger className="cursor-pointer" value="funds">Funds</TabsTrigger>
           <TabsTrigger className="cursor-pointer" value="withdrawals">Withdrawals</TabsTrigger>
           <TabsTrigger className="cursor-pointer" value="transactions">Transactions</TabsTrigger>
+          <TabsTrigger className="cursor-pointer" value="bids">Bids</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4">
@@ -826,7 +828,14 @@ function UserDetailsContent() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        <TabsContent value="bids">
+          <Bids userId={userId} />
+        </TabsContent>
+
       </Tabs>
+
+
     </div>
   );
 }

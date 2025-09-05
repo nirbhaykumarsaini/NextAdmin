@@ -35,7 +35,7 @@ interface MainBidTableProps {
 
 const MainBidTable = ({ bids, loading, formatGameType, formatCurrency, onEditBid }: MainBidTableProps) => {
   return (
-    <div className="bg-card rounded-lg border shadow-sm overflow-hidden">
+    <div className="bg-white dark:bg-gray-900 rounded-lg border shadow-sm overflow-hidden">
       <Table>
         <TableHeader>
           <TableRow>

@@ -32,12 +32,9 @@ export async function POST(request: Request) {
         id: user._id,
         name: user.name,
         mobile_number: user.mobile_number,
-        is_blocked: user.is_blocked,
+        is_verified: user.is_verified,
         batting: user.batting,
         balance: user.balance,
-        createdAt: user.createdAt,
-        updatedAt: user.updatedAt,
-        devices: user.devices,
       },
     });
 

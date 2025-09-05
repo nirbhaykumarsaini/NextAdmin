@@ -17,7 +17,7 @@ export async function GET(
     const skip = (page - 1) * limit;
 
     const [funds, totalCount] = await Promise.all([
-      Fund.find({ })
+      Fund.find({ }).populate('user_id', 'name mobile_number')
         .sort({ created_at: -1 })
         .skip(skip)
         .limit(limit)
