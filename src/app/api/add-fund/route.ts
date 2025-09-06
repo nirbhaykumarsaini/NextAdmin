@@ -100,7 +100,7 @@ export async function POST(
         }
 
         const errorMessage = error instanceof Error ? error.message : 'Failed to add funds';
-        return NextResponse.json({ status: false, message: errorMessage }, { status: 500 });
+        return NextResponse.json({ status: false, message: errorMessage });
     }
 }
 

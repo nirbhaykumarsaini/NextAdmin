@@ -229,7 +229,7 @@ export default function Dashboard() {
         />
         <StatCard
           link="/withdrawal"
-          title="Net Flow"
+          title="Net Profit"
           value={`₹${stats.netFlow.toLocaleString()}`}
           change={calculateChange(stats.netFlow, stats.netFlow * 0.92)} // Example calculation
           icon={<FiDollarSign className="h-4 w-4 text-yellow-500" />}
