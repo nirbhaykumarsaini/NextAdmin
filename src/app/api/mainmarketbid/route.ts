@@ -5,7 +5,7 @@ import ApiError from '@/lib/errors/APiError';
 import MainMarketGame from '@/models/MainMarketGame';
 import AppUser from '@/models/AppUser';
 import Transaction from '@/models/Transaction';
-import mongoose, { Types } from 'mongoose';
+import mongoose, { Types,PipelineStage } from 'mongoose';
 import AccountSetting from '@/models/AccountSettings';
 
 interface BidRequest {
@@ -34,6 +34,7 @@ interface FilterType {
     'bids.game_id'?: Types.ObjectId;
     'bids.game_type'?: string;
 }
+
 
 export async function POST(request: Request) {
     try {
@@ -574,6 +575,7 @@ export async function PUT(request: Request) {
     }
 }
 
+
 export async function GET(request: Request) {
     try {
         await dbConnect();
@@ -587,7 +589,13 @@ export async function GET(request: Request) {
         const session = searchParams.get('session');
 
         // Build filter object dynamically
-        const filter: any = {};
+        const filter: {
+            created_at?: {
+                $gte?: Date;
+                $lte?: Date;
+            };
+            user_id?: Types.ObjectId;
+        } = {};
 
         // Date filtering
         if (startDate || endDate) {
@@ -606,7 +614,11 @@ export async function GET(request: Request) {
         }
 
         // Add match stage for bids array filtering
-        const bidsMatchStage: any = {};
+        const bidsMatchStage: {
+            'bids.game_id'?: Types.ObjectId;
+            'bids.game_type'?: string;
+            'bids.session'?: string;
+        } = {};
 
         // Game ID filtering
         if (gameId) {
@@ -624,7 +636,7 @@ export async function GET(request: Request) {
         }
 
         // Build aggregation pipeline
-        const pipeline: any[] = [];
+        const pipeline: PipelineStage[] = [];
 
         // First, match the main document filters
         if (Object.keys(filter).length > 0) {
