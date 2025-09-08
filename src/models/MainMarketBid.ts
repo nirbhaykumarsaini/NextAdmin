@@ -9,8 +9,8 @@ export interface IBid {
   game_id: Types.ObjectId;
   game_type: string;
   session?: 'open' | 'close';
-  open_panna?: string; // For full-sangam
-  close_panna?: string; // For full-sangam
+  open_panna?: string; // For full-sangam and half-sangam
+  close_panna?: string; // For full-sangam and half-sangam
 }
 
 export interface IMainMarketBid {
@@ -41,12 +41,8 @@ const bidSchema = new Schema<IBid>({
           return v !== undefined && v !== null && v !== '' && /^[0-9]{2}$/.test(v);
         }
         
-        if (this.game_type === 'half-sangam') {
-          if (this.session === 'open') {
-            return v !== undefined && v !== null && v !== '' && /^[0-9]$/.test(v);
-          } else if (this.session === 'close') {
-            return v === undefined || v === null || v === '';
-          }
+        if (['half-sangam'].includes(this.game_type)) {
+          return v !== undefined && v !== null && v !== '' && /^[0-9]$/.test(v);
         }
         
         // For other game types, digit should not be present
@@ -60,18 +56,14 @@ const bidSchema = new Schema<IBid>({
     validate: {
       validator: function(this: IBid, v: string) {
         // Panna validation based on game type
-        const pannaGames = ['single-panna', 'double-panna', 'triple-panna', 'sp-motor', 'dp-motor', 'sp-dp-tp-motor', 'choice-panna', 'two-digit'];
+        const pannaGames = [
+          'single-panna', 'double-panna', 'triple-panna', 
+          'sp-motor', 'dp-motor', 'sp-dp-tp-motor', 
+          'choice-panna', 'two-digit'
+        ];
         
         if (pannaGames.includes(this.game_type)) {
           return v !== undefined && v !== null && v !== '' && /^[0-9]{3}$/.test(v);
-        }
-        
-        if (this.game_type === 'half-sangam') {
-          if (this.session === 'close') {
-            return v !== undefined && v !== null && v !== '' && /^[0-9]{3}$/.test(v);
-          } else if (this.session === 'open') {
-            return v === undefined || v === null || v === '';
-          }
         }
         
         // For other game types, panna should not be present
@@ -84,31 +76,38 @@ const bidSchema = new Schema<IBid>({
     type: String,
     validate: {
       validator: function(this: IBid, v: string) {
-        // Only for full-sangam
+        // For full-sangam and half-sangam (close session)
         if (this.game_type === 'full-sangam') {
+          return v !== undefined && v !== null && v !== '' && /^[0-9]{3}$/.test(v);
+        }
+        if (this.game_type === 'half-sangam' && this.session === 'close') {
           return v !== undefined && v !== null && v !== '' && /^[0-9]{3}$/.test(v);
         }
         return v === undefined || v === null || v === '';
       },
-      message: 'Open panna is required for full-sangam and must be 3 digits'
+      message: `Open panna is required and must be 3 digits`
     }
   },
   close_panna: {
     type: String,
     validate: {
       validator: function(this: IBid, v: string) {
-        // Only for full-sangam
+        // For full-sangam and half-sangam (open session)
         if (this.game_type === 'full-sangam') {
+          return v !== undefined && v !== null && v !== '' && /^[0-9]{3}$/.test(v);
+        }
+        if (this.game_type === 'half-sangam' && this.session === 'open') {
           return v !== undefined && v !== null && v !== '' && /^[0-9]{3}$/.test(v);
         }
         return v === undefined || v === null || v === '';
       },
-      message: 'Close panna is required for full-sangam and must be 3 digits'
+      message: `Close panna is required and must be 3 digits`
     }
   },
   bid_amount: {
     type: Number,
     required: true,
+    min: 0
   },
   game_id: {
     type: Schema.Types.ObjectId,

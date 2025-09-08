@@ -8,7 +8,7 @@ import AppUser from '@/models/AppUser';
 
 
 interface Winners {
-    user_id:Types.ObjectId;
+    user_id: Types.ObjectId;
     _id: string;
     user: string;
     created_at: string;
@@ -56,7 +56,7 @@ interface PopulatedMainMarketBid {
 }
 
 interface WinnerItem {
-    user_id:Types.ObjectId;
+    user_id: Types.ObjectId;
     user: string;
     game_name: string;
     game_type: string;
@@ -75,7 +75,6 @@ interface AggregationResult {
     createdAt: Date;
 }
 
-// GET - Get all games
 export async function GET(request: Request) {
     try {
         await dbConnect();
@@ -83,7 +82,7 @@ export async function GET(request: Request) {
         const { searchParams } = new URL(request.url);
         const user_id = searchParams.get('user_id');
 
-        type PipelineStage = 
+        type PipelineStage =
             | { $match: { 'winners.user'?: string } }
             | { $unwind: string }
             | { $project: { result_date: number; winner: string; createdAt: number } };
@@ -167,7 +166,7 @@ export async function GET(request: Request) {
     }
 }
 // Helper function to calculate winning amount
- function calculateWinningAmount(gameType: string, bidAmount: number, gameRates: GameRates): number {
+function calculateWinningAmount(gameType: string, bidAmount: number, gameRates: GameRates): number {
     const rateMap: Record<string, number> = {
         'single-digit': gameRates.single_digit_point,
         'single-panna': gameRates.single_panna_point,
@@ -236,9 +235,7 @@ export async function POST(request: Request) {
             });
         }
 
-        // Calculate sum of current panna digits
-        const pannaSum = String(panna).split('').reduce((acc, curr) => acc + parseInt(curr), 0);
-        const pannaDigit = pannaSum > 9 ? String(pannaSum).slice(-1) : pannaSum;
+
 
         // Filter winning bids and calculate totals for winners only
         const winningBids: Winners[] = [];
@@ -254,7 +251,9 @@ export async function POST(request: Request) {
 
                 let isWinner = false;
                 let winningAmount = 0;
-
+                // Calculate sum of current panna digits
+                const pannaSum = String(bid.panna).split('').reduce((acc, curr) => acc + parseInt(curr), 0);
+                const pannaDigit = pannaSum > 9 ? String(pannaSum).slice(-1) : pannaSum;
                 // Check based on game type
                 switch (bid.game_type) {
 

@@ -9,15 +9,17 @@ import AppUser from '@/models/AppUser';
 interface Winners {
     _id: string;
     user: string;
-    user_id:Types.ObjectId;
+    user_id: Types.ObjectId;
     created_at: string;
     game_type: string;
-    session: string;
+    session?: string;
     game: string;
     amount: number;
     winning_amount: number;
     panna?: string;
     digit?: string;
+    open_panna?: string;
+    close_panna?: string;
 }
 
 interface GameRates {
@@ -28,6 +30,13 @@ interface GameRates {
     triple_panna_point: number;
     half_sangam_point: number;
     full_sangam_point: number;
+    single_digit_amount: number;
+    jodi_digit_amount: number;
+    single_panna_amount: number;
+    double_panna_amount: number;
+    triple_panna_amount: number;
+    half_sangam_amount: number;
+    full_sangam_amount: number;
 }
 
 interface PopulatedUser {
@@ -49,6 +58,8 @@ interface PopulatedBid {
     game_id: PopulatedGame;
     game_type: string;
     session?: 'open' | 'close';
+    open_panna?: string;
+    close_panna?: string;
 }
 
 interface PopulatedMainMarketBid {
@@ -59,6 +70,7 @@ interface PopulatedMainMarketBid {
     created_at: Date;
     updated_at: Date;
 }
+
 interface WinnerItem {
     user: string;
     game_name: string;
@@ -87,7 +99,7 @@ export async function GET(request: Request) {
         const { searchParams } = new URL(request.url);
         const user_id = searchParams.get('user_id');
 
-        type PipelineStage = 
+        type PipelineStage =
             | { $match: { 'winners.user'?: string } }
             | { $unwind: string }
             | { $project: { result_date: number; winner: string; createdAt: number; updatedAt: number } };
@@ -176,26 +188,26 @@ export async function GET(request: Request) {
 
 // Helper function to calculate winning amount
 function calculateWinningAmount(gameType: string, bidAmount: number, gameRates: GameRates): number {
-    const rateMap: Record<string, number> = {
-        'single-digit': gameRates.single_digit_point,
-        'jodi-digit': gameRates.jodi_digit_point,
-        'single-panna': gameRates.single_panna_point,
-        'double-panna': gameRates.double_panna_point,
-        'triple-panna': gameRates.triple_panna_point,
-        'half-sangam': gameRates.half_sangam_point,
-        'full-sangam': gameRates.full_sangam_point,
-        'sp-motor': gameRates.single_panna_point,
-        'dp-motor': gameRates.double_panna_point,
-        'sp-dp-tp-motor': gameRates.triple_panna_point,
-        'odd-even': gameRates.single_digit_point,
-        'two-digit': gameRates.single_panna_point,
-        'digit-base-jodi': gameRates.jodi_digit_point,
-        'choice-panna': gameRates.single_panna_point,
-        'red-bracket': gameRates.jodi_digit_point
+    const rateMap: Record<string, { amount: number; point: number }> = {
+        'single-digit': { amount: gameRates.single_digit_amount, point: gameRates.single_digit_point },
+        'jodi-digit': { amount: gameRates.jodi_digit_amount, point: gameRates.jodi_digit_point },
+        'single-panna': { amount: gameRates.single_panna_amount, point: gameRates.single_panna_point },
+        'double-panna': { amount: gameRates.double_panna_amount, point: gameRates.double_panna_point },
+        'triple-panna': { amount: gameRates.triple_panna_amount, point: gameRates.triple_panna_point },
+        'half-sangam': { amount: gameRates.half_sangam_amount, point: gameRates.half_sangam_point },
+        'full-sangam': { amount: gameRates.full_sangam_amount, point: gameRates.full_sangam_point },
+        'sp-motor': { amount: gameRates.single_panna_amount, point: gameRates.single_panna_point },
+        'dp-motor': { amount: gameRates.double_panna_amount, point: gameRates.double_panna_point },
+        'sp-dp-tp-motor': { amount: gameRates.triple_panna_amount, point: gameRates.triple_panna_point },
+        'odd-even': { amount: gameRates.single_digit_amount, point: gameRates.single_digit_point },
+        'two-digit': { amount: gameRates.triple_panna_amount, point: gameRates.triple_panna_point },
+        'digit-base-jodi': { amount: gameRates.jodi_digit_amount, point: gameRates.jodi_digit_point },
+        'choice-panna': { amount: gameRates.single_panna_amount, point: gameRates.single_panna_point },
+        'red-bracket': { amount: gameRates.jodi_digit_amount, point: gameRates.jodi_digit_point }
     };
 
-    const rate = rateMap[gameType] || 1;
-    return bidAmount * rate;
+    const rate = rateMap[gameType] || { amount: 1, point: 1 };
+    return bidAmount * (rate.amount / rate.point);
 }
 
 export async function POST(request: Request) {
@@ -271,6 +283,7 @@ export async function POST(request: Request) {
         let totalBidAmount = 0;
         let totalWinAmount = 0;
 
+        // Process each bid to find winners
         bids.forEach(mainBid => {
             mainBid.bids.forEach(bid => {
                 // First check if the game matches
@@ -286,8 +299,7 @@ export async function POST(request: Request) {
                     }
                 }
 
-                let isWinner = false;
-                let winningAmount = 0;
+                totalBidAmount += bid.bid_amount;
 
                 // Check based on game type
                 switch (bid.game_type) {
@@ -295,10 +307,23 @@ export async function POST(request: Request) {
                         // Only check in close session
                         if (sessionLower !== 'close') return;
 
-                        // For full-sangam, check if panna matches
-                        if (bid.panna === panna) {
-                            isWinner = true;
-                            winningAmount = calculateWinningAmount(bid.game_type, bid.bid_amount, gameRates);
+                        // Check if bid has both open and close pannas that match current panna
+                        if (bid.open_panna === panna && bid.close_panna === panna) {
+                            const winningAmount = calculateWinningAmount(bid.game_type, bid.bid_amount, gameRates);
+                            winningBids.push({
+                                _id: mainBid._id.toString(),
+                                user: mainBid.user_id.name,
+                                user_id: mainBid.user_id._id,
+                                created_at: mainBid.created_at.toISOString(),
+                                game_type: bid.game_type,
+                                session: bid.session || '',
+                                game: bid.game_id.game_name,
+                                amount: bid.bid_amount,
+                                winning_amount: winningAmount,
+                                open_panna: bid.open_panna,
+                                close_panna: bid.close_panna
+                            });
+                            totalWinAmount += winningAmount;
                         }
                         break;
 
@@ -306,29 +331,96 @@ export async function POST(request: Request) {
                     case 'red-bracket':
                         // Only check in close session
                         if (sessionLower !== 'close') return;
-
-                        // For jodi-digit and red-bracket, check if digit matches
-                        if (bid.digit === digit) {
-                            isWinner = true;
-                            winningAmount = calculateWinningAmount(bid.game_type, bid.bid_amount, gameRates);
+                        if (bid.digit && bid.digit.length === 2 &&
+                            bid.digit[0].toString() === digit.toString() &&
+                            bid.digit[1].toString() === digit.toString()) {
+                            const winningAmount = calculateWinningAmount(bid.game_type, bid.bid_amount, gameRates);
+                            winningBids.push({
+                                _id: mainBid._id.toString(),
+                                user: mainBid.user_id.name,
+                                user_id: mainBid.user_id._id,
+                                created_at: mainBid.created_at.toISOString(),
+                                game_type: bid.game_type,
+                                session: bid.session || '',
+                                game: bid.game_id.game_name,
+                                amount: bid.bid_amount,
+                                winning_amount: winningAmount,
+                                digit: bid.digit
+                            });
+                            totalWinAmount += winningAmount;
                         }
+
                         break;
 
                     case 'half-sangam':
-                        // For half-sangam, check if panna matches
-                        if (bid.panna === panna) {
-                            isWinner = true;
-                            winningAmount = calculateWinningAmount(bid.game_type, bid.bid_amount, gameRates);
-                        }
+                        // For half-sangam, we want to check both open and close session bids when declaring close session
+                            if (bid.session === "open") {
+                                // For open session half-sangam, check if close_panna sum matches current digit
+                                if (bid.close_panna) {
+                                    const closeSum = String(bid.close_panna).split('').reduce((acc, curr) => acc + parseInt(curr), 0);
+                                    const calculatedCloseDigit = closeSum > 9 ? String(closeSum).slice(-1) : closeSum;
+                                    if (calculatedCloseDigit.toString() === digit.toString()) {
+                                        const winningAmount = calculateWinningAmount(bid.game_type, bid.bid_amount, gameRates);
+                                        winningBids.push({
+                                            _id: mainBid._id.toString(),
+                                            user: mainBid.user_id.name,
+                                            user_id: mainBid.user_id._id,
+                                            created_at: mainBid.created_at.toISOString(),
+                                            game_type: bid.game_type,
+                                            session: bid.session,
+                                            game: bid.game_id.game_name,
+                                            amount: bid.bid_amount,
+                                            winning_amount: winningAmount,
+                                            digit: bid.digit,
+                                            close_panna: bid.close_panna
+                                        });
+                                        totalWinAmount += winningAmount;
+                                    }
+                                }
+                            } else if (bid.session === "close") {
+                                // For close session half-sangam, check if open_panna sum matches current digit
+                                if (bid.open_panna) {
+                                    const openSum = String(bid.open_panna).split('').reduce((acc, curr) => acc + parseInt(curr), 0);
+                                    const calculatedOpenDigit = openSum > 9 ? String(openSum).slice(-1) : openSum;
+                                    if (calculatedOpenDigit.toString() === digit.toString()) {
+                                        const winningAmount = calculateWinningAmount(bid.game_type, bid.bid_amount, gameRates);
+                                        winningBids.push({
+                                            _id: mainBid._id.toString(),
+                                            user: mainBid.user_id.name,
+                                            user_id: mainBid.user_id._id,
+                                            created_at: mainBid.created_at.toISOString(),
+                                            game_type: bid.game_type,
+                                            session: bid.session,
+                                            game: bid.game_id.game_name,
+                                            amount: bid.bid_amount,
+                                            winning_amount: winningAmount,
+                                            digit: bid.digit,
+                                            open_panna: bid.open_panna
+                                        });
+                                        totalWinAmount += winningAmount;
+                                    }
+                                }
+                            }
                         break;
 
                     case 'single-digit':
                     case 'odd-even':
-                    case 'digit-base-jodi':
-                        // For these games, just check if digit matches
-                        if (bid.digit === digit) {
-                            isWinner = true;
-                            winningAmount = calculateWinningAmount(bid.game_type, bid.bid_amount, gameRates);
+                        // Check if digit matches
+                        if (bid.session === sessionLower && bid.digit === digit.toString()) {
+                            const winningAmount = calculateWinningAmount(bid.game_type, bid.bid_amount, gameRates);
+                            winningBids.push({
+                                _id: mainBid._id.toString(),
+                                user: mainBid.user_id.name,
+                                user_id: mainBid.user_id._id,
+                                created_at: mainBid.created_at.toISOString(),
+                                game_type: bid.game_type,
+                                session: bid.session,
+                                game: bid.game_id.game_name,
+                                amount: bid.bid_amount,
+                                winning_amount: winningAmount,
+                                digit: bid.digit
+                            });
+                            totalWinAmount += winningAmount;
                         }
                         break;
 
@@ -340,34 +432,83 @@ export async function POST(request: Request) {
                     case 'sp-dp-tp-motor':
                     case 'choice-panna':
                     case 'two-digit':
-                        // For panna-based games, check if panna matches and sum matches current digit
-                        if (bid.panna === panna && pannaDigit.toString() === digit.toString()) {
-                            isWinner = true;
-                            winningAmount = calculateWinningAmount(bid.game_type, bid.bid_amount, gameRates);
+                        // Check if panna matches and sum matches current digit
+                        if (bid.session === sessionLower && bid.panna === panna && pannaDigit.toString() === digit.toString()) {
+                            const winningAmount = calculateWinningAmount(bid.game_type, bid.bid_amount, gameRates);
+                            winningBids.push({
+                                _id: mainBid._id.toString(),
+                                user: mainBid.user_id.name,
+                                user_id: mainBid.user_id._id,
+                                created_at: mainBid.created_at.toISOString(),
+                                game_type: bid.game_type,
+                                session: bid.session,
+                                game: bid.game_id.game_name,
+                                amount: bid.bid_amount,
+                                winning_amount: winningAmount,
+                                panna: bid.panna
+                            });
+                            totalWinAmount += winningAmount;
                         }
+                        break;
+
+                    case 'digit-base-jodi':
+
+                        if (bid.session === "open" && bid.digit) {
+                            if (bid.digit[0].toString() === digit.toString()) {
+                                const winningAmount = calculateWinningAmount(bid.game_type, bid.bid_amount, gameRates);
+                                winningBids.push({
+                                    _id: mainBid._id.toString(),
+                                    user: mainBid.user_id.name,
+                                    user_id: mainBid.user_id._id,
+                                    created_at: mainBid.created_at.toISOString(),
+                                    game_type: bid.game_type,
+                                    session: bid.session,
+                                    game: bid.game_id.game_name,
+                                    amount: bid.bid_amount,
+                                    winning_amount: winningAmount,
+                                    digit: bid.digit
+                                });
+                                totalWinAmount += winningAmount;
+                            }
+                        } else if (bid.session === "close" && bid.digit) {
+                            if (bid.digit[1].toString() === digit.toString()) {
+                                const winningAmount = calculateWinningAmount(bid.game_type, bid.bid_amount, gameRates);
+                                winningBids.push({
+                                    _id: mainBid._id.toString(),
+                                    user: mainBid.user_id.name,
+                                    user_id: mainBid.user_id._id,
+                                    created_at: mainBid.created_at.toISOString(),
+                                    game_type: bid.game_type,
+                                    session: bid.session,
+                                    game: bid.game_id.game_name,
+                                    amount: bid.bid_amount,
+                                    winning_amount: winningAmount,
+                                    digit: bid.digit
+                                });
+                                totalWinAmount += winningAmount;
+                            }
+                        }
+                        // // Check if digit matches
+                        // if (bid.session === sessionLower && bid.digit && bid.digit === String(digit).padStart(2, '0')) {
+                        //     const winningAmount = calculateWinningAmount(bid.game_type, bid.bid_amount, gameRates);
+                        //     winningBids.push({
+                        //         _id: mainBid._id.toString(),
+                        //         user: mainBid.user_id.name,
+                        //         user_id: mainBid.user_id._id,
+                        //         created_at: mainBid.created_at.toISOString(),
+                        //         game_type: bid.game_type,
+                        //         session: bid.session,
+                        //         game: bid.game_id.game_name,
+                        //         amount: bid.bid_amount,
+                        //         winning_amount: winningAmount,
+                        //         digit: bid.digit
+                        //     });
+                        //     totalWinAmount += winningAmount;
+                        // }
                         break;
 
                     default:
                         break;
-                }
-
-                if (isWinner) {
-                    totalBidAmount += bid.bid_amount;
-                    totalWinAmount += winningAmount;
-
-                    winningBids.push({
-                        _id: mainBid._id.toString(),
-                        user: mainBid.user_id.name,
-                        user_id: mainBid.user_id._id,
-                        created_at: mainBid.created_at.toISOString(),
-                        game_type: bid.game_type,
-                        session: bid.session || '',
-                        game: bid.game_id.game_name,
-                        amount: bid.bid_amount,
-                        winning_amount: winningAmount,
-                        panna: bid.panna,
-                        digit: bid.digit
-                    });
                 }
             });
         });
@@ -390,5 +531,3 @@ export async function POST(request: Request) {
         );
     }
 }
-
-

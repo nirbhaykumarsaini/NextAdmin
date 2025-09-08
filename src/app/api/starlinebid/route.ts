@@ -6,14 +6,13 @@ import StarlineGame from '@/models/StarlineGame';
 import AppUser from '@/models/AppUser';
 import Transaction from '@/models/Transaction';
 import mongoose, { Types } from 'mongoose';
-
-
-
+import AccountSetting from '@/models/AccountSettings';
 
 interface BidRequest {
     user_id?: string;
-    bid_id: string
-    digit: string;
+    bid_id: string;
+    digit?: string;
+    panna?: string;
     bid_amount: number;
     game_id: string;
     game_type: 'single-digit' | 'single-panna' | 'double-panna' | 'triple-panna';
@@ -33,7 +32,6 @@ interface FilterType {
     'bids.game_type'?: string;
 }
 
-
 export async function POST(request: Request) {
     const session = await mongoose.startSession();
     session.startTransaction();
@@ -48,11 +46,25 @@ export async function POST(request: Request) {
             throw new ApiError('User ID and bids array are required');
         }
 
+        // Get account settings for min/max bid validation
+        const accountSettings = await AccountSetting.findOne();
+        const minBidAmount = accountSettings?.min_bid_amount || 0;
+        const maxBidAmount = accountSettings?.max_bid_amount || Infinity;
+
         // Validate each bid
         for (const bid of bids) {
             // Validate amount
             if (!bid.bid_amount || bid.bid_amount <= 0 || isNaN(bid.bid_amount)) {
                 throw new ApiError('Valid bid amount is required for each bid');
+            }
+
+            // Check min/max bid amount
+            if (bid.bid_amount < minBidAmount) {
+                throw new ApiError(`Bid amount must be at least ${minBidAmount}`);
+            }
+
+            if (bid.bid_amount > maxBidAmount) {
+                throw new ApiError(`Bid amount cannot exceed ${maxBidAmount}`);
             }
 
             // Validate game type
@@ -61,34 +73,34 @@ export async function POST(request: Request) {
                 throw new ApiError(`Invalid game type. Must be one of: ${validGameTypes.join(', ')}`);
             }
 
-            // Validate digit
-            if (!bid.digit || bid.digit.toString().trim() === '') {
-                throw new ApiError('Digit is required for each bid');
-            }
-
-            const digitStr = bid.digit.toString();
-
-            // Validate digit format based on game type
+            // Validate digit/panna based on game type
             switch (bid.game_type) {
                 case 'single-digit':
-                    if (digitStr.length !== 1 || parseInt(digitStr) < 0 || parseInt(digitStr) > 9) {
+                    // For single-digit, digit is required and must be single number 0-9
+                    if (!bid.digit || bid.digit.toString().trim() === '') {
+                        throw new ApiError('Digit is required for single-digit game type');
+                    }
+                    const digitStr = bid.digit.toString();
+                    if (digitStr.length !== 1 || !/^[0-9]$/.test(digitStr)) {
                         throw new ApiError('Single digit must be a single number between 0-9');
                     }
+                    // Clean up panna field for single-digit
+                    delete bid.panna;
                     break;
+
                 case 'single-panna':
-                    if (digitStr.length !== 3 || parseInt(digitStr) < 0 || parseInt(digitStr) > 999) {
-                        throw new ApiError('Single panna must be a three-digit number');
-                    }
-                    break;
                 case 'double-panna':
-                    if (digitStr.length !== 3 || parseInt(digitStr) < 0 || parseInt(digitStr) > 999) {
-                        throw new ApiError('Double panna must be a three-digit number');
-                    }
-                    break;
                 case 'triple-panna':
-                    if (digitStr.length !== 3 || parseInt(digitStr) < 0 || parseInt(digitStr) > 999) {
-                        throw new ApiError('Triple panna must be a three-digit number');
+                    // For panna games, panna is required and must be three digits
+                    if (!bid.panna || bid.panna.toString().trim() === '') {
+                        throw new ApiError('Panna is required for this game type');
                     }
+                    const pannaStr = bid.panna.toString();
+                    if (pannaStr.length !== 3 || !/^[0-9]{3}$/.test(pannaStr)) {
+                        throw new ApiError('Panna must be a three-digit number (000-999)');
+                    }
+                    // Clean up digit field for panna games
+                    delete bid.digit;
                     break;
             }
 
@@ -143,6 +155,7 @@ export async function POST(request: Request) {
         // Transform bids to match schema format
         const transformedBids = bids.map(bid => ({
             digit: bid.digit,
+            panna: bid.panna,
             bid_amount: bid.bid_amount,
             game_id: new Types.ObjectId(bid.game_id),
             game_type: bid.game_type

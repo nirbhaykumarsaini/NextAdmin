@@ -5,6 +5,7 @@ import '@/models/StarlineGame'
 
 export interface IBid {
   digit?: string;
+  panna?: string;
   bid_amount: number;
   game_id: Types.ObjectId;
   game_type: string;
@@ -25,8 +26,7 @@ const bidSchema = new Schema<IBid>({
     type: String,
     validate: {
       validator: function (this: IBid, v: string) {
-        // Digit is required for digit-based games in the appropriate session
-        const digitGames = ['single-digit', 'single-panna', 'double-panna', 'triple-panna'];
+        const digitGames = ['single-digit'];
 
         if (digitGames.includes(this.game_type)) {
           return v !== undefined && v !== null && v !== '';
@@ -34,6 +34,20 @@ const bidSchema = new Schema<IBid>({
         return true;
       },
       message: 'Digit is required for this game type'
+    }
+  },
+  panna: {
+    type: String,
+    validate: {
+      validator: function (this: IBid, v: string) {
+        const pannaGames = [ 'single-panna', 'double-panna', 'triple-panna'];
+
+        if (pannaGames.includes(this.game_type)) {
+          return v !== undefined && v !== null && v !== '';
+        }
+        return true;
+      },
+      message: 'Panna is required for this game type'
     }
   },
   bid_amount: {
