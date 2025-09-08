@@ -5,6 +5,7 @@ import mongoose, { Types } from 'mongoose';
 import MainMarketRate from '@/models/MainmarketRate';
 import MainMarketWinner from '@/models/MainMarketWinner';
 import AppUser from '@/models/AppUser';
+import MainMarketResult from '@/models/MainMarketResult';
 
 interface Winners {
     _id: string;
@@ -76,6 +77,8 @@ interface WinnerItem {
     game_name: string;
     game_type: string;
     panna?: string;
+    open_panna?: string;
+    close_panna?: string;
     digit?: string;
     session?: string;
     winning_amount: number;
@@ -91,100 +94,6 @@ interface AggregationResult {
     updatedAt: Date;
 }
 
-// GET - Get all games
-export async function GET(request: Request) {
-    try {
-        await dbConnect();
-
-        const { searchParams } = new URL(request.url);
-        const user_id = searchParams.get('user_id');
-
-        type PipelineStage =
-            | { $match: { 'winners.user'?: string } }
-            | { $unwind: string }
-            | { $project: { result_date: number; winner: string; createdAt: number; updatedAt: number } };
-
-        let aggregationPipeline: PipelineStage[] = [];
-
-        if (user_id && mongoose.Types.ObjectId.isValid(user_id)) {
-            // Find the user first
-            const user = await AppUser.findById(user_id).select('name');
-            if (!user) {
-                return NextResponse.json({
-                    status: true,
-                    data: [],
-                    message: 'User not found'
-                });
-            }
-
-            // Use aggregation to filter winners by username
-            aggregationPipeline = [
-                {
-                    $match: {
-                        'winners.user': user.name
-                    }
-                },
-                {
-                    $unwind: '$winners'
-                },
-                {
-                    $match: {
-                        'winners.user': user.name
-                    }
-                },
-                {
-                    $project: {
-                        result_date: 1,
-                        winner: '$winners',
-                        createdAt: 1,
-                        updatedAt: 1
-                    }
-                }
-            ];
-        } else {
-            // Get all winners without filtering
-            aggregationPipeline = [
-                {
-                    $unwind: '$winners'
-                },
-                {
-                    $project: {
-                        result_date: 1,
-                        winner: '$winners',
-                        createdAt: 1,
-                        updatedAt: 1
-                    }
-                }
-            ];
-        }
-
-        const winnersData = await MainMarketWinner.aggregate(aggregationPipeline) as AggregationResult[];
-
-        const simplifiedData = winnersData.map((item) => ({
-            id: item.winner._id?.toString() || new Types.ObjectId().toString(),
-            result_date: item.result_date,
-            user: item.winner.user,
-            game_name: item.winner.game_name,
-            game_type: item.winner.game_type,
-            digit: item.winner.digit,
-            panna: item.winner.panna,
-            session: item.winner.session,
-            winning_amount: item.winner.winning_amount,
-            bid_amount: item.winner.bid_amount,
-            created_at: item.createdAt
-        }));
-
-        return NextResponse.json({
-            status: true,
-            data: simplifiedData,
-        });
-    } catch (error: unknown) {
-        const errorMessage = error instanceof Error ? error.message : 'Failed to fetch winners';
-        return NextResponse.json(
-            { status: false, message: errorMessage }
-        );
-    }
-}
 
 // Helper function to calculate winning amount
 function calculateWinningAmount(gameType: string, bidAmount: number, gameRates: GameRates): number {
@@ -278,6 +187,20 @@ export async function POST(request: Request) {
         const pannaSum = String(panna).split('').reduce((acc, curr) => acc + parseInt(curr), 0);
         const pannaDigit = pannaSum > 9 ? String(pannaSum).slice(-1) : pannaSum;
 
+        let openSessionResult: { panna: string, digit: string } | null = null;
+
+        try {
+            // Fetch open session result
+            openSessionResult = await MainMarketResult.findOne({
+                result_date: result_date,
+                game_id: new mongoose.Types.ObjectId(game_id),
+                session: 'Open'
+            }).select('panna digit') as { panna: string, digit: string } | null;
+
+        } catch (error) {
+            console.error('Error fetching session results:', error);
+        }
+
         // Filter winning bids and calculate totals for winners only
         const winningBids: Winners[] = [];
         let totalBidAmount = 0;
@@ -308,7 +231,7 @@ export async function POST(request: Request) {
                         if (sessionLower !== 'close') return;
 
                         // Check if bid has both open and close pannas that match current panna
-                        if (bid.open_panna === panna && bid.close_panna === panna) {
+                        if (bid.open_panna === openSessionResult?.panna.toString() && bid.close_panna === panna) {
                             const winningAmount = calculateWinningAmount(bid.game_type, bid.bid_amount, gameRates);
                             winningBids.push({
                                 _id: mainBid._id.toString(),
@@ -331,9 +254,7 @@ export async function POST(request: Request) {
                     case 'red-bracket':
                         // Only check in close session
                         if (sessionLower !== 'close') return;
-                        if (bid.digit && bid.digit.length === 2 &&
-                            bid.digit[0].toString() === digit.toString() &&
-                            bid.digit[1].toString() === digit.toString()) {
+                        if (bid.digit && bid.digit.length === 2 && bid.digit[0].toString() === openSessionResult?.digit.toString() && bid.digit[1].toString() === digit.toString()) {
                             const winningAmount = calculateWinningAmount(bid.game_type, bid.bid_amount, gameRates);
                             winningBids.push({
                                 _id: mainBid._id.toString(),
@@ -531,3 +452,102 @@ export async function POST(request: Request) {
         );
     }
 }
+
+
+// GET - Get all games
+export async function GET(request: Request) {
+    try {
+        await dbConnect();
+
+        const { searchParams } = new URL(request.url);
+        const user_id = searchParams.get('user_id');
+
+        type PipelineStage =
+            | { $match: { 'winners.user'?: string } }
+            | { $unwind: string }
+            | { $project: { result_date: number; winner: string; createdAt: number; updatedAt: number } };
+
+        let aggregationPipeline: PipelineStage[] = [];
+
+        if (user_id && mongoose.Types.ObjectId.isValid(user_id)) {
+            // Find the user first
+            const user = await AppUser.findById(user_id).select('name');
+            if (!user) {
+                return NextResponse.json({
+                    status: true,
+                    data: [],
+                    message: 'User not found'
+                });
+            }
+
+            // Use aggregation to filter winners by username
+            aggregationPipeline = [
+                {
+                    $match: {
+                        'winners.user': user.name
+                    }
+                },
+                {
+                    $unwind: '$winners'
+                },
+                {
+                    $match: {
+                        'winners.user': user.name
+                    }
+                },
+                {
+                    $project: {
+                        result_date: 1,
+                        winner: '$winners',
+                        createdAt: 1,
+                        updatedAt: 1
+                    }
+                }
+            ];
+        } else {
+            // Get all winners without filtering
+            aggregationPipeline = [
+                {
+                    $unwind: '$winners'
+                },
+                {
+                    $project: {
+                        result_date: 1,
+                        winner: '$winners',
+                        createdAt: 1,
+                        updatedAt: 1
+                    }
+                }
+            ];
+        }
+
+        const winnersData = await MainMarketWinner.aggregate(aggregationPipeline) as AggregationResult[];
+
+        const simplifiedData = winnersData.map((item) => ({
+            id: item.winner._id?.toString() || new Types.ObjectId().toString(),
+            result_date: item.result_date,
+            user: item.winner.user,
+            game_name: item.winner.game_name,
+            game_type: item.winner.game_type,
+            digit: item.winner.digit,
+            panna: item.winner.panna,
+            open_panna: item.winner.open_panna,
+            close_panna: item.winner.close_panna,
+            session: item.winner.session,
+            winning_amount: item.winner.winning_amount,
+            bid_amount: item.winner.bid_amount,
+            created_at: item.createdAt
+        }));
+
+        return NextResponse.json({
+            status: true,
+            data: simplifiedData,
+        });
+    } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : 'Failed to fetch winners';
+        return NextResponse.json(
+            { status: false, message: errorMessage }
+        );
+    }
+}
+

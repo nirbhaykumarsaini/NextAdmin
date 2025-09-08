@@ -7,7 +7,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { format } from "date-fns"
 import { FiEdit } from 'react-icons/fi'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -47,6 +46,8 @@ const MainBidTable = ({ bids, loading, formatGameType, formatCurrency, onEditBid
             <TableHead>Session</TableHead>
             <TableHead>Digit</TableHead>
             <TableHead>Panna</TableHead>
+             <TableHead>Open Panna</TableHead>
+              <TableHead>Close Panna</TableHead>
             <TableHead>Amount</TableHead>
             <TableHead>Actions</TableHead>
           </TableRow>
@@ -62,6 +63,8 @@ const MainBidTable = ({ bids, loading, formatGameType, formatCurrency, onEditBid
                 <TableCell><Skeleton className="h-4 w-16" /></TableCell>
                 <TableCell><Skeleton className="h-4 w-16" /></TableCell>
                 <TableCell><Skeleton className="h-4 w-16" /></TableCell>
+                <TableCell><Skeleton className="h-4 w-16" /></TableCell>
+                 <TableCell><Skeleton className="h-4 w-16" /></TableCell>
                 <TableCell><Skeleton className="h-4 w-16" /></TableCell>
                 <TableCell><Skeleton className="h-4 w-20" /></TableCell>
                 <TableCell><Skeleton className="h-8 w-8 rounded-full" /></TableCell>
@@ -97,6 +100,12 @@ const MainBidTable = ({ bids, loading, formatGameType, formatCurrency, onEditBid
                 </TableCell>
                 <TableCell>
                   { bid.panna || '-'}
+                </TableCell>
+                <TableCell>
+                  { bid.open_panna || '-'}
+                </TableCell>
+                <TableCell>
+                  { bid.close_panna || '-'}
                 </TableCell>
                 <TableCell className="font-medium">
                   {formatCurrency(bid.bid_amount)}

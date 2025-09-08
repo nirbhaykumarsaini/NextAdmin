@@ -30,6 +30,7 @@ export interface Bid {
     user_id: string
     name: string
     digit?: string
+    panna?: string
     bid_amount: number
     game_id: string
     game_name: string

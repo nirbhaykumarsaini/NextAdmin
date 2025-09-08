@@ -33,7 +33,7 @@ interface MainMarketResultDocument {
 }
 
 interface WinnerData {
-  user_id:Types.ObjectId;
+  user_id: Types.ObjectId;
   user: string;
   game: string;
   game_type: string;
@@ -42,14 +42,18 @@ interface WinnerData {
   session: string;
   digit: string;
   panna: string;
+  open_panna: string;
+  close_panna: string;
 }
 
 interface ProcessedWinner {
-  user_id:Types.ObjectId;
+  user_id: Types.ObjectId;
   user: string;
   game_name: string;
   game_type: string;
   panna: string;
+  open_panna: string;
+  close_panna: string;
   digit: string;
   session: string;
   winning_amount: number;
@@ -111,7 +115,7 @@ export async function POST(request: NextRequest) {
 
     if (winners.length > 0) {
       for (const winner of winners as WinnerData[]) {
-        const { user, user_id, game, game_type, amount, winning_amount, session: winnerSession, digit: winnerDigit, panna: winnerPanna } = winner;
+        const { user, user_id, game, game_type, amount, winning_amount, session: winnerSession, digit: winnerDigit, panna: winnerPanna, close_panna:closewinnerPanna, open_panna:openwinnerPanna } = winner;
 
         // Validate winner data
         if (!user || winning_amount === undefined) {
@@ -128,7 +132,7 @@ export async function POST(request: NextRequest) {
           }
 
           // Create transaction for the win
-         await Transaction.create({
+          await Transaction.create({
             user_id: userDoc._id,
             type: 'credit',
             amount: winning_amount,
@@ -150,6 +154,8 @@ export async function POST(request: NextRequest) {
             game_name: game,
             game_type,
             panna: winnerPanna,
+            open_panna:openwinnerPanna,
+            close_panna:closewinnerPanna,
             digit: winnerDigit,
             session: winnerSession,
             winning_amount,

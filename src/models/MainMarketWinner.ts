@@ -14,6 +14,8 @@ export interface IMainMarketWinner extends Document {
             game_name: string;
             game_type: string;
             panna?: string;
+            open_panna?: string;
+            close_panna?: string;
             digit?: string;
             session?: string;
             winning_amount: number;
@@ -47,6 +49,14 @@ const mainMarketWinnerSchema = new mongoose.Schema({
             required: [true, "Game type is required"]
         },
         panna: {
+            type: String,
+            // required: true
+        },
+        open_panna: {
+            type: String,
+            // required: true
+        },
+        close_panna: {
             type: String,
             // required: true
         },

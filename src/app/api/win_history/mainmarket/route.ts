@@ -10,6 +10,8 @@ interface WinnerItem {
     game_name: string;
     game_type: string;
     panna?: string;
+    open_panna?: string;
+    close_panna?: string;
     digit?: string;
     session?: string;
     winning_amount: number;
@@ -87,6 +89,8 @@ export async function POST(request: Request) {
             game_type: item.winner.game_type,
             digit: item.winner.digit,
             panna: item.winner.panna,
+            open_panna: item.winner.open_panna,
+            close_panna: item.winner.close_panna,
             session: item.winner.session,
             winning_amount: item.winner.winning_amount,
             bid_amount: item.winner.bid_amount,

@@ -17,6 +17,7 @@ interface Winners {
     amount: number;
     winning_amount: number;
     digit?: string;
+    panna?:string;
 }
 
 interface GameRates {
@@ -292,7 +293,8 @@ export async function POST(request: Request) {
                         game: bid.game_id.game_name,
                         amount: bid.bid_amount,
                         winning_amount: winningAmount,
-                        digit: bid.digit
+                        digit: bid.digit,
+                        panna: bid.panna
                     });
                 }
             });

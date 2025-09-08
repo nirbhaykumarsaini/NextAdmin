@@ -29,6 +29,8 @@ interface Winner {
     game_type: string;
     digit: string;
     panna: string;
+    open_panna: string;
+    close_panna: string;
     session: string;
     winning_amount: number;
     bid_amount: number;
@@ -140,7 +142,10 @@ export default function MainMarketWinner() {
                             <TableHead>Game</TableHead>
                             <TableHead>Game Type</TableHead>
                             <TableHead>Session</TableHead>
-                            <TableHead>Digit/Panna</TableHead>
+                            <TableHead>Digit</TableHead>
+                            <TableHead>Panna</TableHead>
+                            <TableHead>Open Panna</TableHead>
+                            <TableHead>Close Panna</TableHead>
                             <TableHead>Bid Amount</TableHead>
                             <TableHead>Win Amount</TableHead>
                         </TableRow>
@@ -177,10 +182,19 @@ export default function MainMarketWinner() {
                                         {winner.game_type.replace('-', ' ')}
                                     </TableCell>
                                     <TableCell className="text-sm capitalize">
-                                        {winner.session}
+                                        {winner.session || '-'}
                                     </TableCell>
                                     <TableCell className="text-sm font-medium">
-                                        {winner.digit || winner.panna}
+                                        {winner.digit || '-'}
+                                    </TableCell>
+                                      <TableCell className="text-sm font-medium">
+                                        { winner.panna || '-'}
+                                    </TableCell>
+                                      <TableCell className="text-sm font-medium">
+                                        { winner.open_panna || '-'}
+                                    </TableCell>
+                                     <TableCell className="text-sm font-medium">
+                                        { winner.close_panna || '-'}
                                     </TableCell>
                                     <TableCell className="text-sm font-medium text-green-600">
                                         {formatCurrency(winner.bid_amount)}

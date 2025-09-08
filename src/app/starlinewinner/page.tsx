@@ -140,6 +140,7 @@ export default function MainMarketWinner() {
                             <TableHead>Game</TableHead>
                             <TableHead>Game Type</TableHead>
                             <TableHead>Digit</TableHead>
+                            <TableHead>Panna</TableHead>
                             <TableHead>Bid Amount</TableHead>
                             <TableHead>Win Amount</TableHead>
                         </TableRow>
@@ -176,7 +177,10 @@ export default function MainMarketWinner() {
                                         {winner.game_type.replace('-', ' ')}
                                     </TableCell>
                                     <TableCell className="text-sm font-medium">
-                                        {winner.digit}
+                                        {winner.digit || '-'}
+                                    </TableCell>
+                                     <TableCell className="text-sm font-medium">
+                                        {winner.panna || '-'}
                                     </TableCell>
                                     <TableCell className="text-sm font-medium text-green-600">
                                         {formatCurrency(winner.bid_amount)}

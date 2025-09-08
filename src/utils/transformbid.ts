@@ -1,6 +1,8 @@
 export interface Bid {
   digit?: string;
   panna?: string;
+  open_panna?: string;
+  close_panna?: string;
   bid_amount: number;
   game_id?: {
     _id: string;
@@ -28,6 +30,8 @@ export interface TransformedBid {
   mobile_number: string;
   digit?: string;
   panna?: string;
+  open_panna?: string;
+  close_panna?: string;
   bid_amount: number;
   game_id?: string;
   game_name?: string;
@@ -45,6 +49,8 @@ export function transformBids(bids: BidDocument[]): TransformedBid[] {
       mobile_number: doc.user_id.mobile_number,
       digit: bid.digit,
       panna: bid.panna,
+      open_panna: bid.open_panna,
+      close_panna: bid.close_panna,
       bid_amount: bid.bid_amount,
       game_id: bid.game_id?._id?.toString(),
       game_name: bid.game_id?.game_name,
