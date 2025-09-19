@@ -45,8 +45,6 @@ const mainMarketResultSchema: Schema = new Schema(
     { timestamps: true }
 );
 
-// Create compound index to prevent duplicate results for same date, game, and session
-mainMarketResultSchema.index({ result_date: 1, game_name: 1, session: 1 }, { unique: true });
 
 const MainMarketResult: Model<IMainMarketResult> = mongoose.models.MainMarketResult ||
     mongoose.model<IMainMarketResult>('MainMarketResult', mainMarketResultSchema);

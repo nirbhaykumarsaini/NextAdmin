@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
     // Check if result already exists for this date, game, and session
     const existingResult = await MainMarketResult.findOne({
       game_id,
-      result_date:parseDDMMYYYY(result_date),
+      result_date,
       session
     });
 
@@ -104,7 +104,7 @@ export async function POST(request: NextRequest) {
 
     // Create the new result
     const newResult = await MainMarketResult.create({
-      result_date:parseDDMMYYYY(result_date),
+      result_date,
       game_id,
       session,
       panna,
