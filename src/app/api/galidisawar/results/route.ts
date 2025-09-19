@@ -6,6 +6,7 @@ import GalidisawarWinner from '@/models/GalidisawarWinner';
 import AppUser from '@/models/AppUser';
 import Transaction from '@/models/Transaction';
 import { Types } from 'mongoose';
+import { parseDDMMYYYY } from '@/utils/date';
 
 interface StarlineResultDocument {
     result_date: string;
@@ -109,7 +110,7 @@ export async function POST(request: NextRequest) {
 
             if (winnerDocs.length > 0) {
                 await GalidisawarWinner.create({
-                    result_date,
+                    result_date :parseDDMMYYYY(result_date),
                     winners: winnerDocs
                 });
             }

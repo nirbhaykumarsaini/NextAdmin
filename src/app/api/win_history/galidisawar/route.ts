@@ -38,7 +38,7 @@ export async function POST(request: Request) {
             };
         }
 
-        const winnersData = await GalidisawarWinner.find(query).maxTimeMS(15000) as unknown as MainMarketWinnerDocument[];
+        const winnersData = await GalidisawarWinner.find(query).maxTimeMS(15000).sort('-createdAt') as unknown as MainMarketWinnerDocument[];
 
         // Transform the data to a simpler format
         const simplifiedData = winnersData.flatMap(winnerDoc =>

@@ -6,6 +6,7 @@ import { Types } from 'mongoose';
 import MainMarketWinner from '@/models/MainMarketWinner';
 import AppUser from '@/models/AppUser';
 import Transaction from '@/models/Transaction';
+import { parseDDMMYYYY } from '@/utils/date';
 
 interface SessionResult {
   panna: string;
@@ -59,10 +60,7 @@ interface ProcessedWinner {
   winning_amount: number;
   bid_amount: number;
 }
-function parseDDMMYYYY(dateStr: string): Date {
-  const [day, month, year] = dateStr.split("-");
-  return new Date(`${year}-${month}-${day}T00:00:00Z`);
-}
+
 // CREATE a new result
 export async function POST(request: NextRequest) {
   try {

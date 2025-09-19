@@ -7,6 +7,7 @@ import StarlineWinner from '@/models/StarlineWinner';
 import AppUser from '@/models/AppUser';
 import Transaction from '@/models/Transaction';
 import { Types } from 'mongoose';
+import { parseDDMMYYYY } from '@/utils/date';
 
 interface StarlineResultDocument {
     result_date: string;
@@ -129,7 +130,7 @@ export async function POST(request: NextRequest) {
             // Save winners to MainMarketWinner collection
             if (processedWinners.length > 0) {
                 await StarlineWinner.create({
-                    result_date: new Date(result_date),
+                    result_date: parseDDMMYYYY(result_date),
                     winners: processedWinners
                 });
             }
