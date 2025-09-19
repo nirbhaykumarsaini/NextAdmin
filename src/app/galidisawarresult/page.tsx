@@ -250,17 +250,6 @@ const MainMarketResult = () => {
 
     const availableGames = getAvailableGames();
 
-    const formatDate = (dateString: string) => {
-        return new Date(dateString).toLocaleString("en-US", {
-            year: "numeric",
-            month: "short",  // or "long" for full month name
-            day: "2-digit",
-            hour: "2-digit",
-            minute: "2-digit",
-            hour12: true, // ensures AM/PM format
-        });
-    };
-
     return (
         <div className="container mx-auto space-y-8">
             <h1 className="text-2xl font-bold text-center">Galidisawar Results</h1>
@@ -351,7 +340,7 @@ const MainMarketResult = () => {
                             results?.map((result, index) => (
                                 <TableRow key={`${result?.result_date}-${result?.game_name}`}>
                                     <TableCell>{index + 1}</TableCell>
-                                    <TableCell>{formatDate(result?.result_date)}</TableCell>
+                                    <TableCell>{result?.result_date}</TableCell>
                                     <TableCell>{result?.game_name}</TableCell>
 
                                     <TableCell>

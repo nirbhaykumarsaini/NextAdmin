@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
         // Check if result already exists for this date, game, and session
         const existingResult = await StarlineResult.findOne({
             game_id,
-            result_date:parseDDMMYYYY(result_date),
+            result_date:result_date,
         });
 
         if (existingResult) {
@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
 
         // Create the new result
         await StarlineResult.create({
-            result_date:parseDDMMYYYY(result_date),
+            result_date:result_date,
             game_id,
             panna,
             digit
