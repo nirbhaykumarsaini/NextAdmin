@@ -69,9 +69,15 @@ interface StatCardProps {
   title: string;
   link: string;
   value: string;
-  change: string;
+  change?: string;
   icon: React.ReactNode;
   negative?: boolean;
+}
+
+interface TodayData {
+  deposits: number;
+  withdrawals: number;
+  profitLoss: number;
 }
 
 function StatCard({ title, value, change, link, icon, negative = false }: StatCardProps) {
@@ -108,6 +114,7 @@ function StatCard({ title, value, change, link, icon, negative = false }: StatCa
 export default function Dashboard() {
   const dispatch = useAppDispatch();
   const [data, setData] = useState<DashboardData | null>(null);
+   const [todatData, setTodayData] = useState<TodayData | null>(null);
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState('7');
   const [activeChart, setActiveChart] = useState('revenue');
@@ -116,6 +123,8 @@ export default function Dashboard() {
   useEffect(() => {
     fetchDashboardData();
   }, [timeRange]);
+
+
 
   const fetchDashboardData = async () => {
     try {
@@ -128,6 +137,35 @@ export default function Dashboard() {
 
       if (response.data.status) {
         setData(response.data.data);
+      } else {
+        toast.error(response.data.message);
+      }
+    } catch (error: unknown) {
+      console.error('Failed to fetch dashboard data:', error);
+      if (axios.isAxiosError(error)) {
+        toast.error(error.response?.data?.message || 'Failed to fetch dashboard data');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+    useEffect(() => {
+    fetchTodayData();
+  }, []);
+
+  const fetchTodayData = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get(`/api/today-financial-summary`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('accessToken')}`
+        }
+      });
+
+      if (response.data.status) {
+        console.log(response.data.data)
+        setTodayData(response.data.data);
       } else {
         toast.error(response.data.message);
       }
@@ -234,6 +272,32 @@ export default function Dashboard() {
           change={calculateChange(stats.netFlow, stats.netFlow * 0.92)} // Example calculation
           icon={<FiDollarSign className="h-4 w-4 text-yellow-500" />}
           negative={stats.netFlow < 0}
+        />
+
+        <StatCard
+          link="/funds"
+          title="Today Deposits"
+          value={`₹${todatData?.deposits.toLocaleString()}`}
+          // change={calculateChange(stats.netFlow, stats.netFlow * 0.92)} // Example calculation
+          icon={<FiDollarSign className="h-4 w-4 text-yellow-500" />}
+          // negative={stats.netFlow < 0}
+        />
+        <StatCard
+          link="/withdrawal"
+          title="Today Withdrawal"
+          value={`₹${todatData?.withdrawals.toLocaleString()}`}
+          // change={calculateChange(stats.netFlow, stats.netFlow * 0.92)} // Example calculation
+          icon={<FiDollarSign className="h-4 w-4 text-yellow-500" />}
+          // negative={stats.netFlow < 0}
+        />
+
+        <StatCard
+          link=""
+          title="Today Profit/Loss"
+          value={`₹${todatData?.profitLoss.toLocaleString()}`}
+          // change={calculateChange(stats.netFlow, stats.netFlow * 0.92)} // Example calculation
+          icon={<FiDollarSign className="h-4 w-4 text-yellow-500" />}
+          // negative={stats.netFlow < 0}
         />
       </div>
 

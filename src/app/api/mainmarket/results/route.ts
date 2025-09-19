@@ -59,7 +59,10 @@ interface ProcessedWinner {
   winning_amount: number;
   bid_amount: number;
 }
-
+function parseDDMMYYYY(dateStr: string): Date {
+  const [day, month, year] = dateStr.split("-");
+  return new Date(`${year}-${month}-${day}T00:00:00Z`);
+}
 // CREATE a new result
 export async function POST(request: NextRequest) {
   try {
@@ -171,7 +174,7 @@ export async function POST(request: NextRequest) {
       // Save winners to MainMarketWinner collection
       if (processedWinners.length > 0) {
         await MainMarketWinner.create({
-          result_date: new Date(result_date),
+          result_date:parseDDMMYYYY(result_date),
           winners: processedWinners
         });
       }
