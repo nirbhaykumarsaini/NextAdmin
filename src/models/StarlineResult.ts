@@ -36,8 +36,6 @@ const starlineResultSchema: Schema = new Schema(
     { timestamps: true }
 );
 
-// Create compound index to prevent duplicate results for same date, game, and session
-starlineResultSchema.index({ result_date: 1, game_name: 1 }, { unique: true });
 
 const StarlineResult: Model<IStarlineResult> = mongoose.models.StarlineResult ||
     mongoose.model<IStarlineResult>('StarlineResult', starlineResultSchema);

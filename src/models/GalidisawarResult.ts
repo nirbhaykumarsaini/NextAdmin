@@ -30,8 +30,7 @@ const galidisawarResultSchema: Schema = new Schema(
     { timestamps: true }
 );
 
-// Create compound index to prevent duplicate results for same date, game
-galidisawarResultSchema.index({ result_date: 1, game_name: 1 }, { unique: true });
+
 
 const GalidisawarResult: Model<IGalidisawarResult> = mongoose.models.GalidisawarResult ||
     mongoose.model<IGalidisawarResult>('GalidisawarResult', galidisawarResultSchema);
