@@ -28,14 +28,13 @@ interface MainMarketResultDocument {
 }
 
 // ✅ Accept route params correctly
-export async function GET(
-    request: NextRequest,
-    { params }: { params: Promise<{ game_id: string }> }
+export async function POST(
+    request: NextRequest
 ) {
     try {
         await connectDB();
 
-        const { game_id } = await params;
+        const game_id = request.body
 
         // Query results for this game_id
         const results = await MainMarketResult.find({ game_id })

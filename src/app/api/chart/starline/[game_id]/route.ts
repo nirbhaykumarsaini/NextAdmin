@@ -18,22 +18,16 @@ interface StarlineResultDocument {
 }
 
 // GET all results
-export async function GET(
-    request: NextRequest,
-    { params }: { params: Promise<{ game_id: string }> }
+export async function POST(
+    request: NextRequest
 ) {
     try {
         await connectDB();
 
-        const { game_id } = await params;
-
-        let query = {};
-        if (game_id) {
-            query = { ...query, game_id };
-        }
+        const game_id = request.body;
 
         // Get all results with population
-        const results = await StarlineResult.find(query)
+        const results = await StarlineResult.find({game_id})
             .populate('game_id', 'game_name')
             .sort({ result_date: -1, createdAt: -1 })
             .lean() as unknown as StarlineResultDocument[];
