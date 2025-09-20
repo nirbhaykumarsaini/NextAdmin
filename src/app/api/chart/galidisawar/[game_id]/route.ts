@@ -12,7 +12,7 @@ interface StarlineResultDocument {
 
 
 // GET all results
-export async function GET(request: NextRequest, params : Promise<{game_id : string}>) {
+export async function GET(request: NextRequest, {params} : {params : Promise<{game_id : string}>}) {
     try {
         await connectDB();
 
