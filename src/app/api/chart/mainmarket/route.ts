@@ -34,7 +34,7 @@ export async function POST(
     try {
         await connectDB();
 
-        const game_id = request.body
+        const {game_id} = await request.json()
 
         // Query results for this game_id
         const results = await MainMarketResult.find({ game_id })
