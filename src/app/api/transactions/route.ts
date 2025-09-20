@@ -34,21 +34,18 @@ export async function POST(request: Request) {
     return NextResponse.json({
       status: true,
       message: 'Transactions fetched successfully',
-      data: {
-        transactions: transactions.map(transaction => ({
-          id: transaction._id.toString(),
-          userId: transaction.user_id?._id.toString(),
-          userName: transaction.user_id?.name,
-          userMobile: transaction.user_id?.mobile_number,
-          amount: transaction.amount,
-          type: transaction.type,
-          description: transaction.description,
-          status: transaction.status,
-          createdAt: transaction.created_at,
-          formattedTime: formatTimeAgo(transaction.created_at)
-        })),
-
-      }
+      data:transactions.map(transaction => ({
+        id: transaction._id.toString(),
+        userId: transaction.user_id?._id.toString(),
+        userName: transaction.user_id?.name,
+        userMobile: transaction.user_id?.mobile_number,
+        amount: transaction.amount,
+        type: transaction.type,
+        description: transaction.description,
+        status: transaction.status,
+        createdAt: transaction.created_at,
+        formattedTime: formatTimeAgo(transaction.created_at)
+      })),
     });
 
   } catch (error: unknown) {
