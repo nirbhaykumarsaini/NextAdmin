@@ -57,8 +57,7 @@ export async function GET(request: Request) {
   try {
     await dbConnect();
 
-    const { searchParams } = new URL(request.url);
-    const user_id = searchParams.get("user_id");
+    const {user_id} = await request.json()
 
     if (!user_id || !mongoose.Types.ObjectId.isValid(user_id)) {
       throw new ApiError("Invalid or missing user ID");
