@@ -5,7 +5,8 @@ import AppUser from '@/models/AppUser';
 import Transaction from '@/models/Transaction';
 import Fund from '@/models/Fund';
 import mongoose, { Types } from 'mongoose';
-import AccountSetting from '@/models/AccountSettings';
+
+
 
 interface AddFundRequest {
     amount: number;
@@ -22,7 +23,7 @@ export async function POST(
 
 
         const body: AddFundRequest = await request.json();
-        const { user_id, amount, description } = body;
+        const { user_id, amount } = body;
 
         if (!mongoose.Types.ObjectId.isValid(user_id)) {
             throw new ApiError('Invalid user ID');
@@ -35,13 +36,10 @@ export async function POST(
         if (!user) throw new ApiError('User not found');
         if (user.is_blocked) throw new ApiError('Cannot add funds to blocked user');
 
-        const session = await mongoose.startSession();
-        session.startTransaction();
-
         try {
             // Update user balance
             user.balance += amount;
-            await user.save({ session });
+            await user.save();
 
             // Save Transaction
             const transaction = new Transaction({
@@ -49,47 +47,24 @@ export async function POST(
                 amount,
                 type: 'credit',
                 status: 'completed',
-                description: description || `Funds added by admin`
+                description: `Funds added by ${user.name}`
             });
-            await transaction.save({ session });
+            await transaction.save();
 
             // Save Fund record
             const fund = new Fund({
                 user_id: user._id,
                 amount,
                 status: 'completed',
-                description: description || 'Funds added'
+                description:`Funds added by ${user.name}`
             });
-            await fund.save({ session });
-
-            await session.commitTransaction();
-            session.endSession();
+            await fund.save();
 
             return NextResponse.json({
                 status: true,
                 message: 'Funds added successfully',
-                data: {
-                    newBalance: user.balance,
-                    transaction: {
-                        id: transaction._id,
-                        amount: transaction.amount,
-                        type: transaction.type,
-                        status: transaction.status,
-                        description: transaction.description,
-                        createdAt: transaction.created_at
-                    },
-                    fund: {
-                        id: fund._id,
-                        amount: fund.amount,
-                        status: fund.status,
-                        description: fund.description,
-                        createdAt: fund.created_at
-                    }
-                }
             });
         } catch (error) {
-            await session.abortTransaction();
-            session.endSession();
             throw error;
         }
     } catch (error: unknown) {

@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import dbConnect from '@/config/db';
 import ApiError from '@/lib/errors/APiError';
 import Withdrawal from '@/models/Withdrawal';
-import mongoose from 'mongoose';
 
 export async function GET(
   request: Request,
@@ -13,7 +12,7 @@ export async function GET(
 
     // ✅ Fetch withdrawals of user
     const withdrawals = await Withdrawal.find({}).populate('user_id',"name mobile_number")
-      .sort({ createdAt: -1 }) // latest first
+      .sort({ created_at: -1 }) // latest first
       .lean();
 
     return NextResponse.json({

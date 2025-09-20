@@ -56,16 +56,14 @@ export async function POST(request: Request) {
 
     if (error instanceof ApiError) {
       return NextResponse.json(
-        { status: false, message: error.message },
-        { status: 400 }
+        { status: false, message: error.message }
       );
     }
 
     const errorMessage = error instanceof Error ? error.message : 'Failed to fetch transactions';
 
     return NextResponse.json(
-      { status: false, message: errorMessage },
-      { status: 500 }
+      { status: false, message: errorMessage }
     );
   }
 }

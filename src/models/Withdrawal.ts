@@ -26,7 +26,7 @@ const withdrawalSchema = new Schema<IWithdrawal>(
     status: {
       type: String,
       required: true,
-      enum: ['pending', 'completed', 'failed'],
+      enum: ['pending', 'rejected', 'approved'],
       default: 'pending'
     },
     description: {

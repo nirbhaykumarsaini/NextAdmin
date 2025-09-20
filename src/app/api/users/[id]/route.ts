@@ -34,15 +34,7 @@ export async function PATCH(request: Request, { params }:{params: Promise<{id:st
 
     return NextResponse.json({
       status: true,
-      message: 'User updated successfully',
-      user: {
-        id: user._id,
-        name: user.name,
-        mobile_number: user.mobile_number,
-        is_blocked: user.is_blocked,
-        batting: user.batting,
-        devices: user.devices
-      }
+      message: 'User updated successfully'
     });
 
   } catch (error: unknown) {

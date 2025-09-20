@@ -61,7 +61,7 @@ export default function WithdrawalTable() {
     // ✅ Handle status update (Accept / Reject)
     const handleStatusChange = async (
         withdrawalId: string,
-        status: "completed" | "failed"
+        status: "approved" | "rejected"
     ) => {
         try {
             const res = await fetch(`/api/withdrawals/${withdrawalId}`, {
@@ -70,9 +70,9 @@ export default function WithdrawalTable() {
                 body: JSON.stringify({
                     status,
                     description:
-                        status === "completed"
-                            ? "Withdrawal approved by admin"
-                            : "Withdrawal rejected, refunded",
+                        status === "approved"
+                            ? "Withdrawal approved by Admin"
+                            : "Withdrawal rejected by Admin",
                 }),
             });
 
@@ -122,6 +122,7 @@ export default function WithdrawalTable() {
                             <TableHead>S. No.</TableHead>
                             <TableHead>Date</TableHead>
                             <TableHead>User</TableHead>
+                            <TableHead>Description</TableHead>
                             <TableHead>Phone</TableHead>
                             <TableHead>Amount</TableHead>
                             <TableHead>Status</TableHead>
@@ -163,20 +164,23 @@ export default function WithdrawalTable() {
                                         </div>
                                     </TableCell>
                                     <TableCell className="text-sm">
+                                        {w.description || "-"}
+                                    </TableCell>
+                                    <TableCell className="text-sm">
                                         {w.user_id?.mobile_number || "-"}
                                     </TableCell>
                                     <TableCell className="text-sm">₹{w.amount}</TableCell>
                                     <TableCell>
                                         <Badge
                                             variant={
-                                                w.status === "completed"
+                                                w.status === "approved"
                                                     ? "default"
                                                     : w.status === "pending"
                                                         ? "secondary"
                                                         : "outline"
                                             }
                                             className={
-                                                w.status === "completed"
+                                                w.status === "approved"
                                                     ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
                                                     : w.status === "pending"
                                                         ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
@@ -192,14 +196,14 @@ export default function WithdrawalTable() {
                                                 <Button
                                                     size="sm"
                                                     className="bg-green-600 text-white hover:bg-green-700"
-                                                    onClick={() => handleStatusChange(w._id, "completed")}
+                                                    onClick={() => handleStatusChange(w._id, "approved")}
                                                 >
                                                     Accept
                                                 </Button>
                                                 <Button
                                                     size="sm"
                                                     variant="destructive"
-                                                    onClick={() => handleStatusChange(w._id, "failed")}
+                                                    onClick={() => handleStatusChange(w._id, "rejected")}
                                                 >
                                                     Reject
                                                 </Button>

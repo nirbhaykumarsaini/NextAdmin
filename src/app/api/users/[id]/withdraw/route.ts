@@ -61,15 +61,13 @@ export async function GET(
 
     if (error instanceof ApiError) {
       return NextResponse.json(
-        { status: false, message: error.message },
-        { status: error.statusCode }
+        { status: false, message: error.message }
       );
     }
 
     const errorMessage = error instanceof Error ? error.message : 'Failed to fetch withdrawals';
     return NextResponse.json(
-      { status: false, message: errorMessage },
-      { status: 500 }
+      { status: false, message: errorMessage }
     );
   }
 }
@@ -95,40 +93,10 @@ export async function POST(
       throw new ApiError('Amount must be greater than 0');
     }
 
-    // ✅ Fetch account settings
-    const accountSettings = await AccountSetting.findOne({});
-    if (!accountSettings) {
-      throw new ApiError('Withdrawal settings not configured');
-    }
-
-    // ✅ Check withdrawal time window
-    const now = new Date();
-    const [openHour, openMinute] = (accountSettings.withdrawal_open_time || '00:00').split(':').map(Number);
-    const [closeHour, closeMinute] = (accountSettings.withdrawal_close_time || '23:59').split(':').map(Number);
-
-    const openTime = new Date(now);
-    openTime.setHours(openHour, openMinute, 0, 0);
-
-    const closeTime = new Date(now);
-    closeTime.setHours(closeHour, closeMinute, 0, 0);
-
-    if (now < openTime || now > closeTime) {
-      throw new ApiError(`Withdrawals are allowed only between ${accountSettings.withdrawal_open_time} and ${accountSettings.withdrawal_close_time}`);
-    }
-
     // ✅ Find user
     const user = await AppUser.findById(id);
     if (!user) {
       throw new ApiError('User not found');
-    }
-
-    if (user.is_blocked) {
-      throw new ApiError('Cannot withdraw funds from blocked user');
-    }
-
-    // ✅ Check min/max withdrawal limits
-    if (amount < accountSettings.min_withdrawal || amount > accountSettings.max_withdrawal) {
-      throw new ApiError(`Withdrawal amount must be between ${accountSettings.min_withdrawal} and ${accountSettings.max_withdrawal}`);
     }
 
     // ✅ Check sufficient balance
@@ -136,56 +104,36 @@ export async function POST(
       throw new ApiError('Insufficient balance');
     }
 
-    // ✅ Start transaction session
-    const session = await mongoose.startSession();
-    session.startTransaction();
-
     try {
       // Update user balance
       user.balance -= amount;
-      await user.save({ session });
+      await user.save();
 
       // Create transaction record
       const transaction = new Transaction({
         user_id: user._id,
         amount,
         type: 'debit',
-        status: 'completed',
-        description: description || `Funds withdrawn`,
+        status: 'approved',
+        description:description || `Withdrawal by Admin`,
       });
-      await transaction.save({ session });
+      await transaction.save();
 
       // ✅ Create withdrawal record
       const withdrawal = new Withdrawal({
         user_id: user._id,
         amount,
-        status: 'pending', // Admin may later mark completed
-        description,
+        status: 'approved', // Admin may later mark approved
+        description: description || "Withdrawal by Admin",
       });
-      await withdrawal.save({ session });
-
-      // Commit transaction
-      await session.commitTransaction();
-      session.endSession();
+      await withdrawal.save();
 
       return NextResponse.json({
         status: true,
-        message: 'Withdrawal request submitted successfully',
-        data: {
-          newBalance: user.balance,
-          transaction: {
-            id: transaction._id,
-            amount: transaction.amount,
-            type: transaction.type,
-            status: transaction.status,
-            description: transaction.description,
-            createdAt: transaction.created_at
-          }
-        }
+        message: 'Withdrawal successfully',
       });
     } catch (error) {
-      await session.abortTransaction();
-      session.endSession();
+
       throw error;
     }
   } catch (error: unknown) {
@@ -195,8 +143,7 @@ export async function POST(
       return NextResponse.json({ status: false, message: error.message });
     }
 
-    const errorMessage =
-      error instanceof Error ? error.message : 'Failed to process withdrawal';
+    const errorMessage = error instanceof Error ? error.message : 'Failed to process withdrawal';
     return NextResponse.json({ status: false, message: errorMessage });
   }
 }

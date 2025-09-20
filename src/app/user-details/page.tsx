@@ -287,12 +287,13 @@ function UserDetailsContent() {
 
       if (response.data.status) {
         toast.success(response.data.message);
-        setUser(prev => prev ? { ...prev, balance: response.data.data.newBalance } : null);
+        // setUser(prev => prev ? { ...prev, balance: response.data.data.newBalance } : null);
         setAmount("");
         setDescription("");
         fetchTabData("funds", 1);
         fetchTabData("transactions", 1);
         fetchAllBids(userId); // Refresh bids data
+         fetchUserDetails(userId)
       } else {
         toast.error(response.data.message);
       }
@@ -330,12 +331,13 @@ function UserDetailsContent() {
 
       if (response.data.status) {
         toast.success(response.data.message);
-        setUser(prev => prev ? { ...prev, balance: response.data.data.newBalance } : null);
+        // setUser(prev => prev ? { ...prev, balance: response.data.data.newBalance } : null);
         setAmount("");
         setDescription("");
         fetchTabData("withdrawals", 1);
         fetchTabData("transactions", 1);
         fetchAllBids(userId); // Refresh bids data
+        fetchUserDetails(userId)
       } else {
         toast.error(response.data.message);
       }

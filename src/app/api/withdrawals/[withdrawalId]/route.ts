@@ -8,7 +8,7 @@ import mongoose from 'mongoose';
 
 
 interface StatusRequest {
-  status: 'completed' | 'failed' | 'pending';
+  status: 'approved' | 'rejected' | 'pending';
   description?: string;
 }
 
@@ -28,8 +28,8 @@ export async function PATCH(
     const body: StatusRequest = await request.json();
     const { status, description } = body;
 
-    if (!['completed', 'failed'].includes(status)) {
-      throw new ApiError('Invalid status. Must be completed or failed.');
+    if (!['approved', 'rejected'].includes(status)) {
+      throw new ApiError('Invalid status. Must be approved or rejected.');
     }
 
     const withdrawal = await Withdrawal.findById(withdrawalId);
@@ -46,49 +46,42 @@ export async function PATCH(
       throw new ApiError('User not found for this withdrawal');
     }
 
-    // ✅ Start DB transaction
-    const session = await mongoose.startSession();
-    session.startTransaction();
-
     try {
-      if (status === 'completed') {
-        // ✅ Mark as completed only
-        withdrawal.status = 'completed';
-        withdrawal.description = description || withdrawal.description;
-        await withdrawal.save({ session });
+      if (status === 'approved') {
+        // ✅ Mark as approved only
+        withdrawal.status = 'approved';
+        withdrawal.description = description || 'Withdrawal approved by Admin';
+        await withdrawal.save();
 
         // Create transaction log
         const txn = new Transaction({
           user_id: user._id,
           amount: withdrawal.amount,
           type: 'debit',
-          status: 'completed',
-          description: description || 'Withdrawal approved',
+          status: 'rejected',
+          description: description || 'Withdrawal approved by Admin',
         });
-        await txn.save({ session });
+        await txn.save();
 
-      } else if (status === 'failed') {
+      } else if (status === 'rejected') {
         // ✅ Refund user
         user.balance += withdrawal.amount;
-        await user.save({ session });
+        await user.save();
 
-        withdrawal.status = 'failed';
-        withdrawal.description = description || 'Withdrawal rejected';
-        await withdrawal.save({ session });
+        withdrawal.status = 'rejected';
+        withdrawal.description = description || 'Withdrawal rejected by Admin';
+        await withdrawal.save();
 
         // Create refund transaction
         const txn = new Transaction({
           user_id: user._id,
           amount: withdrawal.amount,
           type: 'credit',
-          status: 'completed',
-          description: description || 'Withdrawal rejected, amount refunded',
+          status: 'failed',
+          description: description || 'Withdrawal rejected by Admin',
         });
-        await txn.save({ session });
+        await txn.save();
       }
-
-      await session.commitTransaction();
-      session.endSession();
 
       return NextResponse.json({
         status: true,
@@ -97,8 +90,6 @@ export async function PATCH(
       });
 
     } catch (err) {
-      await session.abortTransaction();
-      session.endSession();
       throw err;
     }
 
