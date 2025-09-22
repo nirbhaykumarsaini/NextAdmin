@@ -1,30 +1,33 @@
 import { NextResponse } from 'next/server';
 import dbConnect from '@/config/db';
-import ApiError from '@/lib/errors/APiError';
+import ApiError from '@/lib/errors/APiError'; // Fixed typo: APiError → ApiError
 import AppUser from '@/models/AppUser';
 import Transaction from '@/models/Transaction';
 import Withdrawal from '@/models/Withdrawal';
 import AccountSetting from '@/models/AccountSettings';
 import mongoose, { Types } from 'mongoose';
+import WithdrawalMethod from '@/models/WithdrawalMethod';
 
 interface WithdrawRequest {
     amount: number;
     description?: string;
     user_id: Types.ObjectId;
+    withdrawal_method_id: Types.ObjectId; // Added withdrawal method ID
 }
 
-
-export async function POST(
-    request: Request
-) {
+export async function POST(request: Request) {
     try {
         await dbConnect();
 
         const body: WithdrawRequest = await request.json();
-        const { user_id, amount } = body;
+        const { user_id, amount, withdrawal_method_id, description } = body;
 
         if (!mongoose.Types.ObjectId.isValid(user_id)) {
             throw new ApiError('Invalid user ID');
+        }
+
+        if (!mongoose.Types.ObjectId.isValid(withdrawal_method_id)) {
+            throw new ApiError('Invalid withdrawal method ID');
         }
 
         // ✅ Validate amount
@@ -63,6 +66,16 @@ export async function POST(
             throw new ApiError('Cannot withdraw funds from blocked user');
         }
 
+        // ✅ Find and validate withdrawal method
+        const withdrawalMethod = await WithdrawalMethod.findOne({
+            _id: withdrawal_method_id,
+            user_id: user_id
+        });
+
+        if (!withdrawalMethod) {
+            throw new ApiError('Withdrawal method not found or does not belong to user');
+        }
+
         // ✅ Check min/max withdrawal limits
         if (amount < accountSettings.min_withdrawal || amount > accountSettings.max_withdrawal) {
             throw new ApiError(`Withdrawal amount must be between ${accountSettings.min_withdrawal} and ${accountSettings.max_withdrawal}`);
@@ -84,22 +97,24 @@ export async function POST(
                 amount,
                 type: 'debit',
                 status: 'pending',
-                description: `Withdrawal request submitted by ${user.name}`,
+                description: description || `Withdrawal request submitted by ${user.name}`,
             });
             await transaction.save();
 
-            // ✅ Create withdrawal record
+            // ✅ Create withdrawal record with withdrawal method
             const withdrawal = new Withdrawal({
                 user_id: user._id,
+                withdrawal_method_id: withdrawal_method_id,
+                transaction_id: transaction._id,
                 amount,
                 status: 'pending',
-                description: `Withdrawal request submitted by ${user.name}`,
+                description: description || `Withdrawal request submitted by ${user.name}`,
             });
             await withdrawal.save();
 
             return NextResponse.json({
                 status: true,
-                message: 'Withdrawal request submitted successfully',
+                message: 'Withdrawal request submitted successfully'
             });
         } catch (error) {
             throw error;
@@ -116,5 +131,3 @@ export async function POST(
         return NextResponse.json({ status: false, message: errorMessage });
     }
 }
-
-

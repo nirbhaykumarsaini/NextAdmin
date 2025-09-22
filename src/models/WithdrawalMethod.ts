@@ -3,7 +3,7 @@ import "@/models/AppUser";
 
 export interface IWithdrawalMethod {
   user_id: Types.ObjectId;
-  withdraw_type: "phonepe" | "googlepay" | "paytmpay" | "bank";
+  withdraw_type: "phonepay" | "googlepay" | "paytmpay" | "bank";
   account_holder_name?: string;
   account_number?: string;
   confirm_account_number?: string;
@@ -24,65 +24,63 @@ const withdrawalMethodSchema = new Schema<IWithdrawalMethod>(
       ref: "AppUser",
       required: true,
     },
-
     withdraw_type: {
       type: String,
       required: true,
-      enum: ["phonepe", "googlepay", "paytmpay", "bank"],
+      enum: ["phonepay", "googlepay", "paytmpay", "bank"],
     },
-
     // Bank details
-    account_holder_name: {
-      type: String,
-      trim: true,
-    },
-    account_number: {
-      type: String,
-      match: /^[0-9]{9,18}$/, // typical bank account number length
-    },
-    confirm_account_number: {
-      type: String,
-      validate: {
-        validator: function (this: IWithdrawalMethod, val: string) {
-          return val === this.account_number;
-        },
-        message: "Confirm Account Number must match Account Number",
-      },
-    },
-    ifsc_code: {
-      type: String,
-      match: /^[A-Z]{4}0[A-Z0-9]{6}$/, // IFSC regex
-    },
-    bank_name: {
-      type: String,
-      trim: true,
-    },
-    branch_name: {
-      type: String,
-      trim: true,
-    },
-
+    account_holder_name: String,
+    account_number: String,
+    confirm_account_number: String,
+    ifsc_code: String,
+    bank_name: String,
+    branch_name: String,
     // UPI / Wallet Numbers
-    paytm_number: {
-      type: String,
-      match: /^[6-9]\d{9}$/, // Indian mobile number
-    },
-    phonepe_number: {
-      type: String,
-      match: /^[6-9]\d{9}$/,
-    },
-    googlepay_number: {
-      type: String,
-      match: /^[6-9]\d{9}$/,
-    },
+    paytm_number: String,
+    phonepe_number: String,
+    googlepay_number: String,
   },
   {
     timestamps: {
       createdAt: "created_at",
       updatedAt: "updated_at",
     },
+    minimize: true, // This removes empty objects
   }
 );
+
+// Pre-save middleware to delete all irrelevant fields based on withdraw_type
+withdrawalMethodSchema.pre("save", function (next) {
+  const withdrawal = this as any; // Use any to access unset method
+
+  // Define which fields should be kept for each withdraw_type
+  const allowedFields: { [key: string]: string[] } = {
+    bank: ['account_holder_name', 'account_number', 'ifsc_code', 'bank_name', 'branch_name'],
+    paytmpay: ['paytm_number'],
+    phonepay: ['phonepe_number'],
+    googlepay: ['googlepay_number']
+  };
+
+  // Get fields to keep for current withdraw_type
+  const fieldsToKeep = allowedFields[this.withdraw_type] || [];
+  
+  // Add mandatory fields that should always be kept
+  fieldsToKeep.push('user_id', 'withdraw_type', 'created_at', 'updated_at');
+
+  // Get all schema paths
+  const schemaPaths = Object.keys(this.schema.paths);
+  
+  // Remove all fields that are not in the allowed list
+  schemaPaths.forEach(field => {
+    if (!fieldsToKeep.includes(field) && field !== '_id' && field !== '__v') {
+      withdrawal[field] = undefined;
+      withdrawal.unset(field); // This completely removes the field from the document
+    }
+  });
+
+  next();
+});
 
 // Custom validation depending on withdraw_type
 withdrawalMethodSchema.pre("validate", function (next) {
@@ -90,7 +88,6 @@ withdrawalMethodSchema.pre("validate", function (next) {
     if (
       !this.account_holder_name ||
       !this.account_number ||
-      !this.confirm_account_number ||
       !this.ifsc_code ||
       !this.bank_name ||
       !this.branch_name
@@ -103,7 +100,7 @@ withdrawalMethodSchema.pre("validate", function (next) {
     return next(new Error("Paytm Number is required"));
   }
 
-  if (this.withdraw_type === "phonepe" && !this.phonepe_number) {
+  if (this.withdraw_type === "phonepay" && !this.phonepe_number) {
     return next(new Error("PhonePe Number is required"));
   }
 

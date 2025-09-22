@@ -6,7 +6,6 @@ import Transaction from '@/models/Transaction';
 import Withdrawal from '@/models/Withdrawal';
 import mongoose from 'mongoose';
 
-
 interface StatusRequest {
   status: 'approved' | 'rejected' | 'pending';
   description?: string;
@@ -32,7 +31,8 @@ export async function PATCH(
       throw new ApiError('Invalid status. Must be approved or rejected.');
     }
 
-    const withdrawal = await Withdrawal.findById(withdrawalId);
+    // Populate the transaction_id to access the original transaction
+    const withdrawal = await Withdrawal.findById(withdrawalId).populate('transaction_id');
     if (!withdrawal) {
       throw new ApiError('Withdrawal not found');
     }
@@ -41,46 +41,43 @@ export async function PATCH(
       throw new ApiError('Withdrawal already processed');
     }
 
-    const user = await AppUser.findById({_id:withdrawal.user_id});
+    const user = await AppUser.findById({_id: withdrawal.user_id});
     if (!user) {
       throw new ApiError('User not found for this withdrawal');
     }
 
     try {
+      // Find the original transaction
+      const originalTransaction = await Transaction.findById(withdrawal.transaction_id);
+      if (!originalTransaction) {
+        throw new ApiError('Original transaction not found');
+      }
+
       if (status === 'approved') {
-        // ✅ Mark as approved only
+        // ✅ Mark withdrawal as approved
         withdrawal.status = 'approved';
         withdrawal.description = description || 'Withdrawal approved by Admin';
         await withdrawal.save();
 
-        // Create transaction log
-        const txn = new Transaction({
-          user_id: user._id,
-          amount: withdrawal.amount,
-          type: 'debit',
-          status: 'rejected',
-          description: description || 'Withdrawal approved by Admin',
-        });
-        await txn.save();
+        // ✅ Update the original transaction status to 'completed'
+        originalTransaction.status = 'completed';
+        originalTransaction.description = description || 'Withdrawal approved by Admin';
+        await originalTransaction.save();
 
       } else if (status === 'rejected') {
         // ✅ Refund user
         user.balance += withdrawal.amount;
         await user.save();
 
+        // ✅ Mark withdrawal as rejected
         withdrawal.status = 'rejected';
         withdrawal.description = description || 'Withdrawal rejected by Admin';
         await withdrawal.save();
 
-        // Create refund transaction
-        const txn = new Transaction({
-          user_id: user._id,
-          amount: withdrawal.amount,
-          type: 'credit',
-          status: 'failed',
-          description: description || 'Withdrawal rejected by Admin',
-        });
-        await txn.save();
+        // ✅ Update the original transaction status to 'failed'
+        originalTransaction.status = 'failed';
+        originalTransaction.description = description || 'Withdrawal rejected by Admin';
+        await originalTransaction.save();
       }
 
       return NextResponse.json({

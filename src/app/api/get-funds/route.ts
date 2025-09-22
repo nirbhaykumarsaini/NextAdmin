@@ -37,16 +37,7 @@ export async function POST(
     return NextResponse.json({
       status: true,
       message: 'Funds fetched successfully',
-      data: {
-        funds,
-        pagination: {
-          currentPage: page,
-          totalPages,
-          totalCount,
-          hasNext: page < totalPages,
-          hasPrev: page > 1
-        }
-      }
+      data: funds
     });
   } catch (error: unknown) {
     console.error('Get Funds Error:', error);

@@ -25,7 +25,6 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       status: true,
-      count: withdrawalMethods.length,
       data: withdrawalMethods,
     });
   } catch (error: unknown) {
