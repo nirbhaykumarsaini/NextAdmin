@@ -30,10 +30,6 @@ export async function POST(
             throw new ApiError('Invalid user ID');
         }
 
-        if (!fund_type) {
-            throw new ApiError(`fund_type is required`);
-        }
-
         if (!['phonepay', 'googlepay', 'paytmpay'].includes(fund_type)) {
             throw new ApiError(`Invalid ${fund_type}`);
         }

@@ -109,7 +109,7 @@ export async function POST(
         amount,
         type: 'credit',
         status: 'completed',
-        description: description || `Funds added by admin`
+        description: description || `Funds added by Admin`
       });
       await transaction.save({ session });
 
@@ -117,8 +117,8 @@ export async function POST(
       const fund = new Fund({
         user_id: user._id,
         amount,
-        status: 'completed',
-        description: description || 'Funds added'
+        status: 'approved',
+        description: description || 'Funds added by Admin'
       });
       await fund.save({ session });
 
@@ -128,24 +128,6 @@ export async function POST(
       return NextResponse.json({
         status: true,
         message: 'Funds added successfully',
-        data: {
-          newBalance: user.balance,
-          transaction: {
-            id: transaction._id,
-            amount: transaction.amount,
-            type: transaction.type,
-            status: transaction.status,
-            description: transaction.description,
-            createdAt: transaction.created_at
-          },
-          fund: {
-            id: fund._id,
-            amount: fund.amount,
-            status: fund.status,
-            description: fund.description,
-            createdAt: fund.created_at
-          }
-        }
       });
     } catch (error) {
       await session.abortTransaction();

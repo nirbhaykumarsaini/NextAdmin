@@ -24,13 +24,11 @@ const withdrawalSchema = new Schema<IWithdrawal>(
     },
     withdrawal_method_id: {
       type: Schema.Types.ObjectId,
-      ref: "WithdrawalMethod",
-      required: true,
+      ref: "WithdrawalMethod"
     },
     transaction_id: {
       type: Schema.Types.ObjectId,
-      ref: "Transaction",
-      required: true,
+      ref: "Transaction"
     },
     amount: {
       type: Number,

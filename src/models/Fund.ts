@@ -23,8 +23,7 @@ const fundSchema = new Schema<IFund>(
     },
     transaction_id: {
       type: Schema.Types.ObjectId,
-      ref: 'Transaction',
-      required: true,
+      ref: 'Transaction'
     },
     amount: {
       type: Number,
@@ -33,7 +32,6 @@ const fundSchema = new Schema<IFund>(
     },
     fund_type: {
       type: String,
-      required: true,
       enum: ['phonepay', 'googlepay', 'paytmpay']
     },
     status: {

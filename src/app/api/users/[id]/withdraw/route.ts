@@ -114,7 +114,7 @@ export async function POST(
         user_id: user._id,
         amount,
         type: 'debit',
-        status: 'approved',
+        status: 'completed',
         description:description || `Withdrawal by Admin`,
       });
       await transaction.save();
