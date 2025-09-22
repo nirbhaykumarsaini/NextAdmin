@@ -202,9 +202,10 @@ export default function Funds() {
                       <TableHead>Date & Time</TableHead>
                       <TableHead>User</TableHead>
                       <TableHead>Description</TableHead>
-                      <TableHead>Fund Type</TableHead>
-                      <TableHead>Amount</TableHead>
+                      <TableHead>Type</TableHead>
                       <TableHead>Status</TableHead>
+                      <TableHead>Amount</TableHead>
+                      <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -229,8 +230,30 @@ export default function Funds() {
                           <TableCell className="max-w-xs truncate">
                             {fund.description}
                           </TableCell>
-                          <TableCell className="max-w-xs truncate">
-                            {fund.fund_type}
+                          <TableCell>
+                           {fund.fund_type ? <Badge>
+                              {fund.fund_type}
+                            </Badge> : "-"}
+                          </TableCell>
+                          <TableCell>
+                            <Badge
+                              variant={
+                                fund.status === "approved"
+                                  ? "default"
+                                  : fund.status === "pending"
+                                    ? "secondary"
+                                    : "outline"
+                              }
+                              className={
+                                fund.status === "approved"
+                                  ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                                  : fund.status === "pending"
+                                    ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
+                                    : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
+                              }
+                            >
+                              {fund.status}
+                            </Badge>
                           </TableCell>
                           <TableCell className={` ${fund.status === 'approved' ? ' text-green-600' :
                             fund.status === 'pending' ? ' text-yellow-800' :
