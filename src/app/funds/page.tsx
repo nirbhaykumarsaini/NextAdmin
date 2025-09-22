@@ -31,6 +31,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 interface Fund {
   _id: string;
   amount: number;
+  fund_type: string,
+  user_id: {
+    name: string;
+  }
   description: string;
   status: string;
   created_at: string;
@@ -60,11 +64,11 @@ export default function Funds() {
     try {
       setDataLoading(true);
       const response = await axios.get(`/api/funds?page=${page}&limit=10`, {
-        headers: { 
-          Authorization: `Bearer ${localStorage.getItem('accessToken')}` 
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('accessToken')}`
         }
       });
-      
+
       if (response.data.status) {
         setFunds(response.data.data.funds);
         setFundPagination(response.data.data.pagination);
@@ -77,7 +81,35 @@ export default function Funds() {
     }
   };
 
- 
+  const handleStatusChange = async (
+    fund_id: string,
+    status: "approved" | "rejected"
+  ) => {
+    try {
+      const res = await fetch(`/api/add-fund/${fund_id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          status,
+          description:
+            status === "approved"
+              ? "Fund approved by Admin"
+              : "Fund rejected by Admin",
+        }),
+      });
+
+      const data = await res.json();
+      if (data.status) {
+        toast.success(`Fund ${status} successfully`);
+        fetchFunds(); // refresh list
+      } else {
+        toast.error(data.message || "Failed to update fund");
+      }
+    } catch (err) {
+      console.error("Error updating fund status:", err);
+      toast.error("Error updating fund");
+    }
+  };
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleString("en-US", {
@@ -145,7 +177,7 @@ export default function Funds() {
 
   return (
     <Tabs value="funds" className="space-y-6">
-   
+
 
       {/* Funds History Card */}
       <Card className="bg-white dark:bg-gray-800">
@@ -166,9 +198,12 @@ export default function Funds() {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead>#</TableHead>
                       <TableHead>Date & Time</TableHead>
-                      <TableHead className="text-right">Amount</TableHead>
+                      <TableHead>User</TableHead>
                       <TableHead>Description</TableHead>
+                      <TableHead>Fund Type</TableHead>
+                      <TableHead>Amount</TableHead>
                       <TableHead>Status</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -180,31 +215,53 @@ export default function Funds() {
                         </TableCell>
                       </TableRow>
                     ) : (
-                      funds.map((fund) => (
+                      funds.map((fund, index) => (
                         <TableRow key={fund._id}>
+                          <TableCell className="font-medium">
+                            {index + 1}
+                          </TableCell>
                           <TableCell className="font-medium">
                             {formatDate(fund.created_at)}
                           </TableCell>
-                          <TableCell className="text-right text-green-600 font-bold">
-                            +{formatCurrency(fund.amount)}
+                          <TableCell className="max-w-xs truncate">
+                            {fund.user_id.name}
                           </TableCell>
                           <TableCell className="max-w-xs truncate">
                             {fund.description}
                           </TableCell>
-                          <TableCell>
-                            <Badge 
-                              variant={
-                                fund.status === 'completed' ? 'default' : 
-                                fund.status === 'pending' ? 'secondary' : 'destructive'
-                              }
-                              className={
-                                fund.status === 'completed' ? 'bg-green-100 text-green-800' :
-                                fund.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                                'bg-red-100 text-red-800'
-                              }
-                            >
-                              {fund.status}
-                            </Badge>
+                          <TableCell className="max-w-xs truncate">
+                            {fund.fund_type}
+                          </TableCell>
+                          <TableCell className={` ${fund.status === 'approved' ? ' text-green-600' :
+                            fund.status === 'pending' ? ' text-yellow-800' :
+                              ' text-red-600'
+                            } font-medium`}>
+                            {fund.status === 'approved' ? ' +' : ''}{formatCurrency(fund.amount)}
+                          </TableCell>
+
+                          <TableCell className="space-x-2">
+                            {fund.status === "pending" ? (
+                              <>
+                                <Button
+                                  size="sm"
+                                  className="bg-green-600 text-white hover:bg-green-700"
+                                  onClick={() => handleStatusChange(fund._id, "approved")}
+                                >
+                                  Accept
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  onClick={() => handleStatusChange(fund._id, "rejected")}
+                                >
+                                  Reject
+                                </Button>
+                              </>
+                            ) : (
+                              <span className="text-sm text-muted-foreground">
+                                No Actions
+                              </span>
+                            )}
                           </TableCell>
                         </TableRow>
                       ))
@@ -212,7 +269,7 @@ export default function Funds() {
                   </TableBody>
                 </Table>
               </div>
-              
+
               {/* Pagination */}
               {fundPagination && fundPagination.totalCount > 0 && (
                 <div className="mt-6">

@@ -22,6 +22,7 @@ import {
     PaginationLink,
     PaginationNext,
 } from "@/components/ui/pagination";
+import { toast } from "sonner";
 
 interface Withdrawal {
     _id: string;
@@ -78,14 +79,14 @@ export default function WithdrawalTable() {
 
             const data = await res.json();
             if (data.status) {
-                alert(`Withdrawal ${status} successfully`);
+                toast.success(`Withdrawal ${status} successfully`);
                 fetchWithdrawals(); // refresh list
             } else {
-                alert(data.message || "Failed to update withdrawal");
+                toast.error(data.message || "Failed to update withdrawal");
             }
         } catch (err) {
             console.error("Error updating withdrawal status:", err);
-            alert("Error updating withdrawal");
+            toast.error("Error updating withdrawal");
         }
     };
 
@@ -143,10 +144,10 @@ export default function WithdrawalTable() {
                                 </TableCell>
                             </TableRow>
                         ) : (
-                            withdrawals.map((w,index) => (
+                            withdrawals.map((w, index) => (
                                 <TableRow key={w._id}>
                                     <TableCell className="text-sm">
-                                        {index+1}
+                                        {index + 1}
                                     </TableCell>
                                     <TableCell className="text-sm">
                                         {formatDate(w.created_at)}

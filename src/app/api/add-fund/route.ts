@@ -12,6 +12,7 @@ interface AddFundRequest {
     amount: number;
     description?: string;
     user_id: Types.ObjectId;
+    fund_type: 'phonepay' | 'googlepay' | 'paytmpay';
 }
 
 
@@ -23,10 +24,18 @@ export async function POST(
 
 
         const body: AddFundRequest = await request.json();
-        const { user_id, amount } = body;
+        const { user_id, amount, fund_type } = body;
 
         if (!mongoose.Types.ObjectId.isValid(user_id)) {
             throw new ApiError('Invalid user ID');
+        }
+
+        if (!fund_type) {
+            throw new ApiError(`fund_type is required`);
+        }
+
+        if (!['phonepay', 'googlepay', 'paytmpay'].includes(fund_type)) {
+            throw new ApiError(`Invalid ${fund_type}`);
         }
 
         if (!amount || amount <= 0) throw new ApiError('Amount must be greater than 0');
@@ -37,16 +46,13 @@ export async function POST(
         if (user.is_blocked) throw new ApiError('Cannot add funds to blocked user');
 
         try {
-            // Update user balance
-            user.balance += amount;
-            await user.save();
 
             // Save Transaction
             const transaction = new Transaction({
                 user_id: user._id,
                 amount,
                 type: 'credit',
-                status: 'completed',
+                status: 'pending',
                 description: `Funds added by ${user.name}`
             });
             await transaction.save();
@@ -54,9 +60,11 @@ export async function POST(
             // Save Fund record
             const fund = new Fund({
                 user_id: user._id,
+                transaction_id:transaction._id,
                 amount,
-                status: 'completed',
-                description:`Funds added by ${user.name}`
+                fund_type,
+                status: 'pending',
+                description: `Funds added by ${user.name}`
             });
             await fund.save();
 
@@ -71,7 +79,7 @@ export async function POST(
         console.error('Add Fund Error:', error);
 
         if (error instanceof ApiError) {
-            return NextResponse.json({ status: false, message: error.message }, { status: 400 });
+            return NextResponse.json({ status: false, message: error.message });
         }
 
         const errorMessage = error instanceof Error ? error.message : 'Failed to add funds';

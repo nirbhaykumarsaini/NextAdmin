@@ -1,10 +1,13 @@
 import mongoose, { Schema, Types } from "mongoose";
 import "@/models/AppUser";
+import "@/models/Transaction";
 
 export interface IFund {
   user_id: Types.ObjectId;
+  transaction_id: Types.ObjectId;
   amount: number;
   status: 'pending' | 'completed' | 'failed';
+  fund_type: 'phonepay' | 'googlepay' | 'paytmpay';
   description?: string;
   created_at?: Date;
   updated_at?: Date;
@@ -18,26 +21,36 @@ const fundSchema = new Schema<IFund>(
       ref: 'AppUser',
       required: true,
     },
+    transaction_id: {
+      type: Schema.Types.ObjectId,
+      ref: 'Transaction',
+      required: true,
+    },
     amount: {
       type: Number,
       required: true,
       min: 0
     },
+    fund_type: {
+      type: String,
+      required: true,
+      enum: ['phonepay', 'googlepay', 'paytmpay']
+    },
     status: {
       type: String,
       required: true,
-      enum: ['pending', 'completed', 'failed'],
-      default: 'completed'
+      enum: ['pending', 'approved', 'rejected'],
+      default: 'pending'
     },
     description: {
       type: String,
     }
-  }, 
-  { 
-    timestamps: { 
-      createdAt: 'created_at', 
-      updatedAt: 'updated_at' 
-    } 
+  },
+  {
+    timestamps: {
+      createdAt: 'created_at',
+      updatedAt: 'updated_at'
+    }
   }
 );
 

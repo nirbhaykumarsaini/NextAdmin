@@ -824,7 +824,10 @@ function UserDetailsContent() {
                             </TableCell>
                             <TableCell>{fund.description}</TableCell>
                             <TableCell>
-                              <Badge variant={fund.status === 'completed' ? 'default' : 'secondary'}>
+                              <Badge variant={
+                                  fund.status === 'approved' ? 'default' :
+                                    fund.status === 'pending' ? 'secondary' : 'destructive'
+                                }>
                                 {fund.status}
                               </Badge>
                             </TableCell>
@@ -882,7 +885,7 @@ function UserDetailsContent() {
                             <TableCell>
                               <Badge
                                 variant={
-                                  withdrawal.status === 'completed' ? 'default' :
+                                  withdrawal.status === 'approved' ? 'default' :
                                     withdrawal.status === 'pending' ? 'secondary' : 'destructive'
                                 }
                               >
