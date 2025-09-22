@@ -4,9 +4,7 @@ import { JWT_SECRET } from '@/constants/index';
 export const generateToken = (userId: string | JwtPayload | undefined) => {
   const secret = JWT_SECRET;
   
-  return jwt.sign({ sub: userId }, secret, {
-    expiresIn:"10d",
-  });
+  return jwt.sign({ sub: userId }, secret);
 };
 
 export const verifyToken = (token: string) => {
