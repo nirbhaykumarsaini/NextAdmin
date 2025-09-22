@@ -52,7 +52,7 @@ const withdrawalMethodSchema = new Schema<IWithdrawalMethod>(
 
 // Pre-save middleware to delete all irrelevant fields based on withdraw_type
 withdrawalMethodSchema.pre("save", function (next) {
-  const withdrawal = this as any; // Use any to access unset method
+  const withdrawal = this as mongoose.Document & IWithdrawalMethod; // Use any to access unset method
 
   // Define which fields should be kept for each withdraw_type
   const allowedFields: { [key: string]: string[] } = {
@@ -73,9 +73,9 @@ withdrawalMethodSchema.pre("save", function (next) {
   
   // Remove all fields that are not in the allowed list
   schemaPaths.forEach(field => {
-    if (!fieldsToKeep.includes(field) && field !== '_id' && field !== '__v') {
-      withdrawal[field] = undefined;
-      withdrawal.unset(field); // This completely removes the field from the document
+   if (!fieldsToKeep.includes(field) && field !== '_id' && field !== '__v') {
+      // Use type assertion to access unset method
+      (withdrawal as mongoose.Document).set(field, undefined);
     }
   });
 
