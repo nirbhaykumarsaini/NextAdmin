@@ -5,12 +5,30 @@ import mongoose from "mongoose";
 import WithdrawalMethod from "@/models/WithdrawalMethod";
 import AppUser from "@/models/AppUser";
 
+
+type WithdrawType = "phonepay" | "googlepay" | "paytmpay" | "bank";
+
+interface WithdrawalFields {
+  account_holder_name?: string;
+  account_number?: string;
+  ifsc_code?: string;
+  bank_name?: string;
+  branch_name?: string;
+  paytm_number?: string;
+  phonepe_number?: string;
+  googlepay_number?: string;
+  [key: string]: string | undefined;
+}
+
 // ✅ POST: Add or Update Withdrawal Method
 export async function POST(request: Request) {
   try {
     await dbConnect();
 
-    const body = await request.json();
+    const body: {
+      user_id: string;
+      withdraw_type: WithdrawType;
+    } & WithdrawalFields = await request.json();
     const { user_id, withdraw_type, ...fields } = body;
 
     // ✅ Validate user_id
@@ -66,8 +84,7 @@ export async function POST(request: Request) {
       const validationErrors = Object.values(error.errors).map(err => err.message);
       return NextResponse.json({
         status: false,
-        message: "Validation failed",
-        errors: validationErrors
+        message: validationErrors,
       });
     }
 
@@ -78,7 +95,7 @@ export async function POST(request: Request) {
 }
 
 // Validate that required fields are present for the specific withdraw_type
-function validateRequiredFields(withdraw_type: string, fields: any) {
+function validateRequiredFields(withdraw_type: string, fields: WithdrawalFields) {
   const requiredFields: { [key: string]: string[] } = {
     bank: ['account_holder_name', 'account_number', 'ifsc_code', 'bank_name', 'branch_name'],
     paytmpay: ['paytm_number'],
@@ -101,7 +118,7 @@ function validateRequiredFields(withdraw_type: string, fields: any) {
 }
 
 // Aggressive field cleaning - only keeps fields relevant to the withdraw_type
-function cleanWithdrawalFieldsAggressive(withdraw_type: string, fields: any) {
+function cleanWithdrawalFieldsAggressive(withdraw_type: string, fields: WithdrawalFields) {
   const fieldMap: { [key: string]: string[] } = {
     bank: ['account_holder_name', 'account_number', 'ifsc_code', 'bank_name', 'branch_name'],
     paytmpay: ['paytm_number'],
@@ -110,7 +127,7 @@ function cleanWithdrawalFieldsAggressive(withdraw_type: string, fields: any) {
   };
 
   const allowedFields = fieldMap[withdraw_type] || [];
-  const cleanedFields: any = {};
+  const cleanedFields: WithdrawalFields = {};
 
   // Only copy allowed fields
   allowedFields.forEach(field => {
