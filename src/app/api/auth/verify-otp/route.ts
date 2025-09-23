@@ -57,11 +57,11 @@ export async function POST(request: Request) {
       return NextResponse.json({
         status: true,
         message: 'OTP verified successfully',
-        token,
         user: {
           id: user._id,
           name: user.name,
-          mobile_number: user.mobile_number
+          mobile_number: user.mobile_number,
+          token
         }
       });
 
