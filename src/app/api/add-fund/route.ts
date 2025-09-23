@@ -31,7 +31,7 @@ export async function POST(
         }
 
         if (!['phonepay', 'googlepay', 'paytmpay'].includes(fund_type)) {
-            throw new ApiError(`Invalid ${fund_type}`);
+            throw new ApiError(`Invalid fund_type`);
         }
 
         if (!amount || amount <= 0) throw new ApiError('Amount must be greater than 0');
