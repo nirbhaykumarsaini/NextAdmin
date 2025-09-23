@@ -29,7 +29,7 @@ export async function POST(request: Request) {
       const missingFields = [];
       if (!body.mobile_number) missingFields.push('mobile_number');
       if (!body.password) missingFields.push('password');
-      
+
       throw new ApiError(
         `${missingFields.join(' and ')} ${missingFields.length > 1 ? 'are' : 'is'} required`
       );
@@ -69,18 +69,19 @@ export async function POST(request: Request) {
     return NextResponse.json({
       status: true,
       message: 'Login successful',
-      token,
       user: {
         id: user._id,
         name: user.name,
         mobile_number: user.mobile_number,
         balance: user.balance,
-        batting: user.batting
+        batting: user.batting,
+        token,
+
       }
     });
 
   } catch (error: unknown) {
-    
+
     if (error instanceof ApiError) {
       return NextResponse.json(
         { status: false, message: error.message }
@@ -88,7 +89,7 @@ export async function POST(request: Request) {
     }
 
     const errorMessage = error instanceof Error ? error.message : 'Failed to sign in user';
-    
+
     return NextResponse.json(
       { status: false, message: errorMessage }
     );
