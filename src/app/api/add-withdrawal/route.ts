@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/config/db';
 import ApiError from '@/lib/errors/APiError'; // Fixed typo: APiError → ApiError
 import AppUser from '@/models/AppUser';
@@ -7,6 +7,7 @@ import Withdrawal from '@/models/Withdrawal';
 import AccountSetting from '@/models/AccountSettings';
 import mongoose, { Types } from 'mongoose';
 import WithdrawalMethod from '@/models/WithdrawalMethod';
+import { getUserIdFromToken } from '@/middleware/authMiddleware';
 
 interface WithdrawRequest {
     amount: number;
@@ -15,12 +16,18 @@ interface WithdrawRequest {
     withdrawal_method_id: Types.ObjectId; // Added withdrawal method ID
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
     try {
         await dbConnect();
 
+        const user_id = getUserIdFromToken(request);
+
+        if (!user_id) {
+            throw new ApiError('Unauthorized - Invalid or missing token');
+        }
+
         const body: WithdrawRequest = await request.json();
-        const { user_id, amount, withdrawal_method_id, description } = body;
+        const { amount, withdrawal_method_id, description } = body;
 
         if (!mongoose.Types.ObjectId.isValid(user_id)) {
             throw new ApiError('Invalid user ID');

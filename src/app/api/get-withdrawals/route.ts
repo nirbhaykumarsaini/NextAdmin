@@ -1,17 +1,22 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/config/db';
 import ApiError from '@/lib/errors/APiError';
 import Withdrawal from '@/models/Withdrawal';
 import mongoose from 'mongoose';
+import { getUserIdFromToken } from '@/middleware/authMiddleware';
 
 
 
 export async function POST(
-    request: Request
+    request: NextRequest
 ) {
     try {
         await dbConnect();
-        const { user_id } = await request.json();
+        const user_id = getUserIdFromToken(request);
+
+        if (!user_id) {
+            throw new ApiError('Unauthorized - Invalid or missing token');
+        }
 
         if (!mongoose.Types.ObjectId.isValid(user_id)) {
             throw new ApiError('Invalid user ID');

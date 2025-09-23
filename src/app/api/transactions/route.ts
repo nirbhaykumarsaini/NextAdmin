@@ -1,30 +1,33 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/config/db';
 import ApiError from '@/lib/errors/APiError';
 import Transaction from '@/models/Transaction';
 import mongoose, { Types } from 'mongoose';
+import { getUserIdFromToken } from '@/middleware/authMiddleware';
 
 interface GetTransactionsParams {
   user_id?: Types.ObjectId;
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
     await dbConnect();
 
-    const body = await request.json()
-    const { user_id } = body;
+    const user_id = getUserIdFromToken(request);
+
+    if (!user_id) {
+      throw new ApiError('Unauthorized - Invalid or missing token');
+    }
 
     // Build filter object
     const filter: GetTransactionsParams = {};
-
 
     if (user_id && mongoose.Types.ObjectId.isValid(user_id)) {
       filter.user_id = new mongoose.Types.ObjectId(user_id);
     }
 
     // Get transactions with pagination
-    const [transactions, totalCount] = await Promise.all([
+    const [transactions] = await Promise.all([
       Transaction.find(filter)
         .populate('user_id', 'name mobile_number')
         .sort({ created_at: -1 }),
@@ -34,7 +37,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       status: true,
       message: 'Transactions fetched successfully',
-      data:transactions.map(transaction => ({
+      data: transactions.map(transaction => ({
         id: transaction._id.toString(),
         userId: transaction.user_id?._id.toString(),
         userName: transaction.user_id?.name,
