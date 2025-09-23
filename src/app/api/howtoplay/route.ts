@@ -3,19 +3,30 @@ import HowToPlay from '@/models/HowToPlay';
 import connectDB from '@/config/db';
 import ApiError from '@/lib/errors/APiError';
 
-// GET all HowToPlay
 export async function GET() {
     try {
         await connectDB();
 
         const howtoplay = await HowToPlay.find();
 
+        // Add full video link
+        const formattedData = howtoplay.map(item => ({
+            _id: item._id,
+            howtoplay_title: item.howtoplay_title,
+            howtoplay_message: item.howtoplay_message,
+            video_id: item.video_id,
+            video_url: `https://www.youtube.com/watch?v=${item.video_id}`, // normal link
+            embed_url: `https://www.youtube.com/embed/${item.video_id}`,   // iframe embed link
+            // createdAt: item.createdAt,
+            // updatedAt: item.updatedAt
+        }));
+
         return NextResponse.json({
             status: true,
-            data: howtoplay
+            data: formattedData
         });
     } catch (error: unknown) {
-         const errorMessage = error instanceof Error ? error.message : 'Failed to retrieve HowToPlay'
+        const errorMessage = error instanceof Error ? error.message : 'Failed to retrieve HowToPlay';
         return NextResponse.json(
             { status: false, message: errorMessage }
         );
