@@ -221,7 +221,7 @@ const ManageUpi = () => {
             ) : upiList.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                  No UPI's found
+                  No UPI&lsquo;s found
                 </TableCell>
               </TableRow>
             ) : (
