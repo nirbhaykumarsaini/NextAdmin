@@ -218,6 +218,7 @@ export async function PUT(request: Request) {
             bid_id,
             user_id,
             digit,
+            panna,
             bid_amount,
             game_id,
             game_type,
@@ -230,7 +231,7 @@ export async function PUT(request: Request) {
 
         // Find the main market bid document
         const mainMarketBid = await StarlineBid.findOne({
-            _id: bid_id,
+            'bids._id': bid_id,
             user_id
         }).session(session);
 
@@ -272,18 +273,33 @@ export async function PUT(request: Request) {
             }
             originalBid.game_id = new Types.ObjectId(game_id);
         }
-
+        const digitGameTypes = ['single-digit'];
 
         if (digit !== undefined) {
             const currentGameType = game_type || originalBid.game_type;
 
-            if (validGameTypes.includes(currentGameType)) {
+            if (digitGameTypes.includes(currentGameType)) {
                 if (!digit) {
                     throw new ApiError('Digit is required for this game type');
                 }
                 originalBid.digit = digit;
             } else {
                 originalBid.digit = undefined;
+            }
+        }
+
+        const pannaGameTypes = ['single-panna', 'double-panna', 'triple-panna'];
+
+        if (panna !== undefined) {
+            const currentGameType = game_type || originalBid.game_type;
+
+            if (pannaGameTypes.includes(currentGameType)) {
+                if (!panna) {
+                    throw new ApiError('Panna is required for this game type');
+                }
+                originalBid.panna = panna;
+            } else {
+                originalBid.panna = undefined;
             }
         }
 
@@ -410,7 +426,7 @@ export async function GET(request: Request) {
             },
             {
                 $project: {
-                    _id: 1,
+                    _id: '$bids._id',
                     user_id: 1,
                     name: { $arrayElemAt: ['$user_info.name', 0] },
                     digit: '$bids.digit',

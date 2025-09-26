@@ -311,7 +311,7 @@ const MainMarketSale = () => {
             {saleReport && (
                 <div className="rounded-lg border shadow-md p-6">
                     {/* Display basic info about the report */}
-                    <div className="mb-8">
+                    <div>
                         <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">Report Summary</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             {/* Date Card */}
@@ -449,7 +449,7 @@ const MainMarketSale = () => {
                     {saleReport.redBreaket && renderSaleReportTable(saleReport.redBreaket, 'Red Bracket')}
                     {saleReport.fullSangamBid && renderSaleReportTable(saleReport.fullSangamBid, 'Full Sangam')}
 
-                    {!saleReport.singleDigitBid && !saleReport.singlePannaBid && !saleReport.doublePannaBid &&
+                    {/* {!saleReport.singleDigitBid && !saleReport.singlePannaBid && !saleReport.doublePannaBid &&
                         !saleReport.triplePannaBid && !saleReport.spMotor && !saleReport.dpMotor &&
                         !saleReport.spdptpMotor && !saleReport.oddEven && !saleReport.twoDigit &&
                         !saleReport.choicePanna && !saleReport.digitBaseJodi && !saleReport.halfSangamBid &&
@@ -457,7 +457,7 @@ const MainMarketSale = () => {
                             <div className="text-center text-gray-500 py-8">
                                 No sale data found for the selected criteria.
                             </div>
-                        )}
+                        )} */}
                 </div>
             )}
         </div>

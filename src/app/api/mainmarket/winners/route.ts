@@ -274,56 +274,65 @@ export async function POST(request: Request) {
                         break;
 
                     case 'half-sangam':
-                        // For half-sangam, we want to check both open and close session bids when declaring close session
-                            if (bid.session === "open") {
-                                // For open session half-sangam, check if close_panna sum matches current digit
-                                if (bid.close_panna) {
-                                    const closeSum = String(bid.close_panna).split('').reduce((acc, curr) => acc + parseInt(curr), 0);
-                                    const calculatedCloseDigit = closeSum > 9 ? String(closeSum).slice(-1) : closeSum;
-                                    if (calculatedCloseDigit.toString() === digit.toString()) {
-                                        const winningAmount = calculateWinningAmount(bid.game_type, bid.bid_amount, gameRates);
-                                        winningBids.push({
-                                            _id: mainBid._id.toString(),
-                                            user: mainBid.user_id.name,
-                                            user_id: mainBid.user_id._id,
-                                            created_at: mainBid.created_at.toISOString(),
-                                            game_type: bid.game_type,
-                                            session: bid.session,
-                                            game: bid.game_id.game_name,
-                                            amount: bid.bid_amount,
-                                            winning_amount: winningAmount,
-                                            digit: bid.digit,
-                                            close_panna: bid.close_panna
-                                        });
-                                        totalWinAmount += winningAmount;
-                                    }
-                                }
-                            } else if (bid.session === "close") {
-                                // For close session half-sangam, check if open_panna sum matches current digit
-                                if (bid.open_panna) {
-                                    const openSum = String(bid.open_panna).split('').reduce((acc, curr) => acc + parseInt(curr), 0);
-                                    const calculatedOpenDigit = openSum > 9 ? String(openSum).slice(-1) : openSum;
-                                    if (calculatedOpenDigit.toString() === digit.toString()) {
-                                        const winningAmount = calculateWinningAmount(bid.game_type, bid.bid_amount, gameRates);
-                                        winningBids.push({
-                                            _id: mainBid._id.toString(),
-                                            user: mainBid.user_id.name,
-                                            user_id: mainBid.user_id._id,
-                                            created_at: mainBid.created_at.toISOString(),
-                                            game_type: bid.game_type,
-                                            session: bid.session,
-                                            game: bid.game_id.game_name,
-                                            amount: bid.bid_amount,
-                                            winning_amount: winningAmount,
-                                            digit: bid.digit,
-                                            open_panna: bid.open_panna
-                                        });
-                                        totalWinAmount += winningAmount;
-                                    }
+                        // Winners only on Close session declaration
+                        if (sessionLower === "close" && openSessionResult) {
+                            // --- OPEN SESSION HALF-SANGAM BIDS ---
+                            if (bid.session === "open" && bid.close_panna) {
+                                const closeSum = String(panna).split('')
+                                    .reduce((acc, curr) => acc + parseInt(curr), 0);
+                                const closeDigit = closeSum > 9 ? String(closeSum).slice(-1) : closeSum;
+
+                                if (
+                                    bid.close_panna.toString() === panna.toString() &&
+                                    bid.digit?.toString() === closeDigit.toString()
+                                ) {
+                                    const winningAmount = calculateWinningAmount(bid.game_type, bid.bid_amount, gameRates);
+                                    winningBids.push({
+                                        _id: mainBid._id.toString(),
+                                        user: mainBid.user_id.name,
+                                        user_id: mainBid.user_id._id,
+                                        created_at: mainBid.created_at.toISOString(),
+                                        game_type: bid.game_type,
+                                        session: bid.session,
+                                        game: bid.game_id.game_name,
+                                        amount: bid.bid_amount,
+                                        winning_amount: winningAmount,
+                                        digit: bid.digit,
+                                        close_panna: bid.close_panna
+                                    });
+                                    totalWinAmount += winningAmount;
                                 }
                             }
-                        break;
 
+                            // --- CLOSE SESSION HALF-SANGAM BIDS ---
+                            if (bid.session === "close" && bid.open_panna) {
+                                const openSum = String(openSessionResult.panna).split('')
+                                    .reduce((acc, curr) => acc + parseInt(curr), 0);
+                                const openDigit = openSum > 9 ? String(openSum).slice(-1) : openSum;
+
+                                if (
+                                    bid.open_panna.toString() === openSessionResult.panna.toString() &&
+                                    bid.digit?.toString() === openDigit.toString()
+                                ) {
+                                    const winningAmount = calculateWinningAmount(bid.game_type, bid.bid_amount, gameRates);
+                                    winningBids.push({
+                                        _id: mainBid._id.toString(),
+                                        user: mainBid.user_id.name,
+                                        user_id: mainBid.user_id._id,
+                                        created_at: mainBid.created_at.toISOString(),
+                                        game_type: bid.game_type,
+                                        session: bid.session,
+                                        game: bid.game_id.game_name,
+                                        amount: bid.bid_amount,
+                                        winning_amount: winningAmount,
+                                        digit: bid.digit,
+                                        open_panna: bid.open_panna
+                                    });
+                                    totalWinAmount += winningAmount;
+                                }
+                            }
+                        }
+                        break;
                     case 'single-digit':
                     case 'odd-even':
                         // Check if digit matches
@@ -409,23 +418,7 @@ export async function POST(request: Request) {
                                 totalWinAmount += winningAmount;
                             }
                         }
-                        // // Check if digit matches
-                        // if (bid.session === sessionLower && bid.digit && bid.digit === String(digit).padStart(2, '0')) {
-                        //     const winningAmount = calculateWinningAmount(bid.game_type, bid.bid_amount, gameRates);
-                        //     winningBids.push({
-                        //         _id: mainBid._id.toString(),
-                        //         user: mainBid.user_id.name,
-                        //         user_id: mainBid.user_id._id,
-                        //         created_at: mainBid.created_at.toISOString(),
-                        //         game_type: bid.game_type,
-                        //         session: bid.session,
-                        //         game: bid.game_id.game_name,
-                        //         amount: bid.bid_amount,
-                        //         winning_amount: winningAmount,
-                        //         digit: bid.digit
-                        //     });
-                        //     totalWinAmount += winningAmount;
-                        // }
+                       
                         break;
 
                     default:
@@ -454,7 +447,6 @@ export async function POST(request: Request) {
 }
 
 
-// GET - Get all games
 export async function GET(request: Request) {
     try {
         await dbConnect();

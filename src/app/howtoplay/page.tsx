@@ -170,42 +170,6 @@ const HowToPlay = () => {
                 </div>
             </form>
 
-            <div className="rounded-md border mt-8">
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>S.No.</TableHead>
-                            <TableHead>Title</TableHead>
-                            <TableHead>YouTube Video ID</TableHead>
-                            <TableHead>Message</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {loading && howToPlayData.length === 0 ? (
-                            <TableRow>
-                                <TableCell colSpan={4} className="text-center">
-                                    Loading...
-                                </TableCell>
-                            </TableRow>
-                        ) : howToPlayData.length === 0 ? (
-                            <TableRow>
-                                <TableCell colSpan={4} className="text-center">
-                                    No HowToPlay data found
-                                </TableCell>
-                            </TableRow>
-                        ) : (
-                            howToPlayData.map((item, index) => (
-                                <TableRow key={item._id}>
-                                    <TableCell>{index + 1}</TableCell>
-                                    <TableCell className="font-medium">{item.howtoplay_title}</TableCell>
-                                    <TableCell>{item.video_id}</TableCell>
-                                    <TableCell className="max-w-md truncate">{item.howtoplay_message}</TableCell>
-                                </TableRow>
-                            ))
-                        )}
-                    </TableBody>
-                </Table>
-            </div>
         </div>
     )
 }

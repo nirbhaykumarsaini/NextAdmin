@@ -39,7 +39,7 @@ export interface Bid {
 }
 
 const gameTypes = [
-    { value: "all", label: "All" },
+    { value: "all", label: "All Game Type" },
     { value: "single-digit", label: "Single Digit" },
     { value: "single-panna", label: "Single Panna" },
     { value: "double-panna", label: "Double Panna" },
@@ -59,6 +59,7 @@ const StarlineBidReports = () => {
     const [editingBid, setEditingBid] = useState<Bid | null>(null);
     const [formData, setFormData] = useState({
         digit: '',
+        panna:'',
         bid_amount: 0,
         game_id: '',
         game_type: '',
@@ -97,7 +98,7 @@ const StarlineBidReports = () => {
         } finally {
             setLoading(false)
         }
-    },[startDate, endDate, gameId, gameType, userId])
+    }, [startDate, endDate, gameId, gameType, userId])
 
     useEffect(() => {
         fetchBids()
@@ -142,6 +143,7 @@ const StarlineBidReports = () => {
             bid_amount: bid.bid_amount,
             game_id: bid.game_id,
             game_type: bid.game_type,
+            panna:bid.panna || ''
         });
         setEditDialogOpen(true);
     };
@@ -188,7 +190,8 @@ const StarlineBidReports = () => {
     };
 
     // Determine which fields to show based on game type
-    const showDigitField = ['single-digit', 'single-panna', 'double-panna', 'triple-panna'].includes(formData.game_type);
+    const showDigitField = ['single-digit'].includes(formData.game_type);
+    const showPannaField = [ 'single-panna', 'double-panna', 'triple-panna'].includes(formData.game_type);
 
     return (
         <div className="container mx-auto space-y-8 p-4">
@@ -208,23 +211,23 @@ const StarlineBidReports = () => {
             {/* Enhanced Filter Form */}
             <div className="bg-white dark:bg-gray-900 rounded-lg">
                 <form onSubmit={handleSearch} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-                    
+
                     {/* Date Range Filters */}
                     <div className="space-y-2">
                         <Label htmlFor="start-date">Start Date</Label>
-                        <Input 
+                        <Input
                             id="start-date"
-                            type="date" 
+                            type="date"
                             value={startDate}
                             onChange={(e) => setStartDate(e.target.value)}
                         />
                     </div>
-                    
+
                     <div className="space-y-2">
                         <Label htmlFor="end-date">End Date</Label>
-                        <Input 
+                        <Input
                             id="end-date"
-                            type="date" 
+                            type="date"
                             value={endDate}
                             onChange={(e) => setEndDate(e.target.value)}
                         />
@@ -237,7 +240,7 @@ const StarlineBidReports = () => {
                             <SelectTrigger className='w-full'>
                                 <SelectValue placeholder="Select Game" />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className='bg-white dark:bg-gray-900'>
                                 <SelectItem value="all">All Games</SelectItem>
                                 {games.map((game) => (
                                     <SelectItem key={game._id} value={game._id}>
@@ -255,7 +258,7 @@ const StarlineBidReports = () => {
                             <SelectTrigger className='w-full'>
                                 <SelectValue placeholder="Game Types" />
                             </SelectTrigger>
-                            <SelectContent >
+                            <SelectContent className='bg-white dark:bg-gray-900'>
                                 {gameTypes.map((type) => (
                                     <SelectItem key={type.value} value={type.value}>
                                         {type.label}
@@ -264,7 +267,6 @@ const StarlineBidReports = () => {
                             </SelectContent>
                         </Select>
                     </div>
-                  
 
                     {/* Submit Button */}
                     <div className="flex items-center mt-4">
@@ -287,7 +289,7 @@ const StarlineBidReports = () => {
 
             {/* Edit Bid Dialog */}
             <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-                <DialogContent className="sm:max-w-[500px]">
+                <DialogContent className="sm:max-w-[500px] bg-white dark:bg-gray-900">
                     <DialogHeader>
                         <DialogTitle>Edit Bid</DialogTitle>
                         <DialogDescription>
@@ -308,7 +310,7 @@ const StarlineBidReports = () => {
                                 <SelectTrigger className="col-span-3 w-full">
                                     <SelectValue placeholder="Select game" />
                                 </SelectTrigger>
-                                <SelectContent>
+                                <SelectContent className='bg-white dark:bg-gray-900'>
                                     {games.map((game) => (
                                         <SelectItem key={game._id} value={game._id}>
                                             {game.game_name}
@@ -329,7 +331,7 @@ const StarlineBidReports = () => {
                                 <SelectTrigger className="col-span-3 w-full">
                                     <SelectValue placeholder="Select game type" />
                                 </SelectTrigger>
-                                <SelectContent>
+                                <SelectContent className='bg-white dark:bg-gray-900'>
                                     {gameTypes.filter(gt => gt.value !== 'all').map((type) => (
                                         <SelectItem key={type.value} value={type.value}>
                                             {type.label}
@@ -338,8 +340,6 @@ const StarlineBidReports = () => {
                                 </SelectContent>
                             </Select>
                         </div>
-
-                        
 
                         {showDigitField && (
                             <div className="grid grid-cols-4 items-center gap-4">
@@ -355,7 +355,19 @@ const StarlineBidReports = () => {
                             </div>
                         )}
 
-                       
+                        {showPannaField && (
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="panna" className="text-right">
+                                    Panna
+                                </Label>
+                                <Input
+                                    id="panna"
+                                    value={formData.panna}
+                                    onChange={(e) => handleInputChange('panna', e.target.value)}
+                                    className="col-span-3"
+                                />
+                            </div>
+                        )}
 
                         <div className="grid grid-cols-4 items-center gap-4">
                             <Label htmlFor="bid_amount" className="text-right">

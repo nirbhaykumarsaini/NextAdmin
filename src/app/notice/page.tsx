@@ -16,6 +16,7 @@ import { FiEdit, FiTrash2, FiPlus, FiX } from 'react-icons/fi'
 import { Textarea } from '@/components/ui/textarea'
 import axios from 'axios'
 import { toast } from 'sonner'
+import { Skeleton } from '@/components/ui/skeleton'
 
 interface Notice {
   _id: string;
@@ -212,15 +213,21 @@ const NoticeForm = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {loading && notices.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={4} className="text-center">
-                  Loading...
-                </TableCell>
-              </TableRow>
+             {loading ? (
+              Array.from({ length: 1 }).map((_, index) => (
+                <TableRow key={index}>
+                  <TableCell><Skeleton className="h-4 w-6" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-16" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-12" /></TableCell>
+                  <TableCell className='flex space-x-2 '>
+                    <Skeleton className="h-8 w-8 rounded-full" />
+                    <Skeleton className="h-8 w-8 rounded-full" />
+                  </TableCell>
+                </TableRow>
+              ))
             ) : notices.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={4} className="text-center">
+                <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
                   No notices found
                 </TableCell>
               </TableRow>

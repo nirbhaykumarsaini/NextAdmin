@@ -234,7 +234,7 @@ const StarlineBidReports = () => {
                             <SelectTrigger className='w-full'>
                                 <SelectValue placeholder="Select Game" />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className='bg-white dark:bg-gray-900'>
                                 <SelectItem value="all">All Games</SelectItem>
                                 {games.map((game) => (
                                     <SelectItem key={game._id} value={game._id}>
@@ -252,7 +252,7 @@ const StarlineBidReports = () => {
                             <SelectTrigger className='w-full'>
                                 <SelectValue placeholder="Game Types" />
                             </SelectTrigger>
-                            <SelectContent >
+                            <SelectContent className='bg-white dark:bg-gray-900' >
                                 {gameTypes.map((type) => (
                                     <SelectItem key={type.value} value={type.value}>
                                         {type.label}
@@ -284,7 +284,7 @@ const StarlineBidReports = () => {
 
             {/* Edit Bid Dialog */}
             <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-                <DialogContent className="sm:max-w-[500px]">
+                <DialogContent className="sm:max-w-[500px] bg-white dark:bg-gray-900">
                     <DialogHeader>
                         <DialogTitle>Edit Bid</DialogTitle>
                         <DialogDescription>
@@ -305,7 +305,7 @@ const StarlineBidReports = () => {
                                 <SelectTrigger className="col-span-3 w-full">
                                     <SelectValue placeholder="Select game" />
                                 </SelectTrigger>
-                                <SelectContent>
+                                <SelectContent className='bg-white dark:bg-gray-900'>
                                     {games.map((game) => (
                                         <SelectItem key={game._id} value={game._id}>
                                             {game.game_name}
@@ -326,7 +326,7 @@ const StarlineBidReports = () => {
                                 <SelectTrigger className="col-span-3 w-full">
                                     <SelectValue placeholder="Select game type" />
                                 </SelectTrigger>
-                                <SelectContent>
+                                <SelectContent className='bg-white dark:bg-gray-900'>
                                     {gameTypes.filter(gt => gt.value !== 'all').map((type) => (
                                         <SelectItem key={type.value} value={type.value}>
                                             {type.label}

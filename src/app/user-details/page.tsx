@@ -475,7 +475,7 @@ function UserDetailsContent() {
   }
 
   return (
-    <div className="container mx-auto space-y-6 p-4">
+    <div className="container mx-auto space-y-6">
       <div className="flex items-center gap-4">
         <Button className="cursor-pointer" variant="outline" size="icon" onClick={() => router.back()}>
           <ArrowLeft className="h-4 w-4" />

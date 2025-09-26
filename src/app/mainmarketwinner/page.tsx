@@ -20,6 +20,7 @@ import {
     PaginationLink,
     PaginationNext,
 } from "@/components/ui/pagination";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface Winner {
     id: string;
@@ -100,14 +101,6 @@ export default function MainMarketWinner() {
         }).format(amount);
     };
 
-    if (loading) {
-        return (
-            <div className="flex items-center justify-center h-64">
-                <div className="text-lg">Loading winners...</div>
-            </div>
-        );
-    }
-
     if (error) {
         return (
             <div className="flex items-center justify-center h-64">
@@ -137,6 +130,7 @@ export default function MainMarketWinner() {
                 <Table>
                     <TableHeader>
                         <TableRow>
+                            <TableHead>#</TableHead>
                             <TableHead>Date</TableHead>
                             <TableHead>User</TableHead>
                             <TableHead>Game</TableHead>
@@ -151,15 +145,41 @@ export default function MainMarketWinner() {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {paginatedWinners.length === 0 ? (
+                        {loading ? (
+                            // Loading skeleton
+                            Array.from({ length: 11 }).map((_, index) => (
+                                <TableRow key={index}>
+                                    <TableCell><Skeleton className="h-4 w-6" /></TableCell>
+                                    <TableCell><Skeleton className="h-4 w-32" /></TableCell>
+                                    <TableCell>
+                                        <div className="flex items-center gap-3">
+                                            <Skeleton className="h-9 w-9 rounded-full" />
+                                            <Skeleton className="h-4 w-24" />
+                                        </div>
+                                    </TableCell>
+                                    <TableCell><Skeleton className="h-4 w-32" /></TableCell>
+                                    <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+                                    <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+                                    <TableCell><Skeleton className="h-4 w-16" /></TableCell>
+                                    <TableCell><Skeleton className="h-6 w-16" /></TableCell>
+                                    <TableCell><Skeleton className="h-4 w-16" /></TableCell>
+                                    <TableCell><Skeleton className="h-6 w-16" /></TableCell>
+                                    <TableCell><Skeleton className="h-6 w-16" /></TableCell>
+                                    <TableCell><Skeleton className="h-8 w-16" /></TableCell>
+                                </TableRow>
+                            ))
+                        ) : paginatedWinners.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                                    {searchTerm ? 'No winners found matching your search' : 'No winners found'}
+                                <TableCell colSpan={15} className="text-center py-8 text-muted-foreground">
+                                    {searchTerm ? 'No withdrawals found matching your search' : 'No withdrawals found'}
                                 </TableCell>
                             </TableRow>
                         ) : (
-                            paginatedWinners.map((winner) => (
+                            paginatedWinners.map((winner, index) => (
                                 <TableRow key={winner.id}>
+                                    <TableCell className="text-sm">
+                                        {index + 1}
+                                    </TableCell>
                                     <TableCell className="text-sm">
                                         {formatDate(winner.result_date)}
                                     </TableCell>
@@ -187,14 +207,14 @@ export default function MainMarketWinner() {
                                     <TableCell className="text-sm font-medium">
                                         {winner.digit || '-'}
                                     </TableCell>
-                                      <TableCell className="text-sm font-medium">
-                                        { winner.panna || '-'}
+                                    <TableCell className="text-sm font-medium">
+                                        {winner.panna || '-'}
                                     </TableCell>
-                                      <TableCell className="text-sm font-medium">
-                                        { winner.open_panna || '-'}
+                                    <TableCell className="text-sm font-medium">
+                                        {winner.open_panna || '-'}
                                     </TableCell>
-                                     <TableCell className="text-sm font-medium">
-                                        { winner.close_panna || '-'}
+                                    <TableCell className="text-sm font-medium">
+                                        {winner.close_panna || '-'}
                                     </TableCell>
                                     <TableCell className="text-sm font-medium text-green-600">
                                         {formatCurrency(winner.bid_amount)}
@@ -207,6 +227,10 @@ export default function MainMarketWinner() {
                         )}
                     </TableBody>
                 </Table>
+            </div>
+
+            <div className="text-sm text-muted-foreground">
+                Showing {paginatedWinners.length} of {filteredWinners.length} winners
             </div>
 
             {totalPages > 1 && (
@@ -252,9 +276,7 @@ export default function MainMarketWinner() {
                 </Pagination>
             )}
 
-            <div className="text-sm text-muted-foreground">
-                Showing {paginatedWinners.length} of {filteredWinners.length} winners
-            </div>
+
         </div>
     );
 }

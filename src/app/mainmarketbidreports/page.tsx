@@ -42,7 +42,7 @@ export interface Bid {
 }
 
 const gameTypes = [
-    { value: "all", label: "All" },
+    { value: "all", label: "All Game Type" },
     { value: "single-digit", label: "Single Digit" },
     { value: "jodi-digit", label: "Jodi Digit" },
     { value: "single-panna", label: "Single Panna" },
@@ -84,6 +84,8 @@ const MainMarketBidReports = () => {
         game_id: '',
         game_type: '',
         session: '',
+        open_panna:'',
+        close_panna:''
     });
     const [updating, setUpdating] = useState(false);
 
@@ -120,7 +122,7 @@ const MainMarketBidReports = () => {
         } finally {
             setLoading(false)
         }
-    },[startDate,endDate, gameId, gameType, userId, session])
+    }, [startDate, endDate, gameId, gameType, userId, session])
 
     useEffect(() => {
         fetchBids()
@@ -168,6 +170,8 @@ const MainMarketBidReports = () => {
             game_id: bid.game_id,
             game_type: bid.game_type,
             session: bid.session || '',
+            open_panna: bid.open_panna || '',
+            close_panna: bid.close_panna || ''
         });
         setEditDialogOpen(true);
     };
@@ -214,9 +218,18 @@ const MainMarketBidReports = () => {
     };
 
     // Determine which fields to show based on game type
-    const showDigitField = ['single-digit', 'jodi-digit', 'two-digit', 'digit-base-jodi', 'red-bracket', 'half-sangam', 'full-sangam'].includes(formData.game_type);
-    const showPannaField = ['single-panna', 'double-panna', 'triple-panna', 'sp-motor', 'dp-motor', 'sp-dp-tp-motor', 'choice-panna', 'half-sangam', 'full-sangam'].includes(formData.game_type);
+    const showDigitField = ['single-digit', 'jodi-digit', 'two-digit', 'digit-base-jodi', 'red-bracket', 'half-sangam'].includes(formData.game_type);
+    const showPannaField = ['single-panna', 'double-panna', 'triple-panna', 'sp-motor', 'dp-motor', 'sp-dp-tp-motor', 'choice-panna'].includes(formData.game_type);
     const showSessionField = !['full-sangam', 'jodi-digit', 'red-bracket', 'odd-even'].includes(formData.game_type);
+
+    // For Half Sangam: Show digit + open_panna for open session, digit + close_panna for close session
+    const isHalfSangam = formData.game_type === 'half-sangam';
+    const showOpenPannaForHalfSangam = isHalfSangam && formData.session === 'close';
+    const showClosePannaForHalfSangam = isHalfSangam && formData.session === 'open';
+    
+    // For Full Sangam: Always show both open_panna and close_panna
+    const isFullSangam = formData.game_type === 'full-sangam';
+    const showBothPannaForFullSangam = isFullSangam;
 
     return (
         <div className="container mx-auto space-y-8 p-4">
@@ -235,24 +248,24 @@ const MainMarketBidReports = () => {
 
             {/* Enhanced Filter Form */}
             <div className=" rounded-lg">
-                <form onSubmit={handleSearch} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-                    
+                <form onSubmit={handleSearch} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
+
                     {/* Date Range Filters */}
                     <div className="space-y-2">
                         <Label htmlFor="start-date">Start Date</Label>
-                        <Input 
+                        <Input
                             id="start-date"
-                            type="date" 
+                            type="date"
                             value={startDate}
                             onChange={(e) => setStartDate(e.target.value)}
                         />
                     </div>
-                    
+
                     <div className="space-y-2">
                         <Label htmlFor="end-date">End Date</Label>
-                        <Input 
+                        <Input
                             id="end-date"
-                            type="date" 
+                            type="date"
                             value={endDate}
                             onChange={(e) => setEndDate(e.target.value)}
                         />
@@ -265,7 +278,7 @@ const MainMarketBidReports = () => {
                             <SelectTrigger className='w-full'>
                                 <SelectValue placeholder="Select Game" />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className='bg-white dark:bg-gray-900'>
                                 <SelectItem value="all">All Games</SelectItem>
                                 {games.map((game) => (
                                     <SelectItem key={game._id} value={game._id}>
@@ -283,7 +296,7 @@ const MainMarketBidReports = () => {
                             <SelectTrigger className='w-full'>
                                 <SelectValue placeholder="Game Types" />
                             </SelectTrigger>
-                            <SelectContent >
+                            <SelectContent className='bg-white dark:bg-gray-900'>
                                 {gameTypes.map((type) => (
                                     <SelectItem key={type.value} value={type.value}>
                                         {type.label}
@@ -292,7 +305,25 @@ const MainMarketBidReports = () => {
                             </SelectContent>
                         </Select>
                     </div>
-                  
+
+                    {/* Session Filter */}
+                    <div className="space-y-2">
+                        <Label>Session</Label>
+                        <Select value={session} onValueChange={setSession}>
+                            <SelectTrigger className='w-full'>
+                                <SelectValue placeholder="Select Session" />
+                            </SelectTrigger>
+                            <SelectContent className='bg-white dark:bg-gray-900'>
+                                {sessions.map((sess) => (
+                                    <SelectItem key={sess.value} value={sess.value}>
+                                        {sess.label}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    
 
                     {/* Submit Button */}
                     <div className="flex items-center mt-4">
@@ -315,7 +346,7 @@ const MainMarketBidReports = () => {
 
             {/* Edit Bid Dialog */}
             <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-                <DialogContent className="sm:max-w-[500px]">
+                <DialogContent className="sm:max-w-[500px] bg-white dark:bg-gray-900">
                     <DialogHeader>
                         <DialogTitle>Edit Bid</DialogTitle>
                         <DialogDescription>
@@ -336,7 +367,7 @@ const MainMarketBidReports = () => {
                                 <SelectTrigger className="col-span-3 w-full">
                                     <SelectValue placeholder="Select game" />
                                 </SelectTrigger>
-                                <SelectContent>
+                                <SelectContent className='bg-white dark:bg-gray-900'>
                                     {games.map((game) => (
                                         <SelectItem key={game._id} value={game._id}>
                                             {game.game_name}
@@ -357,7 +388,7 @@ const MainMarketBidReports = () => {
                                 <SelectTrigger className="col-span-3 w-full">
                                     <SelectValue placeholder="Select game type" />
                                 </SelectTrigger>
-                                <SelectContent>
+                                <SelectContent className='bg-white dark:bg-gray-900'>
                                     {gameTypes.filter(gt => gt.value !== 'all').map((type) => (
                                         <SelectItem key={type.value} value={type.value}>
                                             {type.label}
@@ -379,7 +410,7 @@ const MainMarketBidReports = () => {
                                     <SelectTrigger className="col-span-3 w-full">
                                         <SelectValue placeholder="Select session" />
                                     </SelectTrigger>
-                                    <SelectContent>
+                                    <SelectContent className='bg-white dark:bg-gray-900'>
                                         {sessions.filter(s => s.value !== 'all').map((session) => (
                                             <SelectItem key={session.value} value={session.value}>
                                                 {session.label}
@@ -416,6 +447,63 @@ const MainMarketBidReports = () => {
                                     className="col-span-3"
                                 />
                             </div>
+                        )}
+
+                        {/* Half Sangam Logic */}
+                        {showOpenPannaForHalfSangam && (
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="open_panna" className="text-right">
+                                    Open Panna
+                                </Label>
+                                <Input
+                                    id="open_panna"
+                                    value={formData.open_panna}
+                                    onChange={(e) => handleInputChange('open_panna', e.target.value)}
+                                    className="col-span-3"
+                                />
+                            </div>
+                        )}
+
+                        {showClosePannaForHalfSangam && (
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="close_panna" className="text-right">
+                                    Close Panna
+                                </Label>
+                                <Input
+                                    id="close_panna"
+                                    value={formData.close_panna}
+                                    onChange={(e) => handleInputChange('close_panna', e.target.value)}
+                                    className="col-span-3"
+                                />
+                            </div>
+                        )}
+
+                        {/* Full Sangam Logic */}
+                        {showBothPannaForFullSangam && (
+                            <>
+                                <div className="grid grid-cols-4 items-center gap-4">
+                                    <Label htmlFor="open_panna" className="text-right">
+                                        Open Panna
+                                    </Label>
+                                    <Input
+                                        id="open_panna"
+                                        value={formData.open_panna}
+                                        onChange={(e) => handleInputChange('open_panna', e.target.value)}
+                                        className="col-span-3"
+                                    />
+                                </div>
+                                <div className="grid grid-cols-4 items-center gap-4">
+                                    <Label htmlFor="close_panna" className="text-right">
+                                        Close Panna
+                                    </Label>
+                                    <Input
+                                        id="close_panna"
+                                        value={formData.close_panna}
+                                        onChange={(e) => handleInputChange('close_panna', e.target.value)}
+                                        className="col-span-3"
+                                    />
+                                </div>
+                            </>
                         )}
 
                         <div className="grid grid-cols-4 items-center gap-4">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { FiSearch } from "react-icons/fi";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,6 +23,8 @@ import {
     PaginationNext,
 } from "@/components/ui/pagination";
 import { toast } from "sonner";
+import { Skeleton } from "@/components/ui/skeleton";
+import Link from "next/link";
 
 interface Withdrawal {
     _id: string;
@@ -31,6 +33,7 @@ interface Withdrawal {
     status: string;
     description?: string;
     user_id: {
+        _id: string,
         name: string;
         mobile_number?: string;
     };
@@ -39,17 +42,24 @@ interface Withdrawal {
 export default function WithdrawalTable() {
     const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([]);
     const [loading, setLoading] = useState(true);
+    const [searchTerm, setSearchTerm] = useState("");
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage] = useState(10);
 
     const fetchWithdrawals = async () => {
         try {
-            const res = await fetch(`/api/withdrawals`); // ✅ Your GET all withdrawals API
+            setLoading(true);
+            const res = await fetch(`/api/withdrawals`);
             const data = await res.json();
 
             if (data.status) {
                 setWithdrawals(data.data);
+            } else {
+                toast.error(data.message || "Failed to fetch withdrawals");
             }
         } catch (error) {
             console.error("Error fetching withdrawals:", error);
+            toast.error("Error fetching withdrawals");
         } finally {
             setLoading(false);
         }
@@ -90,15 +100,57 @@ export default function WithdrawalTable() {
         }
     };
 
+    // Filter withdrawals based on search term
+    const filteredWithdrawals = useMemo(() => {
+        return withdrawals.filter(withdrawal =>
+            withdrawal.user_id?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            withdrawal.user_id?.mobile_number?.includes(searchTerm) ||
+            withdrawal.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            withdrawal.amount.toString().includes(searchTerm) ||
+            withdrawal.status.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+    }, [withdrawals, searchTerm]);
+
+    // Pagination logic
+    const totalPages = Math.ceil(filteredWithdrawals.length / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const paginatedWithdrawals = filteredWithdrawals.slice(startIndex, startIndex + itemsPerPage);
+
+    // Generate pagination range (shows limited page numbers)
+    const getPaginationRange = () => {
+        const delta = 2; // Number of pages to show on each side of current page
+        const range = [];
+        const start = Math.max(1, currentPage - delta);
+        const end = Math.min(totalPages, currentPage + delta);
+
+        for (let i = start; i <= end; i++) {
+            range.push(i);
+        }
+        return range;
+    };
+
+    // Reset to first page when search term changes
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm]);
+
     const formatDate = (dateString: string) => {
         return new Date(dateString).toLocaleString("en-US", {
             year: "numeric",
-            month: "short",  // or "long" for full month name
+            month: "short",
             day: "2-digit",
             hour: "2-digit",
             minute: "2-digit",
-            hour12: true, // ensures AM/PM format
+            hour12: true,
         });
+    };
+
+    const formatCurrency = (amount: number) => {
+        return new Intl.NumberFormat('en-IN', {
+            style: 'currency',
+            currency: 'INR',
+            minimumFractionDigits: 0
+        }).format(amount);
     };
 
     return (
@@ -111,6 +163,8 @@ export default function WithdrawalTable() {
                         <Input
                             placeholder="Search withdrawals..."
                             className="pl-10 w-full md:w-[300px]"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
                         />
                     </div>
                 </div>
@@ -132,117 +186,169 @@ export default function WithdrawalTable() {
                     </TableHeader>
                     <TableBody>
                         {loading ? (
+                            // Loading skeleton
+                            Array.from({ length: 10 }).map((_, index) => (
+                                <TableRow key={index}>
+                                    <TableCell><Skeleton className="h-4 w-6" /></TableCell>
+                                    <TableCell><Skeleton className="h-4 w-32" /></TableCell>
+                                    <TableCell>
+                                        <div className="flex items-center gap-3">
+                                            <Skeleton className="h-9 w-9 rounded-full" />
+                                            <Skeleton className="h-4 w-24" />
+                                        </div>
+                                    </TableCell>
+                                    <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+                                    <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+                                    <TableCell><Skeleton className="h-4 w-16" /></TableCell>
+                                    <TableCell><Skeleton className="h-6 w-16" /></TableCell>
+                                    <TableCell><Skeleton className="h-8 w-16 ml-auto" /></TableCell>
+                                </TableRow>
+                            ))
+                        ) : paginatedWithdrawals.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={6} className="text-center">
-                                    Loading...
-                                </TableCell>
-                            </TableRow>
-                        ) : withdrawals.length === 0 ? (
-                            <TableRow>
-                                <TableCell colSpan={6} className="text-center">
-                                    No withdrawals found
+                                <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                                    {searchTerm ? 'No withdrawals found matching your search' : 'No withdrawals found'}
                                 </TableCell>
                             </TableRow>
                         ) : (
-                            withdrawals.map((w, index) => (
-                                <TableRow key={w._id}>
-                                    <TableCell className="text-sm">
-                                        {index + 1}
-                                    </TableCell>
-                                    <TableCell className="text-sm">
-                                        {formatDate(w.created_at)}
-                                    </TableCell>
-                                    <TableCell>
-                                        <div className="flex items-center gap-4">
-                                            <Avatar className="h-9 w-9">
-                                                <AvatarFallback>
-                                                    {w.user_id?.name?.charAt(0) || "U"}
-                                                </AvatarFallback>
-                                            </Avatar>
-                                            <div>
-                                                <div className="font-medium">{w.user_id?.name}</div>
+                            paginatedWithdrawals.map((withdrawal, index) => {
+                                const globalIndex = startIndex + index + 1;
+
+                                return (
+                                    <TableRow key={withdrawal._id}>
+                                        <TableCell className="text-sm">
+                                            {globalIndex}
+                                        </TableCell>
+                                        <TableCell className="text-sm">
+                                            {formatDate(withdrawal.created_at)}
+                                        </TableCell>
+                                        <TableCell>
+                                            <div className="flex items-center gap-3">
+                                                <Link href={`user-details/?userId=${withdrawal.user_id._id}`}>
+                                                    <Avatar className="h-9 w-9 capitalize">
+                                                        <AvatarFallback>
+                                                            {withdrawal.user_id?.name?.charAt(0) || "U"}
+                                                        </AvatarFallback>
+                                                    </Avatar>
+                                                </Link>
+                                                <Link className="text-blue-500 underline capitalize" href={`user-details/?userId=${withdrawal.user_id._id}`}>
+                                                    <div className="font-medium">{withdrawal.user_id?.name}</div>
+                                                </Link>
                                             </div>
-                                        </div>
-                                    </TableCell>
-                                    <TableCell className="text-sm">
-                                        {w.description || "-"}
-                                    </TableCell>
-                                    <TableCell className="text-sm">
-                                        {w.user_id?.mobile_number || "-"}
-                                    </TableCell>
-                                    <TableCell className="text-sm">₹{w.amount}</TableCell>
-                                    <TableCell>
-                                        <Badge
-                                            variant={
-                                                w.status === "approved"
-                                                    ? "default"
-                                                    : w.status === "pending"
-                                                        ? "secondary"
-                                                        : "outline"
-                                            }
-                                            className={
-                                                w.status === "approved"
-                                                    ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-                                                    : w.status === "pending"
-                                                        ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
-                                                        : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
-                                            }
-                                        >
-                                            {w.status}
-                                        </Badge>
-                                    </TableCell>
-                                    <TableCell className="text-right space-x-2">
-                                        {w.status === "pending" ? (
-                                            <>
-                                                <Button
-                                                    size="sm"
-                                                    className="bg-green-600 text-white hover:bg-green-700"
-                                                    onClick={() => handleStatusChange(w._id, "approved")}
-                                                >
-                                                    Accept
-                                                </Button>
-                                                <Button
-                                                    size="sm"
-                                                    variant="destructive"
-                                                    onClick={() => handleStatusChange(w._id, "rejected")}
-                                                >
-                                                    Reject
-                                                </Button>
-                                            </>
-                                        ) : (
-                                            <span className="text-sm text-muted-foreground">
-                                                No Actions
-                                            </span>
-                                        )}
-                                    </TableCell>
-                                </TableRow>
-                            ))
+                                        </TableCell>
+                                        <TableCell className="text-sm">
+                                            {withdrawal.description || "-"}
+                                        </TableCell>
+                                        <TableCell className="text-sm">
+                                            {withdrawal.user_id?.mobile_number || "-"}
+                                        </TableCell>
+                                        <TableCell className="text-sm font-medium">
+                                            {formatCurrency(withdrawal.amount)}
+                                        </TableCell>
+                                        <TableCell>
+                                            <Badge
+                                                variant={
+                                                    withdrawal.status === "approved"
+                                                        ? "default"
+                                                        : withdrawal.status === "pending"
+                                                            ? "secondary"
+                                                            : "destructive"
+                                                }
+                                                className={
+                                                    withdrawal.status === "approved"
+                                                        ? "bg-green-100 text-green-800"
+                                                        : withdrawal.status === "pending"
+                                                            ? "bg-yellow-100 text-yellow-800"
+                                                            : "bg-red-100 text-red-800"
+                                                }
+                                            >
+                                                {withdrawal.status.charAt(0).toUpperCase() + withdrawal.status.slice(1)}
+                                            </Badge>
+                                        </TableCell>
+                                        <TableCell className="text-right">
+                                            <div className="flex justify-end space-x-2">
+                                                {withdrawal.status === "pending" ? (
+                                                    <>
+                                                        <Button
+                                                            size="sm"
+                                                            className="bg-green-600 text-white hover:bg-green-700"
+                                                            onClick={() => handleStatusChange(withdrawal._id, "approved")}
+                                                        >
+                                                            Accept
+                                                        </Button>
+                                                        <Button
+                                                            size="sm"
+                                                            variant="destructive"
+                                                            onClick={() => handleStatusChange(withdrawal._id, "rejected")}
+                                                        >
+                                                            Reject
+                                                        </Button>
+                                                    </>
+                                                ) : (
+                                                    <span className="text-sm text-muted-foreground">
+                                                        No Actions
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
+                                );
+                            })
                         )}
                     </TableBody>
                 </Table>
             </div>
 
-            <Pagination>
-                <PaginationContent>
-                    <PaginationItem>
-                        <PaginationPrevious href="#" />
-                    </PaginationItem>
-                    <PaginationItem>
-                        <PaginationLink href="#" isActive>
-                            1
-                        </PaginationLink>
-                    </PaginationItem>
-                    <PaginationItem>
-                        <PaginationLink href="#">2</PaginationLink>
-                    </PaginationItem>
-                    <PaginationItem>
-                        <PaginationLink href="#">3</PaginationLink>
-                    </PaginationItem>
-                    <PaginationItem>
-                        <PaginationNext href="#" />
-                    </PaginationItem>
-                </PaginationContent>
-            </Pagination>
+            {!loading && filteredWithdrawals.length > 0 && (
+                <div className="space-y-4">
+                    <div className="text-sm text-muted-foreground">
+                        Showing {startIndex + 1} to {Math.min(startIndex + itemsPerPage, filteredWithdrawals.length)} of {filteredWithdrawals.length} withdrawals
+                    </div>
+
+                    {totalPages > 1 && (
+                        <Pagination>
+                            <PaginationContent>
+                                <PaginationItem>
+                                    <PaginationPrevious
+                                        href="#"
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            setCurrentPage(prev => Math.max(prev - 1, 1));
+                                        }}
+                                        className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
+                                    />
+                                </PaginationItem>
+
+                                {getPaginationRange().map(page => (
+                                    <PaginationItem key={page}>
+                                        <PaginationLink
+                                            href="#"
+                                            isActive={currentPage === page}
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                setCurrentPage(page);
+                                            }}
+                                        >
+                                            {page}
+                                        </PaginationLink>
+                                    </PaginationItem>
+                                ))}
+
+                                <PaginationItem>
+                                    <PaginationNext
+                                        href="#"
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            setCurrentPage(prev => Math.min(prev + 1, totalPages));
+                                        }}
+                                        className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
+                                    />
+                                </PaginationItem>
+                            </PaginationContent>
+                        </Pagination>
+                    )}
+                </div>
+            )}
         </div>
     );
 }

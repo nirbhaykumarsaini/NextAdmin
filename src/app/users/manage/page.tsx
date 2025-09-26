@@ -20,7 +20,7 @@ import {
   PaginationLink,
   PaginationNext,
 } from "@/components/ui/pagination";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
 import { Switch } from "@/components/ui/switch";
@@ -53,6 +53,8 @@ export default function ManageUsers() {
   const [loadingStates, setLoadingStates] = useState<{ [key: string]: 'batting' | 'blocking' | null }>({});
   const [isLoading, setIsLoading] = useState(true);
   const [refreshLoading, setRefreshLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
   const router = useRouter();
 
   useEffect(() => {
@@ -63,7 +65,7 @@ export default function ManageUsers() {
     try {
       if (showLoading) setIsLoading(true);
       setRefreshLoading(true);
-      
+
       const response = await axios.get("/api/users", {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('accessToken')}`
@@ -85,7 +87,7 @@ export default function ManageUsers() {
 
   const toggleBatting = async (userId: string, currentStatus: boolean) => {
     setLoadingStates(prev => ({ ...prev, [userId]: 'batting' }));
-    
+
     try {
       const response = await axios.patch(`/api/users/${userId}`, {
         batting: !currentStatus
@@ -96,9 +98,9 @@ export default function ManageUsers() {
       });
 
       if (response.data.status) {
-        setUsers(prevUsers => 
-          prevUsers.map(user => 
-            user._id === userId 
+        setUsers(prevUsers =>
+          prevUsers.map(user =>
+            user._id === userId
               ? { ...user, batting: !currentStatus }
               : user
           )
@@ -109,7 +111,7 @@ export default function ManageUsers() {
       }
     } catch (error: unknown) {
       console.error('Error updating batting:', error);
-      if(axios.isAxiosError(error)) {
+      if (axios.isAxiosError(error)) {
         toast.error(error.response?.data?.message || 'Failed to update batting status');
       }
     } finally {
@@ -119,7 +121,7 @@ export default function ManageUsers() {
 
   const toggleBlockUser = async (userId: string, currentStatus: boolean) => {
     setLoadingStates(prev => ({ ...prev, [userId]: 'blocking' }));
-    
+
     try {
       const response = await axios.patch(`/api/users/${userId}`, {
         is_blocked: !currentStatus
@@ -130,9 +132,9 @@ export default function ManageUsers() {
       });
 
       if (response.data.status) {
-        setUsers(prevUsers => 
-          prevUsers.map(user => 
-            user._id === userId 
+        setUsers(prevUsers =>
+          prevUsers.map(user =>
+            user._id === userId
               ? { ...user, is_blocked: !currentStatus }
               : user
           )
@@ -143,7 +145,7 @@ export default function ManageUsers() {
       }
     } catch (error: unknown) {
       console.error('Error updating user block status:', error);
-      if(axios.isAxiosError(error)) {
+      if (axios.isAxiosError(error)) {
         toast.error(error.response?.data?.message || 'Failed to update user status');
       }
     } finally {
@@ -152,29 +154,57 @@ export default function ManageUsers() {
   };
 
   // Filter users based on search term
-  const filteredUsers = users.filter(user =>
-    user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.mobile_number.includes(searchTerm)
-  );
+  const filteredUsers = useMemo(() => {
+    return users.filter(user =>
+      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.mobile_number.includes(searchTerm)
+    );
+  }, [users, searchTerm]);
+
+  // Pagination logic
+  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedUsers = filteredUsers.slice(startIndex, startIndex + itemsPerPage);
+
+  // Generate pagination range (shows limited page numbers)
+  const getPaginationRange = () => {
+    const delta = 2; // Number of pages to show on each side of current page
+    const range = [];
+    const start = Math.max(1, currentPage - delta);
+    const end = Math.min(totalPages, currentPage + delta);
+    
+    for (let i = start; i <= end; i++) {
+      range.push(i);
+    }
+    return range;
+  };
+
+  // Reset to first page when search term changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
 
   // Format date function
-   const formatDate = (dateString: string) => {
-  return new Date(dateString).toLocaleString("en-US", {
-    year: "numeric",
-    month: "short",  // or "long" for full month name
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: true, // ensures AM/PM format
-  });
-};
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
+  };
 
   if (isLoading) {
     return (
       <div className="space-y-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <Skeleton className="h-8 w-48" />
-          <Skeleton className="h-10 w-[300px]" />
+          <div className="flex items-center gap-3">
+            <Skeleton className="h-10 w-10" />
+            <Skeleton className="h-10 w-[300px]" />
+          </div>
         </div>
 
         <div className="rounded-md border">
@@ -247,130 +277,161 @@ export default function ManageUsers() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredUsers.map((user: User, index: number) => {
-              const lastLogin = user.devices && user.devices.length > 0
-                ? new Date(Math.max(...user.devices.map(d => new Date(d.last_login).getTime())))
-                : null;
-              const isLoading = loadingStates[user._id];
-                
-              return (
-                <TableRow key={user._id}>
-                  <TableCell className="text-sm">
-                    {index + 1}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-4 cursor-pointer"  onClick={() => handleViewUser(user._id)} >
-                      <Avatar className="h-9 w-9 capitalize">
-                        <AvatarFallback>
-                          {user.name?.charAt(0) || 'U'}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <div className="font-medium capitalize hover:underline text-blue-500">
-                          {user.name}
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          ID: {user._id.slice(-6)}
+            {paginatedUsers.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
+                  {searchTerm ? 'No users found matching your search' : 'No users found'}
+                </TableCell>
+              </TableRow>
+            ) : (
+              paginatedUsers.map((user: User, index: number) => {
+                const lastLogin = user.devices && user.devices.length > 0
+                  ? new Date(Math.max(...user.devices.map(d => new Date(d.last_login).getTime())))
+                  : null;
+                const isLoading = loadingStates[user._id];
+                const globalIndex = startIndex + index + 1;
+
+                return (
+                  <TableRow key={user._id}>
+                    <TableCell className="text-sm">
+                      {globalIndex}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-4 cursor-pointer" onClick={() => handleViewUser(user._id)} >
+                        <Avatar className="h-9 w-9 capitalize">
+                          <AvatarFallback>
+                            {user.name?.charAt(0) || 'U'}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <div className="font-medium capitalize hover:underline text-blue-500">
+                            {user.name}
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            ID: {user._id.slice(-6)}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-sm">
-                    {user.mobile_number}
-                  </TableCell>
-                  <TableCell className="text-sm font-medium">
-                    ₹{user.balance.toLocaleString()}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center space-x-2">
-                      <Switch
-                        checked={user.batting}
-                        onCheckedChange={() => toggleBatting(user._id, user.batting)}
-                        disabled={isLoading === 'batting'}
-                      />
-                      <Label className="text-sm">
-                        {user.batting ? 'On' : 'Off'}
-                      </Label>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center space-x-2">
-                      <Switch
-                        checked={!user.is_blocked}
-                        onCheckedChange={() => toggleBlockUser(user._id, user.is_blocked)}
-                        disabled={isLoading === 'blocking'}
-                      />
-                      <Label className="text-sm">
+                    </TableCell>
+                    <TableCell className="text-sm">
+                      {user.mobile_number}
+                    </TableCell>
+                    <TableCell className="text-sm font-medium">
+                      ₹{user.balance.toLocaleString()}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center space-x-2">
+                        <Switch
+                          checked={user.batting}
+                          onCheckedChange={() => toggleBatting(user._id, user.batting)}
+                          disabled={isLoading === 'batting'}
+                        />
+                        <Label className="text-sm">
+                          {user.batting ? 'On' : 'Off'}
+                        </Label>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center space-x-2">
+                        <Switch
+                          checked={!user.is_blocked}
+                          onCheckedChange={() => toggleBlockUser(user._id, user.is_blocked)}
+                          disabled={isLoading === 'blocking'}
+                        />
+                        <Label className="text-sm">
+                          {user.is_blocked ? 'Blocked' : 'Active'}
+                        </Label>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-sm">
+                      {user.devices?.length || 0}
+                    </TableCell>
+                    <TableCell>
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${user.is_blocked
+                          ? 'bg-red-100 text-red-800'
+                          : 'bg-green-100 text-green-800'
+                        }`}>
                         {user.is_blocked ? 'Blocked' : 'Active'}
-                      </Label>
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-sm">
-                    {user.devices?.length || 0}
-                  </TableCell>
-                  <TableCell>
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      user.is_blocked 
-                        ? 'bg-red-100 text-red-800' 
-                        : 'bg-green-100 text-green-800'
-                    }`}>
-                      {user.is_blocked ? 'Blocked' : 'Active'}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-sm">
-                    {lastLogin ? formatDate(lastLogin.toISOString()) : 'N/A'}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end space-x-2">
-                      <Button 
-                        onClick={() => handleViewUser(user._id)} 
-                        variant="ghost" 
-                        size="icon" 
-                        className="cursor-pointer text-blue-600 hover:text-blue-800"
-                        title="View User Details"
-                      >
-                        <FiEye className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              );
-            })}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-sm">
+                      {lastLogin ? formatDate(lastLogin.toISOString()) : 'N/A'}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end space-x-2">
+                        <Button
+                          onClick={() => handleViewUser(user._id)}
+                          variant="ghost"
+                          size="icon"
+                          className="cursor-pointer text-blue-600 hover:text-blue-800"
+                          title="View User Details"
+                        >
+                          <FiEye className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })
+            )}
           </TableBody>
         </Table>
       </div>
 
-      {filteredUsers.length === 0 && (
-        <div className="text-center py-8 text-muted-foreground">
-          {users.length === 0 ? "No users found" : "No users match your search"}
+      {totalPages > 1 && (
+        <div className="space-y-4">
+          <div className="text-sm text-muted-foreground">
+            Showing {startIndex + 1} to {Math.min(startIndex + itemsPerPage, filteredUsers.length)} of {filteredUsers.length} users
+          </div>
+          
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setCurrentPage(prev => Math.max(prev - 1, 1));
+                  }}
+                  className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
+                />
+              </PaginationItem>
+
+              {getPaginationRange().map(page => (
+                <PaginationItem key={page}>
+                  <PaginationLink
+                    href="#"
+                    isActive={currentPage === page}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setCurrentPage(page);
+                    }}
+                  >
+                    {page}
+                  </PaginationLink>
+                </PaginationItem>
+              ))}
+
+              <PaginationItem>
+                <PaginationNext
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setCurrentPage(prev => Math.min(prev + 1, totalPages));
+                  }}
+                  className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
         </div>
       )}
 
-      <Pagination>
-        <PaginationContent>
-          <PaginationItem>
-            <PaginationPrevious href="#" />
-          </PaginationItem>
-          <PaginationItem>
-            <PaginationLink href="#" isActive>
-              1
-            </PaginationLink>
-          </PaginationItem>
-          <PaginationItem>
-            <PaginationLink href="#">
-              2
-            </PaginationLink>
-          </PaginationItem>
-          <PaginationItem>
-            <PaginationLink href="#">
-              3
-            </PaginationLink>
-          </PaginationItem>
-          <PaginationItem>
-            <PaginationNext href="#" />
-          </PaginationItem>
-        </PaginationContent>
-      </Pagination>
+      {filteredUsers.length === 0 && !isLoading && (
+        <div className="text-center text-muted-foreground py-8">
+          {users.length === 0 ? "No users found" : "No users match your search"}
+        </div>
+      )}
     </div>
   );
 }

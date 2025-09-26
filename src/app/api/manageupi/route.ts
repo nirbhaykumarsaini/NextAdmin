@@ -122,6 +122,7 @@ export async function DELETE(request: NextRequest) {
 }
 
 // TOGGLE is_active status
+// TOGGLE is_active status
 export async function PATCH(request: NextRequest) {
     try {
         await connectDB();
@@ -139,7 +140,15 @@ export async function PATCH(request: NextRequest) {
             throw new ApiError('UPI not found');
         }
 
-        upi.is_active = !upi.is_active;
+        if (!upi.is_active) {
+            // If activating this UPI -> deactivate all others first
+            await ManageUpi.updateMany({}, { is_active: false });
+            upi.is_active = true;
+        } else {
+            // If deactivating -> prevent having all inactive
+            throw new ApiError('At least one UPI must remain active');
+        }
+
         await upi.save();
 
         return NextResponse.json({
@@ -149,8 +158,8 @@ export async function PATCH(request: NextRequest) {
 
     } catch (error: unknown) {
         console.error('Error toggling UPI status:', error);
-        const errorMessage = error instanceof Error ? error.message :  'Failed to toggle UPI status' 
-        return NextResponse.json(
-            { status: false, message: errorMessage});
+        const errorMessage =
+            error instanceof Error ? error.message : 'Failed to toggle UPI status';
+        return NextResponse.json({ status: false, message: errorMessage });
     }
 }

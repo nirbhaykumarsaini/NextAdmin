@@ -240,7 +240,7 @@ const MainMarketSale = () => {
             {saleReport && (
                 <div className="rounded-lg border shadow-md p-6">
                     {/* Display basic info about the report */}
-                    <div className="mb-8">
+                    <div>
                         <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">Report Summary</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             {/* Date Card */}

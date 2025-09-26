@@ -211,7 +211,7 @@ export async function PUT(request: Request) {
 
         // Find the main market bid document
         const mainMarketBid = await GalidisawarBid.findOne({
-            _id: bid_id,
+            'bids._id': bid_id,
             user_id
         }).session(session);
 
@@ -390,7 +390,7 @@ export async function GET(request: Request) {
             },
             {
                 $project: {
-                    _id: 1,
+                    _id: '$bids._id',
                     user_id: 1,
                     name: { $arrayElemAt: ['$user_info.name', 0] },
                     digit: '$bids.digit',

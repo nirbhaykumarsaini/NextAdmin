@@ -16,6 +16,7 @@ import { Switch } from "@/components/ui/switch"
 import { FiEdit, FiTrash2, FiPlus } from 'react-icons/fi'
 import axios from 'axios'
 import { toast } from 'sonner'
+import { Skeleton } from '@/components/ui/skeleton'
 
 interface UPI {
   _id: string;
@@ -63,7 +64,7 @@ const ManageUpi = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (!formData.upi_id.trim()) {
       toast.error('UPI ID is required')
       return
@@ -92,7 +93,7 @@ const ManageUpi = () => {
           toast.error(response.data.message || 'Failed to add UPI')
         }
       }
-    }  catch (error: unknown) {
+    } catch (error: unknown) {
       console.error('Error saving UPI:', error)
       if (axios.isAxiosError(error)) {
         toast.error(error.response?.data?.message || 'Failed to save UPI');
@@ -165,7 +166,7 @@ const ManageUpi = () => {
   return (
     <div className="space-y-6">
       <h1 className='font-semibold text-2xl'>Manage UPI</h1>
-      
+
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
           <div className="grid w-full max-w-sm items-center gap-3">
@@ -205,16 +206,22 @@ const ManageUpi = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {loading && upiList.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={4} className="text-center">
-                  Loading...
-                </TableCell>
-              </TableRow>
+            {loading ? (
+              Array.from({ length: 1 }).map((_, index) => (
+                <TableRow key={index}>
+                  <TableCell><Skeleton className="h-4 w-6" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-16" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-12" /></TableCell>
+                  <TableCell className='flex space-x-2'>
+                    <Skeleton className="h-8 w-8 rounded-full" />
+                    <Skeleton className="h-8 w-8 rounded-full" />
+                  </TableCell>
+                </TableRow>
+              ))
             ) : upiList.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={4} className="text-center">
-                  No UPIs found
+                <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                  No UPI's found
                 </TableCell>
               </TableRow>
             ) : (
@@ -235,7 +242,7 @@ const ManageUpi = () => {
                   <TableCell className='space-x-2'>
                     <Button
                       variant="ghost"
-                      size="icon" 
+                      size="icon"
                       className="text-primary hover:text-primary/80"
                       onClick={() => handleEdit(upi)}
                       disabled={loading}
@@ -244,7 +251,7 @@ const ManageUpi = () => {
                     </Button>
                     <Button
                       variant="ghost"
-                      size="icon" 
+                      size="icon"
                       className="text-destructive hover:text-destructive/80"
                       onClick={() => handleDelete(upi._id)}
                       disabled={loading}

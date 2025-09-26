@@ -70,7 +70,7 @@ interface StatCardProps {
   link: string;
   value: string;
   change?: string;
-  icon: React.ReactNode;
+  icon?: React.ReactNode;
   negative?: boolean;
 }
 
@@ -78,12 +78,13 @@ interface TodayData {
   deposits: number;
   withdrawals: number;
   profitLoss: number;
+  totalbid:number
 }
 
 function StatCard({ title, value, change, link, icon, negative = false }: StatCardProps) {
   return (
     <Card className="bg-white dark:bg-gray-800 hover:shadow-md transition-shadow duration-200">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 ">
         <p className="text-sm font-medium text-muted-foreground">
           {title}
         </p>
@@ -96,11 +97,11 @@ function StatCard({ title, value, change, link, icon, negative = false }: StatCa
           <div className="text-2xl font-bold">{value}</div>
           <p className={`text-xs mt-1 flex items-center ${negative ? 'text-red-500' : 'text-green-500'}`}>
             {change}
-            {negative ? (
+            {/* {negative ? (
               <FiArrowDown className="h-3 w-3 ml-1" />
             ) : (
               <FiArrowUp className="h-3 w-3 ml-1" />
-            )}
+            )} */}
           </p>
         </div>
         <Link href={link}>
@@ -191,22 +192,10 @@ export default function Dashboard() {
   }
 
   if (!data) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <p className="text-muted-foreground mb-4">Failed to load dashboard data</p>
-          <Button onClick={fetchDashboardData}>
-            <FiRefreshCw className="mr-2 h-4 w-4" />
-            Try Again
-          </Button>
-        </div>
-      </div>
-    );
+    return <DashboardSkeleton />;
   }
 
   const { stats, charts, recentActivity } = data;
-
-
 
   return (
     <div className="space-y-6">
@@ -247,28 +236,28 @@ export default function Dashboard() {
         <StatCard
           link="/users/manage"
           title="Total Users"
-          value={stats.totalUsers.toLocaleString()}
+          value={stats?.totalUsers?.toLocaleString()}
           change={calculateChange(stats.totalUsers, stats.totalUsers * 0.9)} // Example calculation
           icon={<FiUsers className="h-4 w-4 text-blue-500" />}
         />
         <StatCard
           title="Active Users"
           link="/users/manage"
-          value={stats.activeUsers.toLocaleString()}
+          value={stats?.activeUsers?.toLocaleString()}
           change={calculateChange(stats.activeUsers, stats.activeUsers * 0.85)} // Example calculation
           icon={<FiActivity className="h-4 w-4 text-green-500" />}
         />
         <StatCard
           link="/mainmarketbidreports"
           title="Total Bid Amount"
-          value={`₹${stats.totalBidAmount.toLocaleString()}`}
+          value={`₹${stats?.totalBidAmount?.toLocaleString()}`}
           change={calculateChange(stats.totalBidAmount, stats.totalBidAmount * 0.88)} // Example calculation
           icon={<FiTrendingUp className="h-4 w-4 text-purple-500" />}
         />
         <StatCard
           link="/withdrawal"
           title="Net Profit"
-          value={`₹${stats.netFlow.toLocaleString()}`}
+          value={`₹${stats?.netFlow?.toLocaleString()}`}
           change={calculateChange(stats.netFlow, stats.netFlow * 0.92)} // Example calculation
           icon={<FiDollarSign className="h-4 w-4 text-yellow-500" />}
           negative={stats.netFlow < 0}
@@ -277,7 +266,7 @@ export default function Dashboard() {
         <StatCard
           link="/funds"
           title="Today Deposits"
-          value={`₹${todatData?.deposits.toLocaleString()}`}
+          value={`₹${todatData?.deposits?.toLocaleString()}`}
           // change={calculateChange(stats.netFlow, stats.netFlow * 0.92)} // Example calculation
           icon={<FiDollarSign className="h-4 w-4 text-yellow-500" />}
           // negative={stats.netFlow < 0}
@@ -285,7 +274,16 @@ export default function Dashboard() {
         <StatCard
           link="/withdrawal"
           title="Today Withdrawal"
-          value={`₹${todatData?.withdrawals.toLocaleString()}`}
+          value={`₹${todatData?.withdrawals?.toLocaleString()}`}
+          // change={calculateChange(stats.netFlow, stats.netFlow * 0.92)} // Example calculation
+          icon={<FiDollarSign className="h-4 w-4 text-yellow-500" />}
+          // negative={stats.netFlow < 0}
+        />
+
+        <StatCard
+          link=""
+          title="Today Bid"
+          value={`${todatData?.totalbid?.toLocaleString()}`}
           // change={calculateChange(stats.netFlow, stats.netFlow * 0.92)} // Example calculation
           icon={<FiDollarSign className="h-4 w-4 text-yellow-500" />}
           // negative={stats.netFlow < 0}
@@ -294,7 +292,7 @@ export default function Dashboard() {
         <StatCard
           link=""
           title="Today Profit/Loss"
-          value={`₹${todatData?.profitLoss.toLocaleString()}`}
+          value={`₹${todatData?.profitLoss?.toLocaleString()}`}
           // change={calculateChange(stats.netFlow, stats.netFlow * 0.92)} // Example calculation
           icon={<FiDollarSign className="h-4 w-4 text-yellow-500" />}
           // negative={stats.netFlow < 0}

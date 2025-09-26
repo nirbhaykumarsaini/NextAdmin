@@ -16,6 +16,7 @@ import { Switch } from "@/components/ui/switch"
 import { FiEdit, FiTrash2 } from 'react-icons/fi'
 import axios from 'axios'
 import { toast } from 'sonner'
+import { Skeleton } from '@/components/ui/skeleton'
 
 interface FooterLink {
   _id: string
@@ -227,7 +228,7 @@ const FooterLinks = () => {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>S.No.</TableHead>
+              <TableHead>#</TableHead>
               <TableHead>Name</TableHead>
               <TableHead>Link</TableHead>
               <TableHead>Status</TableHead>
@@ -235,16 +236,23 @@ const FooterLinks = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {isLoading && footerLinks.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={5} className="text-center py-4">
-                  Loading...
-                </TableCell>
-              </TableRow>
+            {isLoading ? (
+              Array.from({ length: 1 }).map((_, index) => (
+                <TableRow key={index}>
+                  <TableCell><Skeleton className="h-4 w-6" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-16" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-32" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-12" /></TableCell>
+                  <TableCell className='flex space-x-2'>
+                    <Skeleton className="h-8 w-8 rounded-full" />
+                    <Skeleton className="h-8 w-8 rounded-full" />
+                    </TableCell>
+                </TableRow>
+              ))
             ) : footerLinks.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-4">
-                  No footer links found. Create one above.
+                <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                  No footer found
                 </TableCell>
               </TableRow>
             ) : (
