@@ -35,8 +35,8 @@ const ManageLogo = () => {
             if (result.status === false) {
                 toast.error(result.message || "Failed to fetch logo")
             } else {
-                setAppTitle(result.data.app_title);
-                setImagePreview(result.data.logo_image);
+                setAppTitle(result.data?.app_title);
+                setImagePreview(result.data?.logo_image);
             }
         } catch (error) {
             console.error('Error fetching app config:', error);
@@ -104,7 +104,7 @@ const ManageLogo = () => {
                     <Input
                         id="app_title"
                         type="text"
-                        value={app_title}
+                        value={app_title || ""}
                         onChange={(e) => setAppTitle(e.target.value)}
                         placeholder="Enter your app title"
                     />

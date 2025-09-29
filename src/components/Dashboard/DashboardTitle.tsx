@@ -37,7 +37,7 @@ const DashboardTitle = ({timeRange, setTimeRange, fetchDashboardData, dispatch} 
           </Select>
           <Button variant="outline" onClick={fetchDashboardData}>
             <FiRefreshCw className="h-4 w-4 mr-2" />
-            Refresh
+            {/* Refresh */}
           </Button>
           <Button variant="outline" onClick={() => dispatch(logoutUser())}>
             <FiLogOut className="h-4 w-4 mr-2" />

@@ -3,17 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-// import {
-//     Table,
-//     TableBody,
-//     TableCell,
-//     TableHead,
-//     TableHeader,
-//     TableRow,
-// } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
-// import { Switch } from "@/components/ui/switch"
-// import { FiEdit, FiTrash2 } from 'react-icons/fi'
 import { toast } from 'sonner'
 import Image from 'next/image'
 
@@ -37,7 +27,7 @@ const Slider = () => {
             if (result.status === false) {
                 toast.error(result.message || "Failed to fetch logo")
             } else {
-                setImagePreview(result.data.slider_image);
+                setImagePreview(result.data?.slider_image);
             }
         } catch (error) {
             console.error('Error fetching app config:', error);

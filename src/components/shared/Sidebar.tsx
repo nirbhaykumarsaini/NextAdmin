@@ -12,6 +12,15 @@ import {
   FiGlobe,
   FiWind,
   FiUser,
+  FiSliders,
+  FiTool,
+  FiZap,
+  FiTrendingUp,
+  FiAward,
+  FiBarChart2,
+  FiDollarSign,
+  FiTag,
+  FiShoppingBag,
 } from "react-icons/fi";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -50,7 +59,7 @@ export function Sidebar() {
     },
     {
       label: "Game Management",
-      icon: <FiGlobe className="h-5 w-5" />,
+      icon: <FiTag className="h-5 w-5" />,
       submenu: [
         { href: "/mainmarket", label: "Main Market Game" },
         { href: "/starline", label: "Starline Game" },
@@ -59,7 +68,7 @@ export function Sidebar() {
     },
     {
       href: "/withdrawal",
-      icon: <FiFileText className="h-5 w-5" />,
+      icon: <FiDollarSign className="h-5 w-5" />,
       label: "Withdrawal",
     },
      {
@@ -69,7 +78,7 @@ export function Sidebar() {
     },
     {
       label: "Game Rates",
-      icon: <FiGlobe className="h-5 w-5" />,
+      icon: <FiBarChart2  className="h-5 w-5" />,
       submenu: [
         { href: "/mainmarketrate", label: "Main Market Rate" },
         { href: "/starlinerate", label: "Starline Rate" },
@@ -78,7 +87,7 @@ export function Sidebar() {
     },
     {
       label: "Results",
-      icon: <FiGlobe className="h-5 w-5" />,
+      icon: <FiAward className="h-5 w-5" />,
       submenu: [
         { href: "/mainmarketresult", label: "Main Market Result" },
         { href: "/starlineresult", label: "Starline Result" },
@@ -87,7 +96,7 @@ export function Sidebar() {
     },
     {
       label: "Winner Report",
-      icon: <FiGlobe className="h-5 w-5" />,
+      icon: <FiTrendingUp  className="h-5 w-5" />,
       submenu: [
         { href: "/mainmarketwinner", label: "Main Market Winner" },
         { href: "/starlinewinner", label: "Starline Winner" },
@@ -96,7 +105,7 @@ export function Sidebar() {
     },
     {
       label: "Sale Report",
-      icon: <FiGlobe className="h-5 w-5" />,
+      icon: <FiShoppingBag  className="h-5 w-5" />,
       submenu: [
         { href: "/mainmarketsale", label: "Main Market Sale" },
         { href: "/starlinesale", label: "Starline Sale" },
@@ -114,12 +123,12 @@ export function Sidebar() {
     },
     {
       href: "/deletebidreport",
-      icon: <FiWind className="h-5 w-5" />,
+      icon: <FiZap className="h-5 w-5" />,
       label: "Delete Bid Report",
     },
     {
       label: "App Setting",
-      icon: <FiGlobe className="h-5 w-5" />,
+      icon: <FiSettings className="h-5 w-5" />,
       submenu: [
         { href: "/managelogo", label: "Manage Logo" },
         { href: "/footerlinks", label: "Footer Links" },
@@ -130,7 +139,7 @@ export function Sidebar() {
     },
     {
       label: "Games Type",
-      icon: <FiSettings className="h-5 w-5" />,
+      icon: <FiSliders className="h-5 w-5" />,
       submenu: [
         { href: "/singledigit", label: "Single Digit" },
         { href: "/jodidigit", label: "Jodi Digit" },
@@ -143,7 +152,7 @@ export function Sidebar() {
     },
     {
       label: "Advanced System",
-      icon: <FiSettings className="h-5 w-5" />,
+      icon: <FiTool className="h-5 w-5" />,
       submenu: [
         { href: "/slider", label: "Slider" },
         { href: "/notice", label: "Notice" },

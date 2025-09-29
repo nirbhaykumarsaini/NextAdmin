@@ -161,7 +161,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
 
         {/* Charts */}
-        <RevenueChart activeChart={activeChart} setActiveChart={setActiveChart} charts={charts} />
+        <RevenueChart activeChart={activeChart} fetchDashboardData={fetchDashboardData} setActiveChart={setActiveChart} charts={charts} />
 
         {/* Activity */}
         <RecentActivity recentActivity={recentActivity} />
