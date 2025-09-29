@@ -48,13 +48,13 @@ const Profile = () => {
     try {
       setIsLoading(true);
       setError(null);
-      
+
       const response = await axios.get<LoginResponse>('/api/auth/me', {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("accessToken")}`
         }
       });
-      
+
       const result = response.data;
 
       if (!result.status) {
@@ -64,13 +64,13 @@ const Profile = () => {
       setUser(result.user);
     } catch (err: unknown) {
       let errorMessage = 'Failed to fetch profile';
-      
+
       if (axios.isAxiosError(err)) {
         errorMessage = err.response?.data?.message || err.message || 'Failed to fetch profile';
       } else if (err instanceof Error) {
         errorMessage = err.message;
       }
-      
+
       setError(errorMessage);
     } finally {
       setIsLoading(false);
@@ -79,7 +79,7 @@ const Profile = () => {
 
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Validation
     if (!passwordForm.old_password || !passwordForm.new_password || !passwordForm.confirm_password) {
       toast.error('All fields are required');
@@ -104,7 +104,7 @@ const Profile = () => {
 
     try {
       setIsChangingPassword(true);
-      
+
       const response = await axios.put('/api/auth/change-password', passwordForm, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("accessToken")}`
@@ -126,13 +126,13 @@ const Profile = () => {
       }
     } catch (err: unknown) {
       let errorMessage = 'Failed to change password';
-      
+
       if (axios.isAxiosError(err)) {
         errorMessage = err.response?.data?.message || err.message || 'Failed to change password';
       } else if (err instanceof Error) {
         errorMessage = err.message;
       }
-      
+
       toast.error(errorMessage);
     } finally {
       setIsChangingPassword(false);
@@ -149,34 +149,38 @@ const Profile = () => {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto p-6 max-w-4xl">
-        <Button 
-          variant="ghost" 
+      <div className="container mx-auto max-w-4xl">
+        <Button
+          variant="ghost"
           onClick={() => router.back()}
           className="mb-4 gap-2"
         >
           <FiArrowLeft className="h-4 w-4" />
           Back
         </Button>
-        
-        <Card>
-          <CardHeader>
-            <Skeleton className="h-8 w-48" />
-            <Skeleton className="h-4 w-64" />
+
+        <Card className='bg-white dark:bg-gray-800'>
+          <CardHeader className='flex justify-between'>
+            <div className='space-y-2'>
+              <Skeleton className="h-8 w-48 bg-white dark:bg-gray-900" />
+              <Skeleton className="h-4 w-64 bg-white dark:bg-gray-900" />
+            </div>
+            <div>
+              <Skeleton className="h-6 w-32 bg-white dark:bg-gray-900" />
+            </div>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="flex items-center space-x-4">
-              <Skeleton className="h-20 w-20 rounded-full" />
+              <Skeleton className="h-20 w-20 rounded-full bg-white dark:bg-gray-900" />
               <div className="space-y-2">
-                <Skeleton className="h-6 w-32" />
-                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-6 w-32 bg-white dark:bg-gray-900" />
+                <Skeleton className="h-4 w-24 bg-white dark:bg-gray-900" />
               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {Array.from({ length: 4 }).map((_, i) => (
+              {Array.from({ length: 2 }).map((_, i) => (
                 <div key={i} className="space-y-2">
-                  <Skeleton className="h-4 w-20" />
-                  <Skeleton className="h-6 w-full" />
+                  <Skeleton className="h-64 w-full bg-white dark:bg-gray-900" />
                 </div>
               ))}
             </div>
@@ -189,15 +193,15 @@ const Profile = () => {
   if (error) {
     return (
       <div className="container mx-auto p-6 max-w-4xl">
-        <Button 
-          variant="ghost" 
+        <Button
+          variant="ghost"
           onClick={() => router.back()}
           className="mb-4 gap-2"
         >
           <FiArrowLeft className="h-4 w-4" />
           Back
         </Button>
-        
+
         <Card>
           <CardContent className="p-6 text-center">
             <div className="text-destructive mb-4">
@@ -217,15 +221,15 @@ const Profile = () => {
   if (!user) {
     return (
       <div className="container mx-auto p-6 max-w-4xl">
-        <Button 
-          variant="ghost" 
+        <Button
+          variant="ghost"
           onClick={() => router.back()}
           className="mb-4 gap-2"
         >
           <FiArrowLeft className="h-4 w-4" />
           Back
         </Button>
-        
+
         <Card className='bg-white dark:bg-gray-800'>
           <CardContent className="p-6 text-center">
             <div className="text-muted-foreground mb-4">
@@ -241,15 +245,15 @@ const Profile = () => {
 
   return (
     <div className="container mx-auto max-w-4xl">
-      <Button 
-        variant="ghost" 
+      <Button
+        variant="ghost"
         onClick={() => router.back()}
         className="mb-4 gap-2"
       >
         <FiArrowLeft className="h-4 w-4" />
         Back
       </Button>
-      
+
       <Card className='bg-white dark:bg-gray-900'>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-6">
           <div>
@@ -258,7 +262,7 @@ const Profile = () => {
               Manage your account information and preferences
             </CardDescription>
           </div>
-          
+
           {/* Change Password Button */}
           <Dialog open={isChangePasswordOpen} onOpenChange={setIsChangePasswordOpen}>
             <DialogTrigger asChild>
@@ -267,15 +271,15 @@ const Profile = () => {
                 Change Password
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
+            <DialogContent className="sm:max-w-md bg-white dark:bg-gray-900">
               <DialogHeader>
                 <DialogTitle>Change Password</DialogTitle>
                 <DialogDescription>
                   Enter your current password and set a new one.
                 </DialogDescription>
               </DialogHeader>
-              
-              <form onSubmit={handlePasswordChange} className="space-y-4 py-4">
+
+              <form onSubmit={handlePasswordChange} className="space-y-4 py-4 ">
                 <div className="space-y-2">
                   <Label htmlFor="old_password">Current Password</Label>
                   <div className="relative">
@@ -303,7 +307,7 @@ const Profile = () => {
                     </Button>
                   </div>
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="new_password">New Password</Label>
                   <div className="relative">
@@ -331,7 +335,7 @@ const Profile = () => {
                     </Button>
                   </div>
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="confirm_password">Confirm New Password</Label>
                   <div className="relative">
@@ -359,7 +363,7 @@ const Profile = () => {
                     </Button>
                   </div>
                 </div>
-                
+
                 <div className="flex justify-end gap-3 pt-4">
                   <Button
                     type="button"
@@ -380,7 +384,7 @@ const Profile = () => {
             </DialogContent>
           </Dialog>
         </CardHeader>
-        
+
         <CardContent className="space-y-6">
           {/* Profile Header */}
           <div className="flex flex-col sm:flex-row items-center gap-6 p-4 rounded-lg bg-white dark:bg-gray-800">
@@ -390,11 +394,11 @@ const Profile = () => {
                 {user.username?.charAt(0)?.toUpperCase() || 'U'}
               </AvatarFallback>
             </Avatar>
-            
+
             <div className="flex-1 text-center sm:text-left">
               <h2 className="text-2xl font-bold capitalize">{user.username}</h2>
               <div className="flex items-center justify-center sm:justify-start gap-2 mt-2">
-                <Badge 
+                <Badge
                   variant={user.role === 'admin' ? 'default' : 'secondary'}
                   className={user.role === 'admin' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'}
                 >
@@ -445,7 +449,7 @@ const Profile = () => {
                   <label className="text-sm font-medium text-muted-foreground">Status</label>
                   <p className="font-medium text-green-600">Active</p>
                 </div>
-                
+
               </CardContent>
             </Card>
           </div>

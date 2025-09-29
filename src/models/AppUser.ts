@@ -95,7 +95,7 @@ const appUserSchema = new Schema<IAppUserDocument, Model<IAppUserDocument>>(
     },
     batting: {
       type: Boolean,
-      default: false
+      default: true
     },
     devices: [deviceInfoSchema]
   },

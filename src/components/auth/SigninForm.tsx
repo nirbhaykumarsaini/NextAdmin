@@ -70,8 +70,8 @@ export function SigninForm() {
   }
 
   return (
-    <Card>
-      <CardHeader className="space-y-1">
+    <Card className='bg-white dark:bg-gray-900'>
+      <CardHeader className="space-y-1 ">
         <CardTitle className="text-2xl font-bold">Sign in</CardTitle>
         <CardDescription>
           Enter your username and password to access your account

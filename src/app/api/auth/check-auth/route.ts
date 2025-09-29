@@ -22,18 +22,18 @@ export async function POST(request: Request) {
         }
 
         if (user.is_blocked) {
-            return NextResponse.json({ status: false, message: 'Your account has been blocked. Please contact support.' });
+            return NextResponse.json({ status: false, message: 'Your account has been blocked. Please contact support.', exists: true });
         }
 
         if (!user.is_verified) {
-            return NextResponse.json({ status: false, message: 'Your account is not verified. Please verify your account.', });
+            return NextResponse.json({ status: false, message: 'Your account is not verified. Please verify your account.', exists: true });
         }
 
         if (!user.batting) {
-            return NextResponse.json({ status: false, message: 'Your account is currently in batting mode. Please try again later.' });
+            return NextResponse.json({ status: false, message: 'Your account is currently in batting mode. Please try again later.', exists: true });
         }
 
-        return NextResponse.json({ status: true, message: 'User account exists', exists: true, });
+        return NextResponse.json({ status: true, message: 'User account exists', exists: true });
 
     } catch (error: unknown) {
 

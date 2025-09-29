@@ -19,7 +19,7 @@ export async function GET() {
     const depositsAgg = await Fund.aggregate([
       {
         $match: {
-          status: "completed",
+          status: "approved",
           created_at: { $gte: startOfDay, $lte: endOfDay },
         },
       },
@@ -37,7 +37,7 @@ export async function GET() {
     const withdrawalsAgg = await Withdrawal.aggregate([
       {
         $match: {
-          status: "completed",
+          status: "approved",
           created_at: { $gte: startOfDay, $lte: endOfDay },
         },
       },
