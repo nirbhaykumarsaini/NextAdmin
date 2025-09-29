@@ -1,17 +1,19 @@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { FiLogOut, FiRefreshCw } from "react-icons/fi";
+import { AppDispatch } from "@/redux/store/store";
+import { logoutUser } from "@/redux/slices/authSlice";
+
 
 
 interface DashboardTitleProps {
   timeRange: string;
   setTimeRange: (value: string) => void;
   fetchDashboardData: () => void;
-  logoutUser: () => void;
-  dispatch: (action: any) => void; // optional if you're using Redux
+  dispatch:AppDispatch; // optional if you're using Redux
 }
 
-const DashboardTitle = ({timeRange, setTimeRange, fetchDashboardData, logoutUser, dispatch} : DashboardTitleProps) => {
+const DashboardTitle = ({timeRange, setTimeRange, fetchDashboardData, dispatch} : DashboardTitleProps) => {
   return (
     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>

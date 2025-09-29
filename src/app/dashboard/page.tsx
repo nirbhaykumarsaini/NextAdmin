@@ -150,7 +150,6 @@ export default function Dashboard() {
       {/* Welcome Section */}
       <DashboardTitle
         dispatch={dispatch}
-        logoutUser={logoutUser}
         timeRange={timeRange}
         setTimeRange={setTimeRange}
         fetchDashboardData={fetchDashboardData}
