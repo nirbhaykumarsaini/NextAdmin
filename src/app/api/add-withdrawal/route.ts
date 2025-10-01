@@ -16,6 +16,17 @@ interface WithdrawRequest {
     withdrawal_method_id: Types.ObjectId; // Added withdrawal method ID
 }
 
+function formatTimeTo12Hour(time: string): string {
+    const [hourStr, minuteStr] = time.split(":");
+    let hour = parseInt(hourStr, 10);
+    const minute = parseInt(minuteStr, 10);
+
+    const ampm = hour >= 12 ? "PM" : "AM";
+    hour = hour % 12 || 12; // Convert 0 → 12 for midnight, and 13–23 → 1–11
+
+    return `${hour}:${minute.toString().padStart(2, "0")} ${ampm}`;
+}
+
 export async function POST(request: NextRequest) {
     try {
         await dbConnect();
@@ -37,18 +48,15 @@ export async function POST(request: NextRequest) {
             throw new ApiError('Invalid withdrawal method ID');
         }
 
-        // ✅ Validate amount
         if (!amount || amount <= 0) {
             throw new ApiError('Amount must be greater than 0');
         }
 
-        // ✅ Fetch account settings
         const accountSettings = await AccountSetting.findOne({});
         if (!accountSettings) {
             throw new ApiError('Withdrawal settings not configured');
         }
 
-        // ✅ Check withdrawal time window
         const now = new Date();
         const [openHour, openMinute] = (accountSettings.withdrawal_open_time || '00:00').split(':').map(Number);
         const [closeHour, closeMinute] = (accountSettings.withdrawal_close_time || '23:59').split(':').map(Number);
@@ -60,10 +68,11 @@ export async function POST(request: NextRequest) {
         closeTime.setHours(closeHour, closeMinute, 0, 0);
 
         if (now < openTime || now > closeTime) {
-            throw new ApiError(`Withdrawals are allowed only between ${accountSettings.withdrawal_open_time} and ${accountSettings.withdrawal_close_time}`);
+            const formattedOpenTime = formatTimeTo12Hour(accountSettings.withdrawal_open_time || "00:00");
+            const formattedCloseTime = formatTimeTo12Hour(accountSettings.withdrawal_close_time || "23:59");
+            throw new ApiError(`Withdrawals are allowed only between ${formattedOpenTime} and ${formattedCloseTime}`);
         }
 
-        // ✅ Find user
         const user = await AppUser.findById(user_id);
         if (!user) {
             throw new ApiError('User not found');
@@ -73,7 +82,6 @@ export async function POST(request: NextRequest) {
             throw new ApiError('Cannot withdraw funds from blocked user');
         }
 
-        // ✅ Find and validate withdrawal method
         const withdrawalMethod = await WithdrawalMethod.findOne({
             _id: withdrawal_method_id,
             user_id: user_id
