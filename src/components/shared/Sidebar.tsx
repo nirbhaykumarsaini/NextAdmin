@@ -21,6 +21,7 @@ import {
   FiDollarSign,
   FiTag,
   FiShoppingBag,
+  FiMoreHorizontal,
 } from "react-icons/fi";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -32,6 +33,7 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { FileOutput } from "lucide-react";
 
 export function Sidebar() {
   const pathname = usePathname();
@@ -75,6 +77,11 @@ export function Sidebar() {
       href: "/funds",
       icon: <FiFileText className="h-5 w-5" />,
       label: "Funds",
+    },
+     {
+      href: "/profit-loss",
+      icon: <FileOutput className="h-5 w-5" />,
+      label: "Total P&L",
     },
     {
       label: "Game Rates",
