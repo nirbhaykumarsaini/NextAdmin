@@ -46,12 +46,14 @@ interface Panna {
 interface Winner {
     _id: string;
     user: string;
+    user_id: string;
     game: string;
     amount: number;
     winning_amount: number;
     game_type: string;
     created_at: string;
     digit: string;
+    session:string;
 }
 
 interface SessionResult {
@@ -482,6 +484,7 @@ const MainMarketResult = () => {
                                         <TableHead>User Name</TableHead>
                                         <TableHead>Game Name</TableHead>
                                         <TableHead>Game Type</TableHead>
+                                        <TableHead>Session</TableHead>
                                         <TableHead>Bid Amount</TableHead>
                                         <TableHead>Winning Amount</TableHead>
                                     </TableRow>
@@ -492,9 +495,10 @@ const MainMarketResult = () => {
                                             <TableRow key={index}>
                                                 <TableCell>{index + 1}</TableCell>
                                                 <TableCell>{new Date(winner?.created_at).toLocaleDateString()}</TableCell>
-                                                <TableCell>{winner?.game}</TableCell>
                                                 <TableCell>{winner?.user}</TableCell>
+                                                <TableCell>{winner?.game}</TableCell>
                                                 <TableCell>{winner?.game_type}</TableCell>
+                                                <TableCell>{winner?.session}</TableCell>
                                                 <TableCell>₹{winner?.amount}</TableCell>
                                                 <TableCell>₹{winner?.winning_amount}</TableCell>
 

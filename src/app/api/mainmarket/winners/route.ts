@@ -222,7 +222,7 @@ export async function POST(request: Request) {
                     }
                 }
 
-                totalBidAmount += bid.bid_amount;
+               
 
                 // Check based on game type
                 switch (bid.game_type) {
@@ -246,6 +246,7 @@ export async function POST(request: Request) {
                                 open_panna: bid.open_panna,
                                 close_panna: bid.close_panna
                             });
+                            totalBidAmount += bid.bid_amount;
                             totalWinAmount += winningAmount;
                         }
                         break;
@@ -269,6 +270,7 @@ export async function POST(request: Request) {
                                 winning_amount: winningAmount,
                                 digit: bid.digit
                             });
+                            totalBidAmount += bid.bid_amount;
                             totalWinAmount += winningAmount;
                         }
 
@@ -279,14 +281,11 @@ export async function POST(request: Request) {
                         if (sessionLower === "close" && openSessionResult) {
                             // --- OPEN SESSION HALF-SANGAM BIDS ---
                             if (bid.session === "open" && bid.close_panna) {
-                                const closeSum = String(panna).split('')
+                                const openSum = String(openSessionResult.panna).split('')
                                     .reduce((acc, curr) => acc + parseInt(curr), 0);
-                                const closeDigit = closeSum > 9 ? String(closeSum).slice(-1) : closeSum;
+                                const openDigit = openSum > 9 ? String(openSum).slice(-1) : openSum;
 
-                                if (
-                                    bid.close_panna.toString() === panna.toString() &&
-                                    bid.digit?.toString() === closeDigit.toString()
-                                ) {
+                                if (bid.digit?.toString() === openDigit.toString()) {
                                     const winningAmount = calculateWinningAmount(bid.game_type, bid.bid_amount, gameRates);
                                     winningBids.push({
                                         _id: mainBid._id.toString(),
@@ -301,20 +300,18 @@ export async function POST(request: Request) {
                                         digit: bid.digit,
                                         close_panna: bid.close_panna
                                     });
+                                    totalBidAmount += bid.bid_amount;
                                     totalWinAmount += winningAmount;
                                 }
                             }
 
                             // --- CLOSE SESSION HALF-SANGAM BIDS ---
                             if (bid.session === "close" && bid.open_panna) {
-                                const openSum = String(openSessionResult.panna).split('')
+                                const closeSum = String(panna).split('')
                                     .reduce((acc, curr) => acc + parseInt(curr), 0);
-                                const openDigit = openSum > 9 ? String(openSum).slice(-1) : openSum;
+                                const closeDigit = closeSum > 9 ? String(closeSum).slice(-1) : closeSum;
 
-                                if (
-                                    bid.open_panna.toString() === openSessionResult.panna.toString() &&
-                                    bid.digit?.toString() === openDigit.toString()
-                                ) {
+                                if ( bid.digit?.toString() === closeDigit.toString()) {
                                     const winningAmount = calculateWinningAmount(bid.game_type, bid.bid_amount, gameRates);
                                     winningBids.push({
                                         _id: mainBid._id.toString(),
@@ -329,6 +326,7 @@ export async function POST(request: Request) {
                                         digit: bid.digit,
                                         open_panna: bid.open_panna
                                     });
+                                    totalBidAmount += bid.bid_amount;
                                     totalWinAmount += winningAmount;
                                 }
                             }
@@ -351,6 +349,7 @@ export async function POST(request: Request) {
                                 winning_amount: winningAmount,
                                 digit: bid.digit
                             });
+                            totalBidAmount += bid.bid_amount;
                             totalWinAmount += winningAmount;
                         }
                         break;
@@ -378,6 +377,7 @@ export async function POST(request: Request) {
                                 winning_amount: winningAmount,
                                 panna: bid.panna
                             });
+                            totalBidAmount += bid.bid_amount;
                             totalWinAmount += winningAmount;
                         }
                         break;

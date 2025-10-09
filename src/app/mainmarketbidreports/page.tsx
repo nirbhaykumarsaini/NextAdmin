@@ -218,9 +218,9 @@ const MainMarketBidReports = () => {
     };
 
     // Determine which fields to show based on game type
-    const showDigitField = ['single-digit', 'jodi-digit', 'two-digit', 'digit-base-jodi', 'red-bracket', 'half-sangam'].includes(formData.game_type);
+    const showDigitField = ['single-digit', 'jodi-digit', 'two-digit', 'digit-base-jodi','odd-even', 'red-bracket', 'half-sangam'].includes(formData.game_type);
     const showPannaField = ['single-panna', 'double-panna', 'triple-panna', 'sp-motor', 'dp-motor', 'sp-dp-tp-motor', 'choice-panna'].includes(formData.game_type);
-    const showSessionField = !['full-sangam', 'jodi-digit', 'red-bracket', 'odd-even'].includes(formData.game_type);
+    const showSessionField = !['full-sangam', 'jodi-digit', 'red-bracket','digit-base-jodi'].includes(formData.game_type);
 
     // For Half Sangam: Show digit + open_panna for open session, digit + close_panna for close session
     const isHalfSangam = formData.game_type === 'half-sangam';
