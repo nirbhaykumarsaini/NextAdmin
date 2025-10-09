@@ -325,7 +325,7 @@ export async function PUT(request: Request) {
             // Session validation based on game type
             const currentGameType = game_type || originalBid.game_type;
 
-            if (!['full-sangam', 'jodi-digit', 'red-bracket'].includes(currentGameType)) {
+            if (!['full-sangam', 'jodi-digit', 'red-bracket', 'digit-base-jodi'].includes(currentGameType)) {
                 if (!['open', 'close'].includes(bidSession)) {
                     throw new ApiError('Valid session is required (open/close) for this game type');
                 }
