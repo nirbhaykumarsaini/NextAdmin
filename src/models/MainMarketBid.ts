@@ -33,11 +33,7 @@ const bidSchema = new Schema<IBid>({
           return v !== undefined && v !== null && v !== '' && /^[0-9]$/.test(v);
         }
         
-        if (['jodi-digit', 'red-bracket'].includes(this.game_type)) {
-          return v !== undefined && v !== null && v !== '' && /^[0-9]{2}$/.test(v);
-        }
-        
-        if (['digit-base-jodi'].includes(this.game_type)) {
+        if (['jodi-digit', 'red-bracket','digit-base-jodi'].includes(this.game_type)) {
           return v !== undefined && v !== null && v !== '' && /^[0-9]{2}$/.test(v);
         }
         
@@ -130,7 +126,7 @@ const bidSchema = new Schema<IBid>({
     validate: {
       validator: function(this: IBid, v: string) {
         // Session is not required for these game types
-        if (['full-sangam', 'jodi-digit', 'red-bracket'].includes(this.game_type)) {
+        if (['full-sangam', 'jodi-digit', 'red-bracket','digit-base-jodi'].includes(this.game_type)) {
           return v === undefined || v === null || v === '';
         }
         

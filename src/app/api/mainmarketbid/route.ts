@@ -26,15 +26,6 @@ interface MainMarketBidRequest {
     bids: BidRequest[];
 }
 
-interface FilterType {
-    created_at?: {
-        $gte?: Date;
-        $lte?: Date;
-    };
-    'bids.game_id'?: Types.ObjectId;
-    'bids.game_type'?: string;
-}
-
 
 export async function POST(request: Request) {
     try {
@@ -86,7 +77,7 @@ export async function POST(request: Request) {
             }
 
             // Session validation based on game type
-            if (!['full-sangam', 'jodi-digit', 'red-bracket'].includes(bid.game_type)) {
+            if (!['full-sangam', 'jodi-digit', 'red-bracket','digit-base-jodi'].includes(bid.game_type)) {
                 if (!bid.session || !['open', 'close'].includes(bid.session)) {
                     throw new ApiError('Valid session is required (open/close) for this game type');
                 }
@@ -105,16 +96,7 @@ export async function POST(request: Request) {
                 delete bid.close_panna;
             }
 
-            if (['jodi-digit', 'red-bracket'].includes(bid.game_type)) {
-                if (!bid.digit || !/^[0-9]{2}$/.test(bid.digit)) {
-                    throw new ApiError('Two digits (00-99) are required for this game type');
-                }
-                delete bid.panna;
-                delete bid.open_panna;
-                delete bid.close_panna;
-            }
-
-            if (['digit-base-jodi'].includes(bid.game_type)) {
+            if (['jodi-digit', 'red-bracket','digit-base-jodi'].includes(bid.game_type)) {
                 if (!bid.digit || !/^[0-9]{2}$/.test(bid.digit)) {
                     throw new ApiError('Two digits (00-99) are required for this game type');
                 }
@@ -574,7 +556,6 @@ export async function PUT(request: Request) {
         return NextResponse.json({ status: false, message: errorMessage });
     }
 }
-
 
 export async function GET(request: Request) {
     try {

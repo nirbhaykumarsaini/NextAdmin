@@ -215,7 +215,7 @@ export async function POST(request: Request) {
                 }
 
                 // For full-sangam, jodi-digit, and red-bracket, skip session check
-                if (bid.game_type !== 'full-sangam' && bid.game_type !== 'jodi-digit' && bid.game_type !== 'red-bracket') {
+                if (bid.game_type !== 'full-sangam' && bid.game_type !== 'jodi-digit' && bid.game_type !== 'red-bracket' && bid.game_type !== 'digit-base-jodi') {
                     // For half-sangam, we want to include both sessions when checking close session
                     if (bid.game_type !== 'half-sangam' && bid.session !== sessionLower) {
                         return;
@@ -252,6 +252,7 @@ export async function POST(request: Request) {
 
                     case 'jodi-digit':
                     case 'red-bracket':
+                    case 'digit-base-jodi':
                         // Only check in close session
                         if (sessionLower !== 'close') return;
                         if (bid.digit && bid.digit.length === 2 && bid.digit[0].toString() === openSessionResult?.digit.toString() && bid.digit[1].toString() === digit.toString()) {
@@ -379,46 +380,6 @@ export async function POST(request: Request) {
                             });
                             totalWinAmount += winningAmount;
                         }
-                        break;
-
-                    case 'digit-base-jodi':
-
-                        if (bid.session === "open" && bid.digit) {
-                            if (bid.digit[0].toString() === digit.toString()) {
-                                const winningAmount = calculateWinningAmount(bid.game_type, bid.bid_amount, gameRates);
-                                winningBids.push({
-                                    _id: mainBid._id.toString(),
-                                    user: mainBid.user_id.name,
-                                    user_id: mainBid.user_id._id,
-                                    created_at: mainBid.created_at.toISOString(),
-                                    game_type: bid.game_type,
-                                    session: bid.session,
-                                    game: bid.game_id.game_name,
-                                    amount: bid.bid_amount,
-                                    winning_amount: winningAmount,
-                                    digit: bid.digit
-                                });
-                                totalWinAmount += winningAmount;
-                            }
-                        } else if (bid.session === "close" && bid.digit) {
-                            if (bid.digit[1].toString() === digit.toString()) {
-                                const winningAmount = calculateWinningAmount(bid.game_type, bid.bid_amount, gameRates);
-                                winningBids.push({
-                                    _id: mainBid._id.toString(),
-                                    user: mainBid.user_id.name,
-                                    user_id: mainBid.user_id._id,
-                                    created_at: mainBid.created_at.toISOString(),
-                                    game_type: bid.game_type,
-                                    session: bid.session,
-                                    game: bid.game_id.game_name,
-                                    amount: bid.bid_amount,
-                                    winning_amount: winningAmount,
-                                    digit: bid.digit
-                                });
-                                totalWinAmount += winningAmount;
-                            }
-                        }
-                       
                         break;
 
                     default:
