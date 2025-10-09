@@ -280,7 +280,7 @@ export async function POST(request: Request) {
                         // Winners only on Close session declaration
                         if (sessionLower === "close" && openSessionResult) {
                             // --- OPEN SESSION HALF-SANGAM BIDS ---
-                            if (bid.session === "open" && bid.close_panna) {
+                            if (bid.session === "open") {
                                 const openSum = String(openSessionResult.panna).split('')
                                     .reduce((acc, curr) => acc + parseInt(curr), 0);
                                 const openDigit = openSum > 9 ? String(openSum).slice(-1) : openSum;
@@ -306,7 +306,7 @@ export async function POST(request: Request) {
                             }
 
                             // --- CLOSE SESSION HALF-SANGAM BIDS ---
-                            if (bid.session === "close" && bid.open_panna) {
+                            if (bid.session === "close") {
                                 const closeSum = String(panna).split('')
                                     .reduce((acc, curr) => acc + parseInt(curr), 0);
                                 const closeDigit = closeSum > 9 ? String(closeSum).slice(-1) : closeSum;
