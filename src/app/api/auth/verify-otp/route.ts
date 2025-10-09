@@ -1,3 +1,4 @@
+// src\app\api\auth\verify-otp\route.ts
 import { NextResponse } from 'next/server';
 import dbConnect from '@/config/db';
 import AppUser from '@/models/AppUser';
@@ -40,7 +41,7 @@ export async function POST(request: Request) {
       }
 
       // Verify OTP (using dummy OTP 1234)
-      if (body.otp !== '1234') {
+      if (body.otp !== '123456') {
         throw new ApiError('Invalid OTP');
       }
 
@@ -68,7 +69,7 @@ export async function POST(request: Request) {
     } else if (body.type === 'forgot') {
       // For forgot password: Only verify OTP without marking user as verified
       // Verify OTP (using dummy OTP 1234)
-      if (body.otp !== '1234') {
+      if (body.otp !== '123456') {
         throw new ApiError('Invalid OTP');
       }
 

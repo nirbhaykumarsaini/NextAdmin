@@ -32,7 +32,7 @@ export async function POST(request: Request) {
     }
 
     // Generate and save new OTP (using dummy OTP 1234)
-    user.otp = '1234';
+    user.otp = '123456';
     await user.save();
 
     // In a real app, you would send the OTP via SMS here
@@ -40,7 +40,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       status: true,
       message: 'OTP sent successfully',
-      otp: '1234' // Only for development
+      otp: '123456' // Only for development
     });
 
   } catch (error: unknown) {

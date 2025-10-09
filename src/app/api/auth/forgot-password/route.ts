@@ -24,13 +24,13 @@ export async function POST(request: Request) {
     }
 
     // Generate and save OTP (using dummy OTP 1234)
-    user.otp = '1234';
+    user.otp = '123456';
     await user.save();
 
     return NextResponse.json({
       status: true,
       message: 'If the mobile number is registered, you will receive an OTP',
-      otp: '1234' // Only for development
+      otp: '123456' // Only for development
     });
 
   } catch (error: unknown) {

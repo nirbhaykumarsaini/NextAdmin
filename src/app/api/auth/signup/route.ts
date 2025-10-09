@@ -1,3 +1,5 @@
+
+// src\app\api\auth\signup\route.ts
 import { NextResponse } from 'next/server';
 import dbConnect from '@/config/db';
 import AppUser from '@/models/AppUser';
@@ -46,7 +48,7 @@ export async function POST(request: Request) {
       name: body.name.trim(),
       mobile_number: body.mobile_number.trim(),
       password: body.password,
-      otp: '1234',
+      otp: '123456',
       is_verified: false,
       is_blocked: false,
       devices: [deviceInfo]
@@ -55,7 +57,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       status: true,
       message: 'User registered successfully. Please verify OTP.',
-      otp: '1234' // Only for development
+      otp: '123456' // Only for development
     });
 
   } catch (error: unknown) {
