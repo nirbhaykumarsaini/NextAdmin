@@ -36,7 +36,7 @@ interface ProcessedWinner {
     digit: string | undefined;
     winning_amount: number;
     bid_amount: number;
-    transaction_id: Types.ObjectId;
+    transaction_id:Types.ObjectId | null;
 }
 
 
@@ -73,42 +73,42 @@ export async function POST(request: NextRequest) {
                 }
 
                 let userId: Types.ObjectId | null = null;
+                let transactionId: Types.ObjectId | null = null;
 
                 // Validate if user is ObjectId
                 if (Types.ObjectId.isValid(user)) {
                     userId = new Types.ObjectId(user);
 
                     // Create transaction only if valid userId
-                    const transaction = await Transaction.create({
+                   const transaction = await Transaction.create({
                         user_id: userId,
                         type: 'win',
                         amount: winning_amount,
                         description: `Win from ${game} on ${result_date}`,
                         status: 'completed'
                     });
-
+                    transactionId = transaction._id;
                     // Update user balance
                     await AppUser.findByIdAndUpdate(
                         userId,
                         { $inc: { balance: winning_amount } },
                         { new: true }
                     );
-
-                    // Save winner entry regardless (string or ObjectId)
-                    winnerDocs.push({
-                        user_id,
-                        user,
-                        game_name: game,
-                        game_type,
-                        digit,
-                        winning_amount,
-                        bid_amount: amount,
-                        transaction_id: transaction._id
-                    });
                 } else {
                     console.warn(`Skipping transaction: invalid userId (${user})`);
                 }
 
+                // Save winner entry regardless (string or ObjectId)
+                winnerDocs.push({
+                    user_id,
+                    user,
+                    game_name: game,
+                    game_type,
+                    digit,
+                    winning_amount,
+                    bid_amount: amount,
+                    transaction_id:transactionId
+                });
             }
 
             if (winnerDocs.length > 0) {
@@ -207,7 +207,7 @@ export async function DELETE(request: NextRequest) {
                 // 2.1 Deduct balance from users (revert win amount)
                 await AppUser.findByIdAndUpdate(
                     winner.user_id,
-                    { $inc: { balance: -winner.winning_amount } });
+                    { $inc: { balance: -winner.winning_amount } }                );
 
                 if (winner.transaction_id) {
                     await Transaction.findByIdAndDelete(winner.transaction_id);
