@@ -37,7 +37,7 @@ export async function POST(request: Request) {
             aggregationPipeline = [
                 {
                     $match: {
-                        'winners.user_id': user_id
+                        'winners.user_id': new Types.ObjectId(user_id)
                     }
                 },
                 {
@@ -45,7 +45,7 @@ export async function POST(request: Request) {
                 },
                 {
                     $match: {
-                        'winners.user_id': user_id
+                        'winners.user_id': new Types.ObjectId(user_id)
                     }
                 },
                 {
