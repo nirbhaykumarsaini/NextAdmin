@@ -1,4 +1,4 @@
-import mongoose, { Model, Types } from "mongoose";
+import mongoose, { Model, Schema, Types } from "mongoose";
 import '@/models/AppUser';
 import '@/models/GalidisawarGame';
 import '@/models/GalidisawarBid'
@@ -32,12 +32,12 @@ const galidisawarWinnerSchema = new mongoose.Schema({
             required: true
         },
         user_id: {
-            type: Types.ObjectId,
+            type: Schema.Types.ObjectId,
             ref: "AppUser",
             required: true
         },
          transaction_id: {
-            type: Types.ObjectId,
+            type: Schema.Types.ObjectId,
             ref: "Transaction",
             required: true
         },

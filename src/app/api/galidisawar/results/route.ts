@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
                 }
 
                 let userId: Types.ObjectId | null = null;
-                let transactionId = null;
+                let transactionId: Types.ObjectId | null = null;
 
                 // Validate if user is ObjectId
                 if (Types.ObjectId.isValid(user)) {
