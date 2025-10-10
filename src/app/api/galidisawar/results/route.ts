@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
                 }
 
                 let userId: Types.ObjectId | null = null;
-                let transactionId: Types.ObjectId | null = null;
+                let transactionId = null;
 
                 // Validate if user is ObjectId
                 if (Types.ObjectId.isValid(user)) {
@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
                     // Create transaction only if valid userId
                    const transaction = await Transaction.create({
                         user_id: userId,
-                        type: 'win',
+                        type: 'credit',
                         amount: winning_amount,
                         description: `Win from ${game} on ${result_date}`,
                         status: 'completed'
