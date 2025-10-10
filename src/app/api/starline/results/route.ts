@@ -29,7 +29,7 @@ interface ProcessedWinner {
     digit: string;
     winning_amount: number;
     bid_amount: number;
-    transaction_id:Types.ObjectId;
+    transaction_id: Types.ObjectId;
 }
 
 
@@ -98,7 +98,7 @@ export async function POST(request: NextRequest) {
                     }
 
                     // Create transaction for the win
-                   const transaction =  await Transaction.create({
+                    const transaction = await Transaction.create({
                         user_id: userDoc._id,
                         type: 'credit',
                         amount: winning_amount,
@@ -122,7 +122,7 @@ export async function POST(request: NextRequest) {
                         digit: winnerDigit,
                         winning_amount,
                         bid_amount: amount,
-                        transaction_id:transaction._id
+                        transaction_id: transaction._id
                     });
                 } catch (error) {
                     console.error('Error processing winner:', error);
@@ -225,8 +225,8 @@ export async function DELETE(request: NextRequest) {
         }
 
         // 2. Find related winners using the result_date
-        const winnerResult = await StarlineWinner.findOne({ 
-            result_date: parseDDMMYYYY(deletedResult.result_date) 
+        const winnerResult = await StarlineWinner.findOne({
+            result_date: parseDDMMYYYY(deletedResult.result_date)
         }).session(session);
 
         if (winnerResult && winnerResult.winners.length > 0) {
@@ -238,16 +238,9 @@ export async function DELETE(request: NextRequest) {
                     { session }
                 );
 
-                // 2.2 Delete related transactions
-                // Find transaction by user_id and description matching the win
-                const transactionDescription = `Win from ${winner.game_name} on ${deletedResult.result_date}`;
-                await Transaction.deleteMany({ 
-                    user_id: winner.user_id,
-                    description: transactionDescription,
-                    type: 'credit',
-                    status: 'completed',
-                    _id:winner.transaction_id
-                }).session(session);
+                if (winner.transaction_id) {
+                    await Transaction.findByIdAndDelete(winner.transaction_id, { session });
+                }
             }
 
             // 2.3 Delete winner result record
@@ -273,7 +266,7 @@ export async function DELETE(request: NextRequest) {
 
         console.error('Error deleting result:', error);
         const errorMessage = error instanceof Error ? error.message : 'Failed to delete result';
-        
+
         return NextResponse.json(
             { status: false, message: errorMessage },
             { status: error instanceof ApiError ? 400 : 500 }
