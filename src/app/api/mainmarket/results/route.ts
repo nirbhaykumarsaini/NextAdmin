@@ -346,7 +346,7 @@ async function deleteMainMarketResult(resultId: string, sessionType: 'open' | 'c
     // Remove processed winners from winner document
     winDoc.winners = winDoc.winners.filter((w: ProcessedWinner) => {
       const isProcessed = winnersToProcess.some(processed =>
-        processed._id?.toString() === w._id.toString()
+        processed._id?.toString() === w._id?.toString()
       );
       return !isProcessed; // Keep winners that were NOT processed
     });
@@ -372,12 +372,12 @@ async function deleteMainMarketResult(resultId: string, sessionType: 'open' | 'c
   const remainingResult = await MainMarketResult.findOne({
     game_id: result.game_id,
     result_date: result.result_date,
-    session: normalizedSession === "open" ? "Close" : "Open"
+    session: normalizedSession === "open" ? "close" : "open"
   });
 
   // If no other session exists, you might want to delete related data
   if (!remainingResult) {
-    console.log(`No ${normalizedSession === "open" ? "Close" : "Open"} session found for game ${game.game_name} on ${result.result_date}`);
+    console.log(`No ${normalizedSession === "open" ? "close" : "open"} session found for game ${game.game_name} on ${result.result_date}`);
     // Additional cleanup can be done here if needed
   }
 
