@@ -162,7 +162,7 @@ export async function POST(request: NextRequest) {
             open_panna: openwinnerPanna,
             close_panna: closewinnerPanna,
             digit: winnerDigit,
-            session: winnerSession,
+            session: winnerSession || "close",
             winning_amount,
             bid_amount: amount
           });
@@ -213,7 +213,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get all results with proper typing
-    const results = await MainMarketResult.find(query).sort({ result_date: -1, createdAt: -1 }).populate('game_id', 'game_name') as unknown as MainMarketResultDocument[];
+    const results = await MainMarketResult.find(query).sort({ result_date: -1, created_at: -1 }).populate('game_id', 'game_name') as unknown as MainMarketResultDocument[];
 
     // Group results by date and game
     const groupedResults = results.reduce((acc: Record<string, GroupedResult>, result: MainMarketResultDocument) => {
