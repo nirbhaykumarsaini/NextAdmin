@@ -27,8 +27,8 @@ const mainMarketResultSchema: Schema = new Schema(
             type: String,
             required: [true, "Session is required"],
             enum: {
-                values: ['Open', 'Close'],
-                message: 'Session must be either Open or Close'
+                values: ['open', 'close'],
+                message: 'Session must be either open or close'
             }
         },
         panna: {

@@ -78,7 +78,7 @@ const appUserSchema = new Schema<IAppUserDocument, Model<IAppUserDocument>>(
     otp: {
       type: String,
       trim: true,
-      default: '1234'
+      default: '123456'
     },
     is_verified: {
       type: Boolean,

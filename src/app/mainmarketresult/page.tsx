@@ -226,18 +226,18 @@ const MainMarketResult = () => {
         }
     };
 
-    const handleDeleteResult = async (resultId: string, sessionType: 'openSession' | 'closeSession') => {
+    const handleDeleteResult = async (resultId: string, sessionType: 'open' | 'close') => {
         if (!resultId) {
             toast.error("Invalid result ID");
             return;
         }
 
-        if (!window.confirm(`Are you sure you want to delete this ${sessionType === 'openSession' ? 'Open' : 'Close'} session result?`)) {
+        if (!window.confirm(`Are you sure you want to delete this ${sessionType === 'open' ? 'Open' : 'Close'} session result?`)) {
             return;
         }
 
         try {
-            const response = await fetch(`/api/mainmarket/results?id=${resultId}`, {
+            const response = await fetch(`/api/mainmarket/results?id=${resultId}&sessionType${sessionType}`, {
                 method: 'DELETE',
             });
 
@@ -341,8 +341,8 @@ const MainMarketResult = () => {
                                 <SelectValue placeholder="Select Session" />
                             </SelectTrigger>
                             <SelectContent className='bg-white dark:bg-gray-900'>
-                                <SelectItem value="Open">Open</SelectItem>
-                                <SelectItem value="Close">Close</SelectItem>
+                                <SelectItem value="open">Open</SelectItem>
+                                <SelectItem value="close">Close</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
@@ -412,7 +412,7 @@ const MainMarketResult = () => {
                                                     variant="ghost"
                                                     size="icon"
                                                     className="text-red-600 hover:text-red-800 hover:bg-red-100"
-                                                    onClick={() => handleDeleteResult(result?.openSession?._id || '', 'openSession')}
+                                                    onClick={() => handleDeleteResult(result?.openSession?._id || '', 'open')}
                                                 >
                                                     <FiTrash2 size={16} />
                                                 </Button>
@@ -429,7 +429,7 @@ const MainMarketResult = () => {
                                                     variant="ghost"
                                                     size="icon"
                                                     className="text-red-600 hover:text-red-800 hover:bg-red-100"
-                                                    onClick={() => handleDeleteResult(result?.closeSession?._id || '', 'closeSession')}
+                                                    onClick={() => handleDeleteResult(result?.closeSession?._id || '', 'close')}
                                                 >
                                                     <FiTrash2 size={16} />
                                                 </Button>

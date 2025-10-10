@@ -2,11 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import MainMarketResult from '@/models/MainMarketResult';
 import connectDB from '@/config/db';
 import ApiError from '@/lib/errors/APiError';
-import { Types } from 'mongoose';
+import mongoose, { Types } from 'mongoose';
 import MainMarketWinner from '@/models/MainMarketWinner';
 import AppUser from '@/models/AppUser';
 import Transaction from '@/models/Transaction';
 import { parseDDMMYYYY } from '@/utils/date';
+import MainMarketGame from '@/models/MainMarketGame';
 
 interface SessionResult {
   panna: string;
@@ -48,17 +49,26 @@ interface WinnerData {
 }
 
 interface ProcessedWinner {
+  _id?:Types.ObjectId;
+  user_id?: Types.ObjectId;
+  user?: string;
+  game_name?: string;
+  game_type?: string;
+  panna?: string;
+  open_panna?: string;
+  close_panna?: string;
+  digit?: string;
+  session?: string;
+  winning_amount?: number;
+  bid_amount?: number;
+}
+
+interface IWinner {
+  _id: Types.ObjectId;
   user_id: Types.ObjectId;
-  user: string;
-  game_name: string;
   game_type: string;
-  panna: string;
-  open_panna: string;
-  close_panna: string;
-  digit: string;
   session: string;
   winning_amount: number;
-  bid_amount: number;
 }
 
 // CREATE a new result
@@ -256,38 +266,162 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// DELETE a result by ID
-export async function DELETE(request: NextRequest) {
-  try {
-    await connectDB();
-
-    const { searchParams } = new URL(request.url);
-    const id = searchParams.get('id');
-
-    if (!id) {
-      throw new ApiError('Result ID is required');
+async function deleteMainMarketResult(resultId: string, sessionType: 'open' | 'close') {
+    if (!resultId || !mongoose.Types.ObjectId.isValid(resultId)) {
+        throw new ApiError("Invalid Result ID");
     }
 
-    // Find and delete the result
-    const result = await MainMarketResult.findByIdAndDelete(id);
+    const result = await MainMarketResult.findById(resultId);
+    if (!result) throw new ApiError("Result not found");
 
-    if (!result) {
-      throw new ApiError('Result not found');
-    }
+    const game = await MainMarketGame.findById(result.game_id);
+    if (!game) throw new ApiError("Game not found");
 
-    // Get all results grouped by date and game
-    await MainMarketResult.find().sort({ result_date: -1, createdAt: -1 });
+    const normalizedSession = sessionType.trim()?.toLowerCase();
 
-    return NextResponse.json({
-      status: true,
-      message: 'Result deleted successfully',
+    // Find ALL Winner documents for this game_id and result_date (date-only match)
+    const startOfDay = new Date(result.result_date);
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const endOfDay = new Date(result.result_date);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    const winnerDocs = await MainMarketWinner.find({
+        result_date: {
+            $gte: startOfDay,
+            $lte: endOfDay
+        },
+        "winners.game_name": game.game_name // Adjust field name as per your MainMarketGame schema
     });
 
-  } catch (error: unknown) {
-    console.error('Error deleting result:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Failed to delete result'
-    return NextResponse.json(
-      { status: false, message: errorMessage }
-    );
-  }
+    // Process winners and revert balances
+    for (const winDoc of winnerDocs) {
+        // Filter winners based on session type
+        let winnersToProcess : ProcessedWinner = [];
+
+        if (normalizedSession === "open") {
+            // For Open session deletion: process all Open winners EXCEPT half-sangam
+            winnersToProcess = winDoc.winners.filter(w =>
+                w.session?.toLowerCase() === "open" &&
+                w.game_name === game.game_name &&
+                w.game_type !== "half-sangam" // EXCLUDE half-sangam
+            );
+            console.log(`Open session deletion: Processing ${winnersToProcess.length} winners (excluding half-sangam)`);
+
+        } else if (normalizedSession === "close") {
+            // For Close session deletion: process ALL Close winners + half-sangam Open winners
+            const closeSessionWinners = winDoc.winners.filter(w =>
+                w.session?.toLowerCase() === "close" &&
+                w.game_name === game.game_name
+            );
+
+            const halfSangamOpenWinners = winDoc.winners.filter(w =>
+                w.game_type === "half-sangam" &&
+                w.session?.toLowerCase() === "open" &&
+                w.game_name === game.game_name
+            );
+
+            winnersToProcess = [...closeSessionWinners, ...halfSangamOpenWinners];
+            console.log(`Close session deletion: Processing ${winnersToProcess.length} winners (${closeSessionWinners.length} Close + ${halfSangamOpenWinners.length} half-sangam Open)`);
+        }
+
+        // Process the filtered winners (revert amounts and delete transactions)
+        for (const winner of winnersToProcess) {
+            // Revert user's win amount
+            const user = await AppUser.findById(winner.user_id);
+            if (user) {
+                user.balance = Math.max(0, user.balance - winner.winning_amount);
+                await user.save();
+                console.log(`Reverted ${winner.winning_amount} from user ${winner.user_id} for ${winner.game_type} (${winner.session})`);
+            }
+
+            // Delete related transactions (search by description or amount)
+            await Transaction.deleteMany({
+                user_id: winner.user_id,
+                amount: winner.winning_amount,
+                type: 'credit',
+                status: 'completed',
+                description: { 
+                    $regex: winner.game_type, 
+                    $options: 'i' 
+                }
+            });
+            console.log(`Deleted transactions for user ${winner.user_id} with amount ${winner.winning_amount}`);
+        }
+
+        // Remove processed winners from winner document
+        winDoc.winners = winDoc.winners.filter(w => {
+            const isProcessed = winnersToProcess.some(processed =>
+                processed._id.toString() === w._id.toString()
+            );
+            return !isProcessed; // Keep winners that were NOT processed
+        });
+
+        if (winDoc.winners.length === 0) {
+            // If no winners left, delete the document
+            await MainMarketWinner.findByIdAndDelete(winDoc._id);
+            console.log(`Deleted empty winner document: ${winDoc._id}`);
+        } else {
+            // Otherwise, update the document
+            await winDoc.save();
+            console.log(`Updated winner document: ${winDoc._id}, remaining winners: ${winDoc.winners.length}`);
+        }
+    }
+
+    // Delete the specific result
+    await MainMarketResult.deleteOne({ 
+        _id: resultId,
+        session: sessionType 
+    });
+
+    // Check if other session exists for the same game and date
+    const remainingResult = await MainMarketResult.findOne({
+        game_id: result.game_id,
+        result_date: result.result_date,
+        session: normalizedSession === "open" ? "Close" : "Open"
+    });
+
+    // If no other session exists, you might want to delete related data
+    if (!remainingResult) {
+        console.log(`No ${normalizedSession === "open" ? "Close" : "Open"} session found for game ${game.game_name} on ${result.result_date}`);
+        // Additional cleanup can be done here if needed
+    }
+
+    return { 
+        status: true, 
+        message: `${sessionType} session result deleted successfully` 
+    };
 }
+
+// DELETE a result by ID
+export async function DELETE(request: NextRequest) {
+    try {
+        await connectDB();
+
+        const { searchParams } = new URL(request.url);
+        const id = searchParams.get('id');
+        const sessionType = searchParams.get('sessionType') as 'open' | 'close';
+
+        if (!id) {
+            throw new ApiError('Result ID is required');
+        }
+
+        if (!sessionType || !['open', 'close'].includes(sessionType)) {
+            throw new ApiError('Valid sessionType (open/close) is required');
+        }
+
+        // Use the delete function with session type
+        const result = await deleteMainMarketResult(id, sessionType);
+
+        return NextResponse.json(result);
+
+    } catch (error: unknown) {
+        console.error('Error deleting result:', error);
+        const errorMessage = error instanceof Error ? error.message : 'Failed to delete result';
+        return NextResponse.json(
+            { status: false, message: errorMessage },
+            { status: error instanceof ApiError ? error.statusCode : 500 }
+        );
+    }
+}
+
