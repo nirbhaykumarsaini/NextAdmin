@@ -198,12 +198,10 @@ export async function GET(request: NextRequest) {
 
 // DELETE a result by ID
 export async function DELETE(request: NextRequest) {
-    const session = await mongoose.startSession();
-    session.startTransaction();
-
+    let session = null;
     try {
         await connectDB();
-
+        
         const { searchParams } = new URL(request.url);
         const id = searchParams.get('id');
 
@@ -211,71 +209,105 @@ export async function DELETE(request: NextRequest) {
             throw new ApiError('Result ID is required');
         }
 
-        if (!Types.ObjectId.isValid(id)) {
-            throw new ApiError('Invalid Result ID');
-        }
+        // Start mongoose session for transaction
+        session = await mongoose.startSession();
+        session.startTransaction();
 
-        // 1. Find the result
-        const deletedResult = await StarlineResult.findById(id).session(session);
-        if (!deletedResult) {
+        // Find the result to be deleted
+        const result = await StarlineResult.findById(id).session(session);
+        if (!result) {
             throw new ApiError('Result not found');
         }
 
-        // 2. Find related winners using result_date
-        const winnerResult = await StarlineWinner.findOne({ 
-            result_date: deletedResult.result_date 
+        const resultDate = result.result_date;
+        const gameId = result.game_id;
+
+        // Find associated winners for this result date and game
+        const winnerRecord = await StarlineWinner.findOne({
+            result_date: resultDate
         }).session(session);
 
-        if (winnerResult) {
-            for (const winner of winnerResult.winners) {
-                // 2.1 Deduct balance from users (revert win amount)
+        // If winners exist, process reversal
+        if (winnerRecord && winnerRecord.winners.length > 0) {
+            const winnersToRevert = winnerRecord.winners.filter(winner => 
+                winner.game_name === result.game_id.toString() // Adjust based on your actual relationship
+            );
+
+            // Revert balances and create reversal transactions
+            for (const winner of winnersToRevert) {
+                // Deduct winning amount from user balance
                 await AppUser.findByIdAndUpdate(
                     winner.user_id,
-                    { $inc: { balance: -winner.winning_amount } },
+                    { 
+                        $inc: { balance: -winner.winning_amount } 
+                    },
                     { session }
                 );
 
-                // 2.2 Delete related transactions
-                // Since your StarlineWinner schema doesn't have transactionId field,
-                // we need to find transactions by description or other identifiers
-                await Transaction.deleteMany({
-                    user_id: winner.user_id,
-                    description: { 
-                        $regex: `.*${winner.game_name}.*${winner.game_type}.*win.*`, 
-                        $options: 'i' 
-                    },
-                    amount: winner.winning_amount,
-                    type: 'credit'
-                }).session(session);
             }
 
-            // 2.3 Delete winner result record
-            await StarlineWinner.deleteOne({ _id: winnerResult._id }).session(session);
+            // Remove the specific winners from winner record
+            if (winnersToRevert.length > 0) {
+                await StarlineWinner.updateOne(
+                    { result_date: resultDate },
+                    { 
+                        $pull: { 
+                            winners: { 
+                                game_name: result.game_id.toString() 
+                            } 
+                        } 
+                    },
+                    { session }
+                );
+
+                // If no winners left, delete the entire winner record
+                const updatedWinnerRecord = await StarlineWinner.findOne({
+                    result_date: resultDate
+                }).session(session);
+                
+                if (updatedWinnerRecord) {
+                    await StarlineWinner.deleteOne({
+                        result_date: resultDate
+                    }).session(session);
+                }
+            }
         }
 
-        // 4. Delete the result
+        // Find and delete all transactions related to this result
+        await Transaction.deleteMany({
+            description: { 
+                $regex: resultDate, 
+                $options: 'i' 
+            },
+            status: 'completed'
+        }).session(session);
+
+        // Delete the result itself
         await StarlineResult.findByIdAndDelete(id).session(session);
 
+        // Commit the transaction
         await session.commitTransaction();
-        session.endSession();
-
-        console.log(`Result and related data deleted successfully - ID: ${id}`);
 
         return NextResponse.json({
             status: true,
-            message: 'Result deleted successfully',
+            message: 'Result deleted successfully along with associated winners and transactions',
         });
 
     } catch (error: unknown) {
-        await session.abortTransaction();
-        session.endSession();
-
-        console.error('Error deleting result:', error);
-        const errorMessage = error instanceof Error ? error.message : 'Failed to delete result';
+        // Abort transaction in case of error
+        if (session) {
+            await session.abortTransaction();
+        }
         
+        console.error('Error deleting result:', error);
+        const errorMessage = error instanceof Error ? error.message : 'Failed to delete result'
         return NextResponse.json(
-            { status: false, message: errorMessage },
-            { status: error instanceof ApiError ? 400 : 500 }
+            { status: false, message: errorMessage }
         );
+    } finally {
+        // End session
+        if (session) {
+            session.endSession();
+        }
     }
 }
