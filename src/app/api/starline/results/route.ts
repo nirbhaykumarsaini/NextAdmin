@@ -6,7 +6,7 @@ import ApiError from '@/lib/errors/APiError';
 import StarlineWinner from '@/models/StarlineWinner';
 import AppUser from '@/models/AppUser';
 import Transaction from '@/models/Transaction';
-import { Types } from 'mongoose';
+import mongoose, { Types } from 'mongoose';
 import { parseDDMMYYYY } from '@/utils/date';
 
 interface StarlineResultDocument {
@@ -198,6 +198,9 @@ export async function GET(request: NextRequest) {
 
 // DELETE a result by ID
 export async function DELETE(request: NextRequest) {
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
     try {
         await connectDB();
 
@@ -208,12 +211,55 @@ export async function DELETE(request: NextRequest) {
             throw new ApiError('Result ID is required');
         }
 
-        // Find and delete the result
-        const result = await StarlineResult.findByIdAndDelete(id);
+        if (!Types.ObjectId.isValid(id)) {
+            throw new ApiError('Invalid Result ID');
+        }
 
-        if (!result) {
+        // 1. Find the result
+        const deletedResult = await StarlineResult.findById(id).session(session);
+        if (!deletedResult) {
             throw new ApiError('Result not found');
         }
+
+        // 2. Find related winners using result_date
+        const winnerResult = await StarlineWinner.findOne({ 
+            result_date: deletedResult.result_date 
+        }).session(session);
+
+        if (winnerResult) {
+            for (const winner of winnerResult.winners) {
+                // 2.1 Deduct balance from users (revert win amount)
+                await AppUser.findByIdAndUpdate(
+                    winner.user_id,
+                    { $inc: { balance: -winner.winning_amount } },
+                    { session }
+                );
+
+                // 2.2 Delete related transactions
+                // Since your StarlineWinner schema doesn't have transactionId field,
+                // we need to find transactions by description or other identifiers
+                await Transaction.deleteMany({
+                    user_id: winner.user_id,
+                    description: { 
+                        $regex: `.*${winner.game_name}.*${winner.game_type}.*win.*`, 
+                        $options: 'i' 
+                    },
+                    amount: winner.winning_amount,
+                    type: 'credit'
+                }).session(session);
+            }
+
+            // 2.3 Delete winner result record
+            await StarlineWinner.deleteOne({ _id: winnerResult._id }).session(session);
+        }
+
+        // 4. Delete the result
+        await StarlineResult.findByIdAndDelete(id).session(session);
+
+        await session.commitTransaction();
+        session.endSession();
+
+        console.log(`Result and related data deleted successfully - ID: ${id}`);
 
         return NextResponse.json({
             status: true,
@@ -221,10 +267,15 @@ export async function DELETE(request: NextRequest) {
         });
 
     } catch (error: unknown) {
+        await session.abortTransaction();
+        session.endSession();
+
         console.error('Error deleting result:', error);
-        const errorMessage = error instanceof Error ? error.message : 'Failed to delete result'
+        const errorMessage = error instanceof Error ? error.message : 'Failed to delete result';
+        
         return NextResponse.json(
-            { status: false, message: errorMessage }
+            { status: false, message: errorMessage },
+            { status: error instanceof ApiError ? 400 : 500 }
         );
     }
 }

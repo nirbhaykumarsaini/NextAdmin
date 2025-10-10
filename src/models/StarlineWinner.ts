@@ -1,4 +1,4 @@
-import mongoose, { Model, Types } from "mongoose";
+import mongoose, { Model, Schema, Types } from "mongoose";
 import '@/models/AppUser';
 import '@/models/StarlineGame';
 import '@/models/StarlineBid'
@@ -32,7 +32,7 @@ const starlineWinnerSchema = new mongoose.Schema({
             required: true
         },
         user_id: {
-            type: String,
+            type: Schema.Types.ObjectId,
             ref: "AppUser",
             required: true
         },

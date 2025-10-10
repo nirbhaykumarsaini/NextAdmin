@@ -78,11 +78,11 @@ export function Sidebar() {
       icon: <FiFileText className="h-5 w-5" />,
       label: "Funds",
     },
-     {
-      href: "/profit-loss",
-      icon: <FileOutput className="h-5 w-5" />,
-      label: "Total P&L",
-    },
+    //  {
+    //   href: "/profit-loss",
+    //   icon: <FileOutput className="h-5 w-5" />,
+    //   label: "Total P&L",
+    // },
     {
       label: "Game Rates",
       icon: <FiBarChart2  className="h-5 w-5" />,
