@@ -228,13 +228,13 @@ export async function GET(request: NextRequest) {
         };
       }
 
-      if (result.session === 'Open') {
+      if (result.session === 'open') {
         acc[key].openSession = {
           panna: result.panna,
           digit: result.digit,
           _id: result._id
         };
-      } else if (result.session === 'Close') {
+      } else if (result.session === 'close') {
         acc[key].closeSession = {
           panna: result.panna,
           digit: result.digit,

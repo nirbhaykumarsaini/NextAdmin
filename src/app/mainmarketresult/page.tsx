@@ -237,7 +237,7 @@ const MainMarketResult = () => {
         }
 
         try {
-            const response = await fetch(`/api/mainmarket/results?id=${resultId}&sessionType${sessionType}`, {
+            const response = await fetch(`/api/mainmarket/results?id=${resultId}&sessionType=${sessionType}`, {
                 method: 'DELETE',
             });
 

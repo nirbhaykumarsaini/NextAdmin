@@ -194,7 +194,7 @@ export async function POST(request: Request) {
             openSessionResult = await MainMarketResult.findOne({
                 result_date: result_date,
                 game_id: new mongoose.Types.ObjectId(game_id),
-                session: 'Open'
+                session: 'open'
             }).select('panna digit') as { panna: string, digit: string } | null;
 
         } catch (error) {
