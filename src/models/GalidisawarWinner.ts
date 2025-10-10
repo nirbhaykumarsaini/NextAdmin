@@ -15,6 +15,7 @@ export interface IGalidisawarWinner extends Document {
             digit?: string;
             winning_amount: number;
             bid_amount: number;
+            transaction_id:Types.ObjectId;
         }
     ]
 }
@@ -33,6 +34,11 @@ const galidisawarWinnerSchema = new mongoose.Schema({
         user_id: {
             type: Types.ObjectId,
             ref: "AppUser",
+            required: true
+        },
+         transaction_id: {
+            type: Types.ObjectId,
+            ref: "Transaction",
             required: true
         },
         game_name: {

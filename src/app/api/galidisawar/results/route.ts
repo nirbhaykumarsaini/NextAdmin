@@ -5,7 +5,7 @@ import ApiError from '@/lib/errors/APiError';
 import GalidisawarWinner from '@/models/GalidisawarWinner';
 import AppUser from '@/models/AppUser';
 import Transaction from '@/models/Transaction';
-import { Types } from 'mongoose';
+import mongoose, { Types } from 'mongoose';
 import { parseDDMMYYYY } from '@/utils/date';
 
 interface StarlineResultDocument {
@@ -19,7 +19,7 @@ interface StarlineResultDocument {
 }
 
 interface WinnerData {
-    user_id:Types.ObjectId;
+    user_id: Types.ObjectId;
     user: string;
     game_type: string;
     game: string;
@@ -36,6 +36,7 @@ interface ProcessedWinner {
     digit: string | undefined;
     winning_amount: number;
     bid_amount: number;
+    transaction_id: Types.ObjectId;
 }
 
 
@@ -78,7 +79,7 @@ export async function POST(request: NextRequest) {
                     userId = new Types.ObjectId(user);
 
                     // Create transaction only if valid userId
-                    await Transaction.create({
+                    const transaction = await Transaction.create({
                         user_id: userId,
                         type: 'win',
                         amount: winning_amount,
@@ -92,25 +93,27 @@ export async function POST(request: NextRequest) {
                         { $inc: { balance: winning_amount } },
                         { new: true }
                     );
+
+                    // Save winner entry regardless (string or ObjectId)
+                    winnerDocs.push({
+                        user_id,
+                        user,
+                        game_name: game,
+                        game_type,
+                        digit,
+                        winning_amount,
+                        bid_amount: amount,
+                        transaction_id: transaction._id
+                    });
                 } else {
                     console.warn(`Skipping transaction: invalid userId (${user})`);
                 }
 
-                // Save winner entry regardless (string or ObjectId)
-                winnerDocs.push({
-                    user_id,
-                    user, 
-                    game_name: game,
-                    game_type,
-                    digit,
-                    winning_amount,
-                    bid_amount: amount
-                });
             }
 
             if (winnerDocs.length > 0) {
                 await GalidisawarWinner.create({
-                    result_date :parseDDMMYYYY(result_date),
+                    result_date: parseDDMMYYYY(result_date),
                     winners: winnerDocs
                 });
             }
@@ -184,12 +187,39 @@ export async function DELETE(request: NextRequest) {
             throw new ApiError('Result ID is required');
         }
 
-        // Find and delete the result
-        const result = await GalidisawarResult.findByIdAndDelete(id);
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            throw new ApiError('Invalid Result ID');
+        }
 
-        if (!result) {
+        // Find and delete the result
+        const deletedResult = await GalidisawarResult.findByIdAndDelete(id);
+
+        if (!deletedResult) {
             throw new ApiError('Result not found');
         }
+
+        const winnerResult = await GalidisawarWinner.findOne({
+            result_date: parseDDMMYYYY(deletedResult.result_date)
+        });
+
+        if (winnerResult && winnerResult.winners.length > 0) {
+            for (const winner of winnerResult.winners) {
+                // 2.1 Deduct balance from users (revert win amount)
+                await AppUser.findByIdAndUpdate(
+                    winner.user_id,
+                    { $inc: { balance: -winner.winning_amount } });
+
+                if (winner.transaction_id) {
+                    await Transaction.findByIdAndDelete(winner.transaction_id);
+                }
+            }
+
+            // 2.3 Delete winner result record
+            await GalidisawarWinner.deleteOne({ _id: winnerResult._id });
+        }
+
+        // 3. Delete the result
+        await GalidisawarResult.findByIdAndDelete(id);
 
         return NextResponse.json({
             status: true,
