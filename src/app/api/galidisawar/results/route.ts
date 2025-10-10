@@ -76,8 +76,8 @@ export async function POST(request: NextRequest) {
                 let transactionId: Types.ObjectId | null = null;
 
                 // Validate if user is ObjectId
-                if (Types.ObjectId.isValid(user)) {
-                    userId = new Types.ObjectId(user);
+                if (Types.ObjectId.isValid(user_id)) {
+                    userId = new Types.ObjectId(user_id);
 
                     // Create transaction only if valid userId
                    const transaction = await Transaction.create({
