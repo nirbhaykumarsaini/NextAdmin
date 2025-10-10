@@ -295,7 +295,7 @@ async function deleteMainMarketResult(resultId: string, sessionType: 'open' | 'c
 
     if (normalizedSession === "open") {
       // For Open session deletion: process all Open winners EXCEPT half-sangam
-      winnersToProcess = winDoc.winners.filter((w: any) =>
+      winnersToProcess = winDoc.winners.filter((w: ProcessedWinner) =>
         w.session?.toLowerCase() === "open" &&
         w.game_name === game.game_name &&
         w.game_type !== "half-sangam" // EXCLUDE half-sangam
@@ -304,12 +304,12 @@ async function deleteMainMarketResult(resultId: string, sessionType: 'open' | 'c
 
     } else if (normalizedSession === "close") {
       // For Close session deletion: process ALL Close winners + half-sangam Open winners
-      const closeSessionWinners = winDoc.winners.filter((w: any) =>
+      const closeSessionWinners = winDoc.winners.filter((w: ProcessedWinner) =>
         w.session?.toLowerCase() === "close" &&
         w.game_name === game.game_name
       ) as ProcessedWinner[];
 
-      const halfSangamOpenWinners = winDoc.winners.filter((w: any) =>
+      const halfSangamOpenWinners = winDoc.winners.filter((w: ProcessedWinner) =>
         w.game_type === "half-sangam" &&
         w.session?.toLowerCase() === "open" &&
         w.game_name === game.game_name
@@ -344,7 +344,7 @@ async function deleteMainMarketResult(resultId: string, sessionType: 'open' | 'c
     }
 
     // Remove processed winners from winner document
-    winDoc.winners = winDoc.winners.filter((w: any) => {
+    winDoc.winners = winDoc.winners.filter((w: ProcessedWinner) => {
       const isProcessed = winnersToProcess.some(processed =>
         processed._id?.toString() === w._id.toString()
       );
