@@ -98,7 +98,7 @@ export async function POST(request: NextRequest) {
                     }
 
                     // Create transaction for the win
-                    await Transaction.create({
+                   const transaction =  await Transaction.create({
                         user_id: userDoc._id,
                         type: 'credit',
                         amount: winning_amount,
@@ -107,7 +107,7 @@ export async function POST(request: NextRequest) {
                     });
 
                     // Update user balance
-                    const transaction = await AppUser.findByIdAndUpdate(
+                    await AppUser.findByIdAndUpdate(
                         userDoc._id,
                         { $inc: { balance: winning_amount } },
                         { new: true }
