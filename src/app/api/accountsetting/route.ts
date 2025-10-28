@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import AccountSetting from '@/models/AccountSettings';
+import AccountSetting, { IAccountSettings } from '@/models/AccountSettings';
 import connectDB from '@/config/db';
 
 export async function POST(request: NextRequest) {
@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
 
         if (accountSetting) {
             // Update existing settings using $set to ensure new fields are added
-            const updateData: any = {
+            const updateData: Partial<IAccountSettings> = {
                 welcome_bonus: welcome_bonus !== undefined ? welcome_bonus : accountSetting.welcome_bonus,
                 global_batting: global_batting !== undefined ? global_batting : accountSetting.global_batting,
                 min_deposit: min_deposit !== undefined ? min_deposit : accountSetting.min_deposit,
