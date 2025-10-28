@@ -9,7 +9,7 @@ import { toast } from 'sonner'
 import axios from 'axios'
 
 interface AccountSettingsData {
-  welcome_bonus: string;
+  welcome_bonus: number;
   global_batting: boolean;
   min_deposit: number;
   max_deposit: number;
@@ -17,14 +17,26 @@ interface AccountSettingsData {
   max_withdrawal: number;
   min_bid_amount: number;
   max_bid_amount: number;
+  withdrawal_days: string[]; // Simple array of enabled days: ["monday", "tuesday", ...]
   withdrawal_period: "morning" | "evening";
   withdrawal_open_time: string;
   withdrawal_close_time: string;
 }
 
-// Default form values to prevent uncontrolled inputs
+// Days of the week
+const DAYS_OF_WEEK = [
+  { value: "monday", label: "Monday" },
+  { value: "tuesday", label: "Tuesday" },
+  { value: "wednesday", label: "Wednesday" },
+  { value: "thursday", label: "Thursday" },
+  { value: "friday", label: "Friday" },
+  { value: "saturday", label: "Saturday" },
+  { value: "sunday", label: "Sunday" }
+];
+
+// Default form values
 const defaultFormData: AccountSettingsData = {
-  welcome_bonus: "",
+  welcome_bonus: 0,
   global_batting: false,
   min_deposit: 0,
   max_deposit: 0,
@@ -32,6 +44,7 @@ const defaultFormData: AccountSettingsData = {
   max_withdrawal: 0,
   min_bid_amount: 0,
   max_bid_amount: 0,
+  withdrawal_days: [], // Empty array = no days enabled
   withdrawal_period: "morning",
   withdrawal_open_time: "",
   withdrawal_close_time: ""
@@ -51,8 +64,8 @@ const AccountSettings = () => {
     try {
       const response = await axios.get('/api/accountsetting');
       if (response.data.status && response.data.data) {
-        // Safely merge API data with defaults to ensure no undefined values
         const apiData = response.data.data;
+        
         setFormData({
           welcome_bonus: apiData.welcome_bonus || defaultFormData.welcome_bonus,
           global_batting: apiData.global_batting !== undefined ? apiData.global_batting : defaultFormData.global_batting,
@@ -62,6 +75,7 @@ const AccountSettings = () => {
           max_withdrawal: apiData.max_withdrawal || defaultFormData.max_withdrawal,
           min_bid_amount: apiData.min_bid_amount || defaultFormData.min_bid_amount,
           max_bid_amount: apiData.max_bid_amount || defaultFormData.max_bid_amount,
+          withdrawal_days: apiData.withdrawal_days || defaultFormData.withdrawal_days,
           withdrawal_period: apiData.withdrawal_period || defaultFormData.withdrawal_period,
           withdrawal_open_time: apiData.withdrawal_open_time || defaultFormData.withdrawal_open_time,
           withdrawal_close_time: apiData.withdrawal_close_time || defaultFormData.withdrawal_close_time,
@@ -70,14 +84,7 @@ const AccountSettings = () => {
       setIsDataLoaded(true);
     } catch (error: unknown) {
       console.error('Error fetching settings:', error);
-
-      if (axios.isAxiosError(error)) {
-        toast.error(error.response?.data?.message || 'Failed to load account settings');
-      } else if (error instanceof Error) {
-        toast.error(error.message || 'Failed to load account settings');
-      } else {
-        toast.error('Failed to load account settings');
-      }
+      toast.error('Failed to load account settings');
       setIsDataLoaded(true);
     }
   };
@@ -112,6 +119,40 @@ const AccountSettings = () => {
     }
   };
 
+  const handleDayToggle = (dayValue: string) => {
+    setFormData(prev => {
+      const isCurrentlyEnabled = prev.withdrawal_days.includes(dayValue);
+      
+      if (isCurrentlyEnabled) {
+        // Remove day
+        return {
+          ...prev,
+          withdrawal_days: prev.withdrawal_days.filter(day => day !== dayValue)
+        };
+      } else {
+        // Add day
+        return {
+          ...prev,
+          withdrawal_days: [...prev.withdrawal_days, dayValue]
+        };
+      }
+    });
+  };
+
+  const selectAllDays = () => {
+    setFormData(prev => ({
+      ...prev,
+      withdrawal_days: DAYS_OF_WEEK.map(day => day.value)
+    }));
+  };
+
+  const clearAllDays = () => {
+    setFormData(prev => ({
+      ...prev,
+      withdrawal_days: []
+    }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -126,23 +167,15 @@ const AccountSettings = () => {
       }
     } catch (error: unknown) {
       console.error('Error saving settings:', error);
-
-      if (axios.isAxiosError(error)) {
-        toast.error(error.response?.data?.message || 'Failed to save account settings');
-      } else if (error instanceof Error) {
-        toast.error(error.message || 'Failed to save account settings');
-      } else {
-        toast.error('Failed to save account settings');
-      }
+      toast.error('Failed to save account settings');
     } finally {
       setLoading(false);
     }
   };
 
-  // // Don't render form until data is loaded to prevent controlled/uncontrolled issues
-  // if (!isDataLoaded) {
-  //   return <div>Loading...</div>;
-  // }
+  if (!isDataLoaded) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <div className="space-y-6">
@@ -150,6 +183,7 @@ const AccountSettings = () => {
 
       <form onSubmit={handleSubmit}>
         <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+          {/* Existing fields remain the same */}
           <div className="grid w-full items-center gap-3">
             <Label htmlFor="welcome_bonus">Welcome Bonus</Label>
             <Input
@@ -252,14 +286,15 @@ const AccountSettings = () => {
             />
           </div>
 
+          {/* Simplified Withdrawal Settings */}
           <div className="grid w-full items-center gap-3">
-            <Label htmlFor="withdrawal_period">Withdrawal Time</Label>
+            <Label htmlFor="withdrawal_period">Withdrawal Period</Label>
             <Select
               value={formData.withdrawal_period}
               onValueChange={(value) => handleSelectChange("withdrawal_period", value)}
             >
               <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select Withdrawal Time" />
+                <SelectValue placeholder="Select Withdrawal Period" />
               </SelectTrigger>
               <SelectContent className='bg-white dark:bg-gray-900'>
                 <SelectGroup>
@@ -290,6 +325,49 @@ const AccountSettings = () => {
               value={formData.withdrawal_close_time}
               onChange={handleInputChange}
             />
+          </div>
+        </div>
+
+        {/* Simplified Withdrawal Days Section */}
+        <div className="mt-8 border-t pt-6">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="font-semibold text-xl">Withdrawal Days</h2>
+            <div className="space-x-2">
+              <Button type="button" variant="outline" onClick={selectAllDays}>
+                Select All
+              </Button>
+              <Button type="button" variant="outline" onClick={clearAllDays}>
+                Clear All
+              </Button>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2">
+            {DAYS_OF_WEEK.map((day) => (
+              <div key={day.value} className="flex flex-col items-center">
+                <button
+                  type="button"
+                  onClick={() => handleDayToggle(day.value)}
+                  className={`w-full py-2 px-3 rounded-lg border-2 text-center transition-colors ${
+                    formData.withdrawal_days.includes(day.value)
+                      ? 'bg-blue-500 text-white border-blue-500'
+                      : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'
+                  }`}
+                >
+                  {day.label}
+                </button>
+                <span className="text-xs mt-1 text-gray-500">
+                  {formData.withdrawal_days.includes(day.value) ? '✓ Enabled' : '✗ Disabled'}
+                </span>
+              </div>
+            ))}
+          </div>
+          
+          <div className="mt-4 text-sm text-gray-600">
+            <p>Selected days: {formData.withdrawal_days.length > 0 
+              ? formData.withdrawal_days.map(day => DAYS_OF_WEEK.find(d => d.value === day)?.label).join(', ')
+              : 'No days selected'
+            }</p>
           </div>
         </div>
 

@@ -273,12 +273,10 @@ async function deleteMainMarketResult(resultId: string, sessionType: 'open' | 'c
 
   const normalizedSession = sessionType.trim()?.toLowerCase();
 
-  // Find ALL Winner documents for this game_id and result_date (date-only match)
-  const startOfDay = new Date(result.result_date);
-  startOfDay.setHours(0, 0, 0, 0);
-
-  const endOfDay = new Date(result.result_date);
-  endOfDay.setHours(23, 59, 59, 999);
+   // FIX: Parse the date string properly (DD-MM-YYYY format)
+  const [day, month, year] = result.result_date.split('-').map(Number);
+  const startOfDay = new Date(year, month - 1, day, 0, 0, 0, 0); // month is 0-indexed
+  const endOfDay = new Date(year, month - 1, day, 23, 59, 59, 999);
 
   const winnerDocs = await MainMarketWinner.find({
     result_date: {

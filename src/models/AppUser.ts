@@ -23,12 +23,20 @@ export interface IAppUser {
   batting: boolean;
   balance: number;
   devices: IDeviceInfo[];
+  email: String,
+  date_of_birth: string;
+  address: string;
+  occupation: string;
+
 }
 
 export interface IAppUserDocument extends IAppUser, Document {
   comparePassword(candidatePassword: string): Promise<boolean>;
   addDevice(deviceInfo: IDeviceInfo): Promise<void>;
 }
+
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 
 const deviceInfoSchema = new Schema({
   device_id: {
@@ -97,7 +105,31 @@ const appUserSchema = new Schema<IAppUserDocument, Model<IAppUserDocument>>(
       type: Boolean,
       default: true
     },
-    devices: [deviceInfoSchema]
+    devices: [deviceInfoSchema],
+    email: {
+      type: String,
+      trim: true,
+      lowercase: true,
+      validate: {
+        validator: function (email: string) {
+          if (!email) return true;
+          return emailRegex.test(email);
+        },
+        message: 'Please provide a valid email address'
+      }
+    },
+    date_of_birth: {
+      type: String,
+      trim: true,
+    },
+    address: {
+      type: String,
+      trim: true
+    },
+    occupation: {
+      type: String,
+      trim: true
+    },
   },
   { timestamps: true }
 );
@@ -118,7 +150,7 @@ appUserSchema.methods.addDevice = async function (deviceInfo: IDeviceInfo): Prom
   const existingDeviceIndex = this.devices.findIndex(
     (device: IDeviceInfo) => device.device_id === deviceInfo.device_id
   );
-  
+
   if (existingDeviceIndex !== -1) {
     this.devices[existingDeviceIndex] = {
       ...this.devices[existingDeviceIndex],
@@ -131,7 +163,7 @@ appUserSchema.methods.addDevice = async function (deviceInfo: IDeviceInfo): Prom
       last_login: new Date()
     });
   }
-  
+
   await this.save();
 };
 

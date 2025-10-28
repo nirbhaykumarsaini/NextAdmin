@@ -34,6 +34,12 @@ function formatTimeTo12Hour(time: string): string {
   return `${hour}:${minute.toString().padStart(2, "0")} ${ampm}`;
 }
 
+// ✅ Get day name from date (lowercase for matching with withdrawal_days)
+function getDayName(date: Date): string {
+  const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+  return days[date.getDay()];
+}
+
 export async function POST(request: NextRequest) {
   try {
     await dbConnect();
@@ -65,7 +71,22 @@ export async function POST(request: NextRequest) {
 
     // ✅ Always use IST date
     const now = getISTDate();
+    const currentDay = getDayName(now);
+    
+    // ✅ Check if withdrawal is allowed on current day
+    if (!accountSettings.withdrawal_days || !Array.isArray(accountSettings.withdrawal_days)) {
+      throw new ApiError('Withdrawal days are not properly configured');
+    }
 
+    if (!accountSettings.withdrawal_days.includes(currentDay)) {
+      const enabledDays = accountSettings.withdrawal_days.map(day => 
+        day.charAt(0).toUpperCase() + day.slice(1)
+      ).join(', ');
+      
+      throw new ApiError(`Withdrawals are not allowed on ${currentDay.charAt(0).toUpperCase() + currentDay.slice(1)}. Available days: ${enabledDays || 'None'}`);
+    }
+
+    // ✅ Check time restrictions based on withdrawal period
     const [openHour, openMinute] = (accountSettings.withdrawal_open_time || '00:00')
       .split(':')
       .map(Number);
@@ -79,10 +100,38 @@ export async function POST(request: NextRequest) {
     const closeTime = new Date(now);
     closeTime.setHours(closeHour, closeMinute, 0, 0);
 
-    if (now < openTime || now > closeTime) {
+    // ✅ Handle different withdrawal periods
+    let isWithinTime = false;
+    
+    switch (accountSettings.withdrawal_period) {
+      case 'morning':
+        // Morning period: typically 6 AM to 12 PM
+        isWithinTime = now >= openTime && now <= closeTime;
+        break;
+        
+      case 'evening':
+        // Evening period: typically 6 PM to 10 PM
+        isWithinTime = now >= openTime && now <= closeTime;
+        break;
+        
+      default:
+        // Default to time range check
+        isWithinTime = now >= openTime && now <= closeTime;
+    }
+
+    if (!isWithinTime) {
       const formattedOpenTime = formatTimeTo12Hour(accountSettings.withdrawal_open_time || "00:00");
       const formattedCloseTime = formatTimeTo12Hour(accountSettings.withdrawal_close_time || "23:59");
-      throw new ApiError(`Withdrawals are allowed only between ${formattedOpenTime} and ${formattedCloseTime}`);
+      
+      let timeMessage = `Withdrawals are allowed only between ${formattedOpenTime} and ${formattedCloseTime}`;
+      
+      if (accountSettings.withdrawal_period === 'morning') {
+        timeMessage = `Withdrawals are allowed only in the morning between ${formattedOpenTime} and ${formattedCloseTime}`;
+      } else if (accountSettings.withdrawal_period === 'evening') {
+        timeMessage = `Withdrawals are allowed only in the evening between ${formattedOpenTime} and ${formattedCloseTime}`;
+      }
+      
+      throw new ApiError(timeMessage);
     }
 
     const user = await AppUser.findById(user_id);

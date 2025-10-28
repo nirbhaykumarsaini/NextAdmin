@@ -71,6 +71,9 @@ const MainMarketResult = () => {
     const [winners, setWinners] = useState<Winner[]>([])
     const [totalBidAmount, setTotalBidAmount] = useState(0)
     const [totalWinningAmount, setTotalWinningAmount] = useState(0)
+    const [searchPanna, setSearchPanna] = useState("")
+    const [filteredPanna, setFilteredPanna] = useState<Panna[]>([])
+    const [showDropdown, setShowDropdown] = useState(false)
 
     const dispatch = useAppDispatch();
     const { games } = useAppSelector(
@@ -84,6 +87,19 @@ const MainMarketResult = () => {
         fetchAllPanna();
         fetchResults();
     }, [dispatch]);
+
+    useEffect(() => {
+        if (allPanna && searchPanna) {
+            const filtered = allPanna.filter(pannaItem => 
+                pannaItem.digit.includes(searchPanna)
+            );
+            setFilteredPanna(filtered);
+            setShowDropdown(true);
+        } else {
+            setFilteredPanna([]);
+            setShowDropdown(false);
+        }
+    }, [searchPanna, allPanna]);
 
     const fetchAllPanna = async () => {
         try {
@@ -117,25 +133,53 @@ const MainMarketResult = () => {
         }
     };
 
-    const handlePannaChange = (selectedPanna: string) => {
-        setPanna(selectedPanna);
-
-        // Calculate digit from panna
-        if (selectedPanna) {
-            const digits = selectedPanna.split('').map(Number);
-            let sum = digits.reduce((total, digit) => total + digit, 0);
-
-            // If sum is greater than 9, take the last digit
-            if (sum > 9) {
-                sum = Number(sum.toString().slice(-1));
-            }
-
-            setDigit(sum.toString());
+    const handlePannaSearch = (value: string) => {
+        setSearchPanna(value);
+        
+        // If input is empty, clear both panna and digit
+        if (!value.trim()) {
+            setPanna("");
+            setDigit("");
+            setFilteredPanna([]);
+            setShowDropdown(false);
+            return;
         }
+
+        // Auto-calculate digit as user types (only if it's a valid 3-digit number)
+        if (/^\d{3}$/.test(value)) {
+            calculateDigit(value);
+        } else {
+            setDigit("");
+        }
+    };
+
+    const calculateDigit = (pannaValue: string) => {
+        const digits = pannaValue.split('').map(Number);
+        let sum = digits.reduce((total, digit) => total + digit, 0);
+
+        // If sum is greater than 9, take the last digit
+        if (sum > 9) {
+            sum = Number(sum.toString().slice(-1));
+        }
+
+        setDigit(sum.toString());
+    };
+
+    const handlePannaSelect = (selectedPanna: string) => {
+        setPanna(selectedPanna);
+        setSearchPanna(selectedPanna);
+        setShowDropdown(false);
+        calculateDigit(selectedPanna);
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        // Validate panna
+        if (!panna || panna.length !== 3) {
+            toast.error("Please enter a valid 3-digit panna");
+            return;
+        }
 
         try {
             const formattedDate = result_date ? format(result_date, "dd-MM-yyyy") : "";
@@ -200,6 +244,7 @@ const MainMarketResult = () => {
                 setGameName("");
                 setPanna("");
                 setDigit("");
+                setSearchPanna("");
 
                 // Refresh results
                 fetchResults();
@@ -266,8 +311,6 @@ const MainMarketResult = () => {
 
     const availableGames = getAvailableGames();
 
-
-
     return (
         <div className="container mx-auto space-y-8">
             <h1 className="text-2xl font-bold text-center">Starline Results</h1>
@@ -316,21 +359,45 @@ const MainMarketResult = () => {
                         </Select>
                     </div>
 
-                    {/* Panna Select */}
-                    <div className="space-y-2">
+                    {/* Panna Search Input */}
+                    <div className="space-y-2 relative">
                         <Label>Panna</Label>
-                        <Select onValueChange={handlePannaChange} value={panna}>
-                            <SelectTrigger className='w-full'>
-                                <SelectValue placeholder="Select Panna" />
-                            </SelectTrigger>
-                            <SelectContent className='bg-white dark:bg-gray-900 max-h-60 overflow-y-auto'>
-                                {allPanna?.map((panna) => (
-                                    <SelectItem key={panna._id} value={panna.digit}>
-                                        {panna.digit}
-                                    </SelectItem>
+                        <Input
+                            type="text"
+                            placeholder="Search panna..."
+                            value={searchPanna}
+                            onChange={(e) => handlePannaSearch(e.target.value)}
+                            className="w-full"
+                            maxLength={3}
+                            onFocus={() => {
+                                if (searchPanna && allPanna) {
+                                    const filtered = allPanna.filter(pannaItem => 
+                                        pannaItem.digit.includes(searchPanna)
+                                    );
+                                    setFilteredPanna(filtered);
+                                    setShowDropdown(true);
+                                }
+                            }}
+                            onBlur={() => {
+                                // Delay hiding dropdown to allow for click
+                                setTimeout(() => setShowDropdown(false), 200);
+                            }}
+                        />
+                        {/* Dropdown for filtered panna results */}
+                        {showDropdown && filteredPanna.length > 0 && (
+                            <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                                {filteredPanna.map((pannaItem) => (
+                                    <div
+                                        key={pannaItem._id}
+                                        className="px-4 py-1.5 text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 border-b border-gray-100 dark:border-gray-800 last:border-b-0"
+                                        onMouseDown={(e) => e.preventDefault()} // Prevent blur before click
+                                        onClick={() => handlePannaSelect(pannaItem.digit)}
+                                    >
+                                        {pannaItem.digit}
+                                    </div>
                                 ))}
-                            </SelectContent>
-                        </Select>
+                            </div>
+                        )}
                     </div>
 
                     {/* Digit Input */}
@@ -346,7 +413,7 @@ const MainMarketResult = () => {
                     </div>
 
                     {/* Submit Button */}
-                    <div className="flex items-center justify-center mt-3">
+                    <div className="flex items-center justify-center mt-5">
                         <Button type="submit" className="w-full ">
                             Show Winner
                         </Button>
@@ -363,6 +430,7 @@ const MainMarketResult = () => {
                             <TableHead>Date</TableHead>
                             <TableHead>Game Name</TableHead>
                             <TableHead>Result</TableHead>
+                            <TableHead>Action</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -382,14 +450,16 @@ const MainMarketResult = () => {
                                             <span className="text-gray-400">Not declared</span>
                                         )}
                                     </TableCell>
-                                    <TableCell> <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="text-red-600 hover:text-red-800 hover:bg-red-100"
-                                        onClick={() => handleDeleteResult(result?._id || '')}
-                                    >
-                                        <FiTrash2 size={16} />
-                                    </Button></TableCell>
+                                    <TableCell> 
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="text-red-600 hover:text-red-800 hover:bg-red-100"
+                                            onClick={() => handleDeleteResult(result?._id || '')}
+                                        >
+                                            <FiTrash2 size={16} />
+                                        </Button>
+                                    </TableCell>
                                 </TableRow>
                             ))
                         ) : (
@@ -455,7 +525,7 @@ const MainMarketResult = () => {
                                         ))
                                     ) : (
                                         <TableRow>
-                                            <TableCell colSpan={5} className="text-center py-4">
+                                            <TableCell colSpan={7} className="text-center py-4">
                                                 No winning bids found
                                             </TableCell>
                                         </TableRow>

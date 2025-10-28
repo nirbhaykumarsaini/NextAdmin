@@ -9,6 +9,7 @@ export interface IAccountSettings extends Document {
     max_withdrawal: number;
     min_bid_amount: number;
     max_bid_amount: number;
+    withdrawal_days: string[];
     withdrawal_period: "morning" | "evening";
     withdrawal_open_time: string;
     withdrawal_close_time: string;
@@ -47,6 +48,10 @@ const accountSettingsSchema: Schema = new Schema(
         max_bid_amount: {
             type: Number,
             default: 0
+        },
+        withdrawal_days: {
+            type: [String], // Array of strings
+            default: [] // Empty array = no days enabled by default
         },
         withdrawal_period: {
             type: String,
