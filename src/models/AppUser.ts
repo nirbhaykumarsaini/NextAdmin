@@ -23,7 +23,7 @@ export interface IAppUser {
   batting: boolean;
   balance: number;
   devices: IDeviceInfo[];
-  email: String,
+  email: string,
   date_of_birth: string;
   address: string;
   occupation: string;
