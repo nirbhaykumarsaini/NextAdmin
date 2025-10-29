@@ -7,6 +7,8 @@ import AppUser from '@/models/AppUser';
 import Transaction from '@/models/Transaction';
 import mongoose, { Types } from 'mongoose';
 import { parseDDMMYYYY } from '@/utils/date';
+import NotificationService from '@/services/notificationService';
+import GalidisawarGame from '@/models/GalidisawarGame';
 
 interface StarlineResultDocument {
     result_date: string;
@@ -36,7 +38,7 @@ interface ProcessedWinner {
     digit: string | undefined;
     winning_amount: number;
     bid_amount: number;
-    transaction_id:Types.ObjectId | null;
+    transaction_id: Types.ObjectId | null;
 }
 
 
@@ -51,6 +53,9 @@ export async function POST(request: NextRequest) {
         if (!result_date) throw new ApiError('Date is required');
         if (!game_id) throw new ApiError('Game id is required');
         if (!digit) throw new ApiError('Digit is required');
+
+        const game = await GalidisawarGame.findById(game_id);
+        if (!game) throw new ApiError("Game not found");
 
         // Check duplicate result
         const existingResult = await GalidisawarResult.findOne({ game_id, result_date });
@@ -80,7 +85,7 @@ export async function POST(request: NextRequest) {
                     userId = new Types.ObjectId(user_id);
 
                     // Create transaction only if valid userId
-                   const transaction = await Transaction.create({
+                    const transaction = await Transaction.create({
                         user_id: userId,
                         type: 'credit',
                         amount: winning_amount,
@@ -107,7 +112,7 @@ export async function POST(request: NextRequest) {
                     digit,
                     winning_amount,
                     bid_amount: amount,
-                    transaction_id:transactionId
+                    transaction_id: transactionId
                 });
             }
 
@@ -118,6 +123,11 @@ export async function POST(request: NextRequest) {
                 });
             }
         }
+
+        await NotificationService.sendNotificationToAllUsers(
+            `${game.game_name} Result`,
+            `${digit}`
+        );
 
         return NextResponse.json({
             status: true,
@@ -207,7 +217,7 @@ export async function DELETE(request: NextRequest) {
                 // 2.1 Deduct balance from users (revert win amount)
                 await AppUser.findByIdAndUpdate(
                     winner.user_id,
-                    { $inc: { balance: -winner.winning_amount } }                );
+                    { $inc: { balance: -winner.winning_amount } });
 
                 if (winner.transaction_id) {
                     await Transaction.findByIdAndDelete(winner.transaction_id);

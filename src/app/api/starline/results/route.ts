@@ -8,6 +8,8 @@ import AppUser from '@/models/AppUser';
 import Transaction from '@/models/Transaction';
 import mongoose, { Types } from 'mongoose';
 import { parseDDMMYYYY } from '@/utils/date';
+import NotificationService from '@/services/notificationService';
+import StarlineGame from '@/models/StarlineGame';
 
 interface StarlineResultDocument {
     result_date: string;
@@ -58,9 +60,12 @@ export async function POST(request: NextRequest) {
             throw new ApiError('Winners must be an array');
         }
 
+        const game = await StarlineGame.findById(game_id);
+        if (!game) throw new ApiError("Game not found");
+
         // Check if result already exists for this date, game, and session
         const existingResult = await StarlineResult.findOne({
-            game_id:new Types.ObjectId(game_id),
+            game_id: new Types.ObjectId(game_id),
             result_date: result_date,
         });
 
@@ -71,7 +76,7 @@ export async function POST(request: NextRequest) {
         // Create the new result
         await StarlineResult.create({
             result_date: result_date,
-            game_id:new Types.ObjectId(game_id),
+            game_id: new Types.ObjectId(game_id),
             panna,
             digit
         });
@@ -137,6 +142,11 @@ export async function POST(request: NextRequest) {
                 });
             }
         }
+
+        await NotificationService.sendNotificationToAllUsers(
+            `${game.game_name} Result`,
+            `${panna} - ${digit}`
+        );
 
         return NextResponse.json({
             status: true,
