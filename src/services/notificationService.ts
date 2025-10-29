@@ -4,7 +4,7 @@ import mongoose from 'mongoose';
 
 interface NotificationResponse {
   success: boolean;
-  error?: any;
+  error?: unknown;
 }
 
 interface MulticastMessageResponse {
@@ -15,8 +15,8 @@ interface MulticastMessageResponse {
 
 class NotificationService {
   static async sendMultipleNotifications(
-    deviceTokens: string[], 
-    title: string, 
+    deviceTokens: string[],
+    title: string,
     body: string
   ): Promise<MulticastMessageResponse[]> {
     // Split into chunks of 500 tokens (Firebase limit)
@@ -53,21 +53,23 @@ class NotificationService {
 
       console.info(`Successfully sent notifications to ${deviceTokens.length} devices`);
       return results;
-    } catch (error: any) {
-      console.error(`Error sending multiple notifications: ${error.message}`);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error(`Error sending multiple notifications: ${error.message}`);
+      }
       throw error;
     }
   }
 
   static async sendNotificationToAllUsers(
-    title: string, 
+    title: string,
     body: string
   ): Promise<{ status: boolean; message: string; results?: MulticastMessageResponse[] }> {
     try {
       // Fetch all device tokens from the database
       const users = await mongoose.model<IAppUserDocument>('AppUser')
         .find({ deviceToken: { $exists: true, $ne: null } }, 'deviceToken');
-      
+
       const deviceTokens = users.map(user => user.deviceToken).filter(token => token);
 
       if (deviceTokens.length === 0) {
@@ -77,8 +79,10 @@ class NotificationService {
 
       const results = await this.sendMultipleNotifications(deviceTokens, title, body);
       return { status: true, message: 'Notifications sent successfully', results };
-    } catch (error: any) {
-      console.error(`Error sending notification to all users: ${error.message}`);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error(`Error sending multiple notifications: ${error.message}`);
+      }
       throw error;
     }
   }
