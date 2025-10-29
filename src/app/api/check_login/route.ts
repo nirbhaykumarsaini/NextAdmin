@@ -32,7 +32,11 @@ export async function POST(request: Request) {
         id: user._id,
         name: user.name,
         mobile_number: user.mobile_number,
-        is_verified: user.is_verified,
+        email:user.email || "",
+        date_of_birth:user.date_of_birth || "",
+        address:user.address || "",
+        occupation:user.occupation || "",
+        is_verified: user.is_verified ,
         batting: user.batting,
         balance: user.balance,
       },
@@ -42,20 +46,17 @@ export async function POST(request: Request) {
     if (error instanceof ApiError) {
       return NextResponse.json(
         { status: false, message: error.message },
-        { status: 400 }
       );
     }
 
     if (error instanceof Error) {
       return NextResponse.json(
         { status: false, message: error.message || 'Internal server error' },
-        { status: 500 }
       );
     }
 
     return NextResponse.json(
       { status: false, message: 'Internal server error' },
-      { status: 500 }
     );
   }
 }

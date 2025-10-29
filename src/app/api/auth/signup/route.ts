@@ -7,15 +7,78 @@ import ApiError from '@/lib/errors/APiError';
 import { headers } from 'next/headers';
 
 // Function to extract device info from request
+// async function getDeviceInfo() {
+//   const headersList = await headers();
+
+//   return {
+//     device_id: headersList.get('x-device-id') || 'unknown',
+//     device_model: headersList.get('x-device-model') || 'Unknown',
+//     os: headersList.get('x-os') || 'Unknown',
+//     browser: headersList.get('user-agent') || 'Unknown',
+//     ip_address: headersList.get('x-forwarded-for') || headersList.get('x-real-ip') || 'Unknown'
+//   };
+// }
+
 async function getDeviceInfo() {
   const headersList = await headers();
 
+  // Get IP address from various headers
+  const ipAddress = headersList.get('x-forwarded-for') ||
+    headersList.get('x-real-ip') ||
+    headersList.get('cf-connecting-ip') ||
+    headersList.get('true-client-ip') ||
+    'Unknown';
+
+  // Get user agent
+  const userAgent = headersList.get('user-agent') || 'Unknown';
+
+  // Extract browser/device info from user agent
+  let browser = 'Unknown';
+  let os = 'Unknown';
+  let deviceModel = 'Unknown';
+
+  if (userAgent.includes('Android')) {
+    os = 'Android';
+    // Extract Android device model from user agent
+    const androidMatch = userAgent.match(/Android.*; ([^;)]+)\)/);
+    deviceModel = androidMatch ? androidMatch[1] : 'Android Device';
+  } else if (userAgent.includes('iPhone') || userAgent.includes('iPad')) {
+    os = 'iOS';
+    const iosMatch = userAgent.match(/\(([^;]+);/);
+    deviceModel = iosMatch ? iosMatch[1] : 'iOS Device';
+  } else if (userAgent.includes('Windows')) {
+    os = 'Windows';
+  } else if (userAgent.includes('Mac')) {
+    os = 'macOS';
+  } else if (userAgent.includes('Linux')) {
+    os = 'Linux';
+  }
+
+  if (userAgent.includes('Chrome')) {
+    browser = 'Chrome';
+  } else if (userAgent.includes('Firefox')) {
+    browser = 'Firefox';
+  } else if (userAgent.includes('Safari')) {
+    browser = 'Safari';
+  } else if (userAgent.includes('OkHttp')) {
+    browser = 'OkHttp';
+  }
+
   return {
-    device_id: headersList.get('x-device-id') || 'unknown',
-    device_model: headersList.get('x-device-model') || 'Unknown',
-    os: headersList.get('x-os') || 'Unknown',
-    browser: headersList.get('user-agent') || 'Unknown',
-    ip_address: headersList.get('x-forwarded-for') || headersList.get('x-real-ip') || 'Unknown'
+    device_id: headersList.get('x-device-id') ||
+      headersList.get('device-id') ||
+      headersList.get('x-device-uuid') ||
+      'unknown',
+    device_model: headersList.get('x-device-model') ||
+      headersList.get('device-model') ||
+      deviceModel,
+    os: headersList.get('x-os') ||
+      headersList.get('os') ||
+      os,
+    browser: headersList.get('x-browser') ||
+      headersList.get('browser') ||
+      browser,
+    ip_address: ipAddress
   };
 }
 
@@ -51,7 +114,13 @@ export async function POST(request: Request) {
       otp: '123456',
       is_verified: false,
       is_blocked: false,
-      devices: [deviceInfo]
+      devices: [deviceInfo],
+      email: body.email || '',
+      date_of_birth: body.date_of_birth || '',
+      address: body.address || '',
+      occupation: body.occupation || '',
+      deviceToken: body.deviceToken || '',
+
     });
 
     return NextResponse.json({

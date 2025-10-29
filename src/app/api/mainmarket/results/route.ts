@@ -8,6 +8,7 @@ import AppUser from '@/models/AppUser';
 import Transaction from '@/models/Transaction';
 import { parseDDMMYYYY } from '@/utils/date';
 import MainMarketGame from '@/models/MainMarketGame';
+import NotificationService from '@/services/notificationService';
 
 interface SessionResult {
   panna: string;
@@ -95,6 +96,9 @@ export async function POST(request: NextRequest) {
       throw new ApiError('Winners must be an array');
     }
 
+    const game = await MainMarketGame.findById(game_id);
+    if (!game) throw new ApiError("Game not found");
+
     // Check if result already exists for this date, game, and session
     const existingResult = await MainMarketResult.findOne({
       game_id,
@@ -181,6 +185,13 @@ export async function POST(request: NextRequest) {
         });
       }
     }
+
+    await NotificationService.sendNotificationToAllUsers(
+      `${game.game_name} Result`,
+      `Session : ${session}` +
+      `${session === 'open' ? ` ${panna} - ${digit}` : ''}` +
+      `${session === 'close' ? `${panna} - ${digit}` : ''}`
+    );
 
     return NextResponse.json({
       status: true,
@@ -273,7 +284,7 @@ async function deleteMainMarketResult(resultId: string, sessionType: 'open' | 'c
 
   const normalizedSession = sessionType.trim()?.toLowerCase();
 
-   // FIX: Parse the date string properly (DD-MM-YYYY format)
+  // FIX: Parse the date string properly (DD-MM-YYYY format)
   const [day, month, year] = result.result_date.split('-').map(Number);
   const startOfDay = new Date(year, month - 1, day, 0, 0, 0, 0); // month is 0-indexed
   const endOfDay = new Date(year, month - 1, day, 23, 59, 59, 999);

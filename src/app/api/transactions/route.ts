@@ -15,6 +15,8 @@ export async function POST(request: NextRequest) {
 
     const user_id = getUserIdFromToken(request);
 
+    console.log(user_id)
+
     if (!user_id) {
       throw new ApiError('Unauthorized - Invalid or missing token');
     }

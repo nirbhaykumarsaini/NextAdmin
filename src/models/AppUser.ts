@@ -27,7 +27,7 @@ export interface IAppUser {
   date_of_birth: string;
   address: string;
   occupation: string;
-
+  deviceToken: string;
 }
 
 export interface IAppUserDocument extends IAppUser, Document {
@@ -130,6 +130,10 @@ const appUserSchema = new Schema<IAppUserDocument, Model<IAppUserDocument>>(
       type: String,
       trim: true
     },
+    deviceToken: {
+      type: String,
+      trim: true,
+    }
   },
   { timestamps: true }
 );
