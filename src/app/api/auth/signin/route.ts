@@ -57,6 +57,10 @@ export async function POST(request: Request) {
       throw new ApiError('Please verify your account with OTP first');
     }
 
+    if (body.deviceToken) {
+      user.deviceToken = body.deviceToken;
+    }
+
     // Add device information
     await user.addDevice(deviceInfo);
 
