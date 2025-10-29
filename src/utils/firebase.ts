@@ -1,39 +1,43 @@
 import admin from 'firebase-admin'
 
-// Debug: Check if environment variables are loaded
-console.log('FIREBASE_PROJECT_ID:', process.env.FIREBASE_PROJECT_ID ? 'Loaded' : 'Missing');
-console.log('FIREBASE_CLIENT_EMAIL:', process.env.FIREBASE_CLIENT_EMAIL ? 'Loaded' : 'Missing');
-console.log('FIREBASE_PRIVATE_KEY:', process.env.FIREBASE_PRIVATE_KEY ? 'Loaded' : 'Missing');
+// Temporary hardcoded values for testing
+const firebaseConfig = {
+  projectId: "kalyan-zone-f3139",
+  clientEmail: "firebase-adminsdk-fbsvc@kalyan-zone-f3139.iam.gserviceaccount.com",
+  privateKey: `-----BEGIN PRIVATE KEY-----
+MIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQC76+u0lzs+5AyU
+WIdXZyLYEehLup2rJxIe2dlaIBh7NShmjN+MiW6NIUzBK0W7tARLo8mlZRSwdcw/
+mlib+XGsZX6HesoLtB+IVsDuun5GiE2TwVMYMt5TK2k8H2FpyOilWQyv6bHDHQCG
+m6qRrZ3q19ZNld/+2SJlqAL4e3Btwxhdx5E6+y7oxMuBwrwAAjLcdWz9Ye2R3Sdg
+EolommAMFEn1Mq98SMciLL/QBhKbdmu80FPAbblsODXg62n3NIP7Wsv+pEgkBEMV
+7stUfz8WFI/py+fNC5pnQrHssireVzkeU+hWK3mxO3doIjEGPr5bjsjEEkI6Sxu/
+3L+ymUODAgMBAAECggEASh5Ido9pYio/Hel25A29K/yQIwJFOqKr3ngs5oOfNEUo
+nJ32c+8mp8pZBB1loR1kzlKY7z+Zc+naN8HQLiCp6YWUbKoM86XFBBi3etEaigYr
+ltnaxMIXdzU5iemUmc0QmVqwiteA8cRIF09hbJjOHringS1aTiFlFDQ6i7fgBaIO
+kctOjY3tFGfVv5COf2x5KkvKd6thfD9XoxgDuISVZnbfU1xOm0VflhDwLkZVpp6c
+lpPEdtL+Ii+Orgr0Sp9h2fsVrkz9+Mv3VwOxv0avga33crRb3KPvI36O2X8kv63J
+SZNA/kVkHlCeRHyhVy/FF6q22zaAo+lSVStnBSy/5QKBgQDldOUjVVU1Iu81JmbW
++iK6SeXgAYoOr7s+QW+/Z8ShUGDQdBq1M92TsdVCZcLk2A96Td8y7rtUb2Rjjv0E
+9kt11b5tMw+s7L9POqX1DvvBg5bkvQ7lx6LbtLeCgLfXWs7YbT0eJK3cuv6jE59/
+baaEsOTZkjv2w1wk80kw9UhInwKBgQDRqQLAhr/ur+SmSw3fEidtNw3vrlyj6hoR
+Ymvfve5r3LaAmRv1l7bX1WpW5tzeHeu7ZqYbJK/LjiFLvYuXHciKh+hEVpRZ308N
+m1hHjBlgsugQiL3+H7xTZ5bdCnlwm7AaOOFnAYHyeYfhTFX9ScTI8QcYRYwToeWT
+5jSMRc8GnQKBgH29w1vLhXgq/r83nh+sz58ao/hPn6JQtuF05pITgXONIqDZH1Gx
+bHlleKJ8NYNGy6SQTAITRWEN8guE7i7r8YpPaZ1Z3/s5edUnJI7YeSogvG35FNLi
+xeJ0dCP1+cjwIG4F3vpHy2csqiIfvMYOBrSsY5y/QFEH2dT95VwI7mWtAoGAKVUg
+bcQi4nNaqE3zlh6GF0nbPX0qVkY4jWTRz3IqJqmEcSW+FVSrfzFbnXY15LQRXQiH
+hqJc5cxHVB8x/cCpYGYarB5FcNJNS2lspe5AsoeSqG/MxOSMxASQAVOnTUPkG8dK
+6HurmpnK5+ecrCp22QZrV6WeT+CC2f1wLpc0kSECgYAxiqfA/uHtgV0WwZKEkIpq
+Sgez1LJYMZ8DPUc3UvT8YUcAPCa5NlMKf6ZPs1T2+b7PmZuRpB+9BGtgjiCgq+S/
+fCdilskYvuhozlu1y3v8+05Msw36pygoLFUUW58T6AkxKqwdSUnHWSfaqELzAaCL
+M+ejOaaCiVOJ+7tnHlCayQ==
+-----END PRIVATE KEY-----`
+};
 
-// Validate required environment variables
-if (!process.env.FIREBASE_PROJECT_ID) {
-  throw new Error('FIREBASE_PROJECT_ID is required');
-}
+admin.initializeApp({
+  credential: admin.credential.cert(firebaseConfig),
+});
 
-if (!process.env.FIREBASE_CLIENT_EMAIL) {
-  throw new Error('FIREBASE_CLIENT_EMAIL is required');
-}
-
-if (!process.env.FIREBASE_PRIVATE_KEY) {
-  throw new Error('FIREBASE_PRIVATE_KEY is required');
-}
-
-// Format the private key properly
-const privateKey = process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n');
-
-// Initialize Firebase Admin
-try {
-  admin.initializeApp({
-    credential: admin.credential.cert({
-      projectId: process.env.FIREBASE_PROJECT_ID,
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      privateKey: privateKey,
-    }),
-  });
-  console.log('Firebase Admin initialized successfully');
-} catch (error) {
-  console.error('Firebase Admin initialization error:', error);
-  throw error;
-}
+console.log('Firebase Admin initialized successfully');
 
 export default admin;
