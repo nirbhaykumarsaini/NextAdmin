@@ -7,6 +7,7 @@ import AppUser from '@/models/AppUser';
 import Transaction from '@/models/Transaction';
 import mongoose, { Types,PipelineStage } from 'mongoose';
 import AccountSetting from '@/models/AccountSettings';
+import MainMarketResult from '@/models/MainMarketResult';
 
 interface BidRequest {
     bid_id?: string;
@@ -25,6 +26,12 @@ interface MainMarketBidRequest {
     user_id: string;
     bids: BidRequest[];
 }
+
+interface RequestQuery{
+    game_id: string;
+    result_date: string;
+    session?: 'open' | 'close';
+} 
 
 
 export async function POST(request: Request) {
@@ -74,6 +81,55 @@ export async function POST(request: Request) {
             // Validate game ID
             if (!bid.game_id) {
                 throw new ApiError('Game ID is required for each bid');
+            }
+
+             const games = await MainMarketGame.findById(bid.game_id);
+            if (!games) {
+                throw new ApiError(`Game not found for ID: ${bid.game_id}`);
+            }
+            if (!games.is_active) {
+                throw new ApiError(`Game with ID ${bid.game_id} is inactive`);
+            }
+
+            // ✅ NEW: Check if result is already declared for this game
+            const today = new Date();
+            const formattedDate = today.toLocaleDateString('en-GB').split('/').join('-'); // DD-MM-YYYY format
+            
+            let resultQuery: RequestQuery = {
+                game_id: bid.game_id,
+                result_date: formattedDate
+            };
+
+              // For game types that have sessions, check specific session results
+            if (bid.session && ['open', 'close'].includes(bid.session)) {
+                resultQuery.session = bid.session;
+            }
+
+            // For full-sangam, check both open and close sessions
+            if (bid.game_type === 'full-sangam') {
+                const openResult = await MainMarketResult.findOne({
+                    game_id: bid.game_id,
+                    result_date: formattedDate,
+                    session: 'open'
+                });
+                
+                const closeResult = await MainMarketResult.findOne({
+                    game_id: bid.game_id,
+                    result_date: formattedDate,
+                    session: 'close'
+                });
+
+                if (openResult && closeResult) {
+                    throw new ApiError(`Bids are closed for this game. Results for both sessions have been declared.`);
+                }
+            } else {
+                // For other game types, check if result exists
+                const existingResult = await MainMarketResult.findOne(resultQuery);
+                
+                if (existingResult) {
+                    const sessionText = bid.session ? ` for ${bid.session} session` : '';
+                    throw new ApiError(`Bids are closed for this game. Result${sessionText} has been declared.`);
+                }
             }
 
             // Session validation based on game type
