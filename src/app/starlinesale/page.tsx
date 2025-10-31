@@ -151,7 +151,7 @@ const MainMarketSale = () => {
 
             {/* Sale Report Form */}
             <div className="rounded-lg shadow-md">
-                <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-4 gap-3">
                     {/* Date Picker */}
                     <div className="space-y-2">
                         <Label>Date</Label>
