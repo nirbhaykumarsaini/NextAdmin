@@ -6,15 +6,75 @@ import { format } from 'date-fns';
 
 connectDB();
 
-// Function to convert time to AM/PM format
-const convertToAMPM = (time: string): string => {
+// Interface for time conversion result
+interface TimeConversionResult {
+  formattedTime: string;
+  period: string;
+  sortableTime: string;
+}
+
+// Interface for day object
+interface GameDay {
+  day: string;
+  open_time: string;
+  close_time: string;
+  market_status: string;
+}
+
+// Interface for game result
+interface GameResult {
+  panna: string;
+  digit: string;
+}
+
+// Interface for market timing
+interface MarketTiming {
+  open_time: string | null;
+  close_time: string | null;
+  market_status: string;
+  period: string;
+  sortableTime: string;
+}
+
+// Interface for the final game data
+interface TodayGameData {
+  game_id: string;
+  game_name: string;
+  is_active: boolean;
+  market_timing: MarketTiming | null;
+  results: {
+    open: GameResult;
+    close: GameResult;
+  };
+}
+
+// Function to convert time to AM/PM format and extract period for sorting
+const convertToAMPM = (time: string): TimeConversionResult => {
   try {
     // Check if time is already in AM/PM format
     if (time.toLowerCase().includes('am') || time.toLowerCase().includes('pm')) {
-      return time;
+      const timeParts = time.split(' ');
+      const [hours, minutes] = timeParts[0].split(':').map(part => parseInt(part, 10));
+      const period = timeParts[1]?.toUpperCase() || 'AM';
+      
+      // Create sortable time (convert to 24-hour format for sorting)
+      let sortableHours = hours;
+      if (period === 'PM' && hours !== 12) {
+        sortableHours += 12;
+      } else if (period === 'AM' && hours === 12) {
+        sortableHours = 0;
+      }
+      
+      const sortableTime = `${sortableHours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+      
+      return {
+        formattedTime: time,
+        period,
+        sortableTime
+      };
     }
 
-    // Split the time by colon
+    // Split the time by colon (24-hour format)
     const [hours, minutes] = time.split(':').map(part => parseInt(part, 10));
     
     // Determine AM/PM
@@ -26,75 +86,49 @@ const convertToAMPM = (time: string): string => {
     // Format minutes with leading zero if needed
     const formattedMinutes = minutes.toString().padStart(2, '0');
     
-    return `${hours12}:${formattedMinutes} ${period}`;
+    const formattedTime = `${hours12}:${formattedMinutes} ${period}`;
+    
+    // Create sortable time (24-hour format)
+    const sortableTime = `${hours.toString().padStart(2, '0')}:${formattedMinutes}`;
+    
+    return {
+      formattedTime,
+      period,
+      sortableTime
+    };
   } catch (error) {
     // Return original time if conversion fails
-    return time;
+    return {
+      formattedTime: time,
+      period: 'AM',
+      sortableTime: '00:00'
+    };
   }
 };
 
-// Function to convert time to 24-hour format for comparison
-const convertTo24Hour = (time: string): number => {
-  try {
-    // If already in 24-hour format (HH:MM)
-    if (time.includes(':') && !time.toLowerCase().includes('am') && !time.toLowerCase().includes('pm')) {
-      const [hours, minutes] = time.split(':').map(part => parseInt(part, 10));
-      return hours * 60 + minutes;
+// Function to sort games by timing (AM first, then PM)
+const sortGamesByTiming = (games: TodayGameData[]): TodayGameData[] => {
+  return games.sort((a, b) => {
+    // If either game has no market timing, put them at the end
+    if (!a.market_timing || !b.market_timing) {
+      if (!a.market_timing && !b.market_timing) return 0;
+      return !a.market_timing ? 1 : -1;
     }
 
-    // For AM/PM format
-    const timeParts = time.match(/(\d+):(\d+)\s*(AM|PM)/i);
-    if (timeParts) {
-      let hours = parseInt(timeParts[1], 10);
-      const minutes = parseInt(timeParts[2], 10);
-      const period = timeParts[3].toUpperCase();
-
-      // Convert to 24-hour format
-      if (period === 'PM' && hours !== 12) {
-        hours += 12;
-      } else if (period === 'AM' && hours === 12) {
-        hours = 0;
-      }
-
-      return hours * 60 + minutes;
+    // Compare by period first (AM before PM)
+    const aPeriod = a.market_timing.period || 'AM';
+    const bPeriod = b.market_timing.period || 'AM';
+    
+    if (aPeriod !== bPeriod) {
+      return aPeriod === 'AM' ? -1 : 1;
     }
 
-    return Infinity; // Return high value if conversion fails
-  } catch (error) {
-    return Infinity;
-  }
+    // If same period, compare by sortable time
+    return a.market_timing.sortableTime.localeCompare(b.market_timing.sortableTime);
+  });
 };
 
-// Function to get next available time for a game
-const getNextGameTime = (game: any, todayDay: any): number => {
-  if (!todayDay) return Infinity;
-
-  const now = new Date();
-  const currentTime = now.getHours() * 60 + now.getMinutes();
-  
-  const openTime = convertTo24Hour(todayDay.open_time);
-  const closeTime = convertTo24Hour(todayDay.close_time);
-
-  // If market is open, next time is current time (prioritize open markets)
-  if (todayDay.market_status === 'open') {
-    return currentTime;
-  }
-
-  // If open time is in future, return open time
-  if (openTime > currentTime) {
-    return openTime;
-  }
-
-  // If close time is in future, return close time
-  if (closeTime > currentTime) {
-    return closeTime;
-  }
-
-  // If both times have passed, return Infinity (will be sorted last)
-  return Infinity;
-};
-
-// GET - Get today's market data with results, sorted by next available time
+// GET - Get today's market data with results
 export async function GET() {
   try {
     // Get current day name and formatted date
@@ -122,70 +156,49 @@ export async function GET() {
       if (!resultsMap.has(gameId)) {
         resultsMap.set(gameId, {});
       }
-      resultsMap.get(gameId)[result.session.toLowerCase()] = {
-        panna: result.panna,
-        digit: result.digit
-      };
+      
+      const sessionResults = resultsMap.get(gameId);
+      if (sessionResults && result.session) {
+        sessionResults[result.session.toLowerCase()] = {
+          panna: result.panna,
+          digit: result.digit
+        };
+      }
     });
 
     // Combine game data with today's timing and results
-    const todayData = games.map(game => {
-      const todayDay = game.days.find((day: { day: string; }) => day.day === todayDayName);
+    let todayData: TodayGameData[] = games.map(game => {
+      const todayDay = game.days.find((day: GameDay) => day.day === todayDayName);
       const gameResults = resultsMap.get(game._id.toString()) || {};
 
-      // Convert times to AM/PM format
-      const formattedOpenTime = todayDay ? convertToAMPM(todayDay.open_time) : null;
-      const formattedCloseTime = todayDay ? convertToAMPM(todayDay.close_time) : null;
-
-      // Calculate next game time for sorting
-      const nextGameTime = getNextGameTime(game, todayDay);
+      // Convert times to AM/PM format and get period info for sorting
+      const openTimeInfo = todayDay ? convertToAMPM(todayDay.open_time) : null;
+      const closeTimeInfo = todayDay ? convertToAMPM(todayDay.close_time) : null;
 
       return {
-        game_id: game._id,
+        game_id: game._id.toString(),
         game_name: game.game_name,
         is_active: game.is_active,
         market_timing: todayDay ? {
-          open_time: formattedOpenTime,
-          close_time: formattedCloseTime,
+          open_time: openTimeInfo?.formattedTime || null,
+          close_time: closeTimeInfo?.formattedTime || null,
           market_status: todayDay.market_status,
-          raw_open_time: todayDay.open_time, // Keep original for sorting
-          raw_close_time: todayDay.close_time // Keep original for sorting
+          period: openTimeInfo?.period || 'AM', // Use open time period for sorting
+          sortableTime: openTimeInfo?.sortableTime || '00:00' // Use for time-based sorting
         } : null,
         results: {
           open: gameResults.open || { panna: "***", digit: "*" },
           close: gameResults.close || { panna: "*", digit: "***" }
-        },
-        next_game_time: nextGameTime,
-        sort_priority: todayDay?.market_status === 'open' ? 0 : 
-                      nextGameTime < Infinity ? 1 : 2
+        }
       };
     });
 
-    // Sort games by:
-    // 1. Currently open markets first (highest priority)
-    // 2. Games with nearest upcoming time next
-    // 3. Games that have already ended last
-    const sortedData = todayData.sort((a, b) => {
-      // First, sort by priority (open markets first)
-      if (a.sort_priority !== b.sort_priority) {
-        return a.sort_priority - b.sort_priority;
-      }
-
-      // If both are open or both have upcoming times, sort by time
-      if (a.next_game_time !== b.next_game_time) {
-        return a.next_game_time - b.next_game_time;
-      }
-
-      // If times are equal, sort by game name
-      return a.game_name.localeCompare(b.game_name);
-    });
-
-    // Remove temporary sorting fields from response
-    const finalData = sortedData.map(({ next_game_time, sort_priority, ...game }) => game);
+    // Sort games by timing (AM first, then PM)
+    todayData = sortGamesByTiming(todayData);
 
     return NextResponse.json({
       status: true,
-      data: finalData,
+      data: todayData,
     });
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'Failed to fetch today\'s market data';
