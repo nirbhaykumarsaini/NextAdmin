@@ -204,7 +204,7 @@ const MainMarketSale = () => {
             <h1 className="text-2xl font-bold text-center">Main Market Sale Report</h1>
 
             {/* Sale Report Form */}
-            <div className="rounded-lg shadow-md p-6">
+            <div className="rounded-lg shadow-md">
                 <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-5 gap-6">
                     {/* Date Picker */}
                     <div className="space-y-2">
@@ -216,7 +216,7 @@ const MainMarketSale = () => {
                                     className="w-full justify-start text-left font-normal"
                                 >
                                     <FiCalendar className="mr-2 h-4 w-4" />
-                                    {date ? format(date, "PPP") : <span>Pick a date</span>}
+                                    {date ? format(date, "MMM dd, yyyy") : <span>Pick a date</span>}
                                 </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0 bg-white dark:bg-gray-900">
@@ -449,15 +449,6 @@ const MainMarketSale = () => {
                     {saleReport.redBreaket && renderSaleReportTable(saleReport.redBreaket, 'Red Bracket')}
                     {saleReport.fullSangamBid && renderSaleReportTable(saleReport.fullSangamBid, 'Full Sangam')}
 
-                    {/* {!saleReport.singleDigitBid && !saleReport.singlePannaBid && !saleReport.doublePannaBid &&
-                        !saleReport.triplePannaBid && !saleReport.spMotor && !saleReport.dpMotor &&
-                        !saleReport.spdptpMotor && !saleReport.oddEven && !saleReport.twoDigit &&
-                        !saleReport.choicePanna && !saleReport.digitBaseJodi && !saleReport.halfSangamBid &&
-                        !saleReport.jodiBid && !saleReport.redBreaket && !saleReport.fullSangamBid && (
-                            <div className="text-center text-gray-500 py-8">
-                                No sale data found for the selected criteria.
-                            </div>
-                        )} */}
                 </div>
             )}
         </div>
