@@ -95,7 +95,7 @@ export async function POST(request: Request) {
             const today = new Date();
             const formattedDate = today.toLocaleDateString('en-GB').split('/').join('-'); // DD-MM-YYYY format
             
-            let resultQuery: RequestQuery = {
+            const resultQuery: RequestQuery = {
                 game_id: bid.game_id,
                 result_date: formattedDate
             };
