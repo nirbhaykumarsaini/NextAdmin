@@ -5,7 +5,7 @@ import ApiError from '@/lib/errors/APiError';
 import MainMarketGame from '@/models/MainMarketGame';
 import AppUser from '@/models/AppUser';
 import Transaction from '@/models/Transaction';
-import mongoose, { Types,PipelineStage } from 'mongoose';
+import mongoose, { Types, PipelineStage } from 'mongoose';
 import AccountSetting from '@/models/AccountSettings';
 import MainMarketResult from '@/models/MainMarketResult';
 
@@ -27,11 +27,11 @@ interface MainMarketBidRequest {
     bids: BidRequest[];
 }
 
-interface RequestQuery{
+interface RequestQuery {
     game_id: string;
     result_date: string;
     session?: 'open' | 'close';
-} 
+}
 
 
 export async function POST(request: Request) {
@@ -83,7 +83,7 @@ export async function POST(request: Request) {
                 throw new ApiError('Game ID is required for each bid');
             }
 
-             const games = await MainMarketGame.findById(bid.game_id);
+            const games = await MainMarketGame.findById(bid.game_id);
             if (!games) {
                 throw new ApiError(`Game not found for ID: ${bid.game_id}`);
             }
@@ -94,46 +94,54 @@ export async function POST(request: Request) {
             // ✅ NEW: Check if result is already declared for this game
             const today = new Date();
             const formattedDate = today.toLocaleDateString('en-GB').split('/').join('-'); // DD-MM-YYYY format
-            
+
             const resultQuery: RequestQuery = {
                 game_id: bid.game_id,
                 result_date: formattedDate
             };
 
-              // For game types that have sessions, check specific session results
+            // For game types that have sessions, check specific session results
             if (bid.session && ['open', 'close'].includes(bid.session)) {
                 resultQuery.session = bid.session;
             }
 
-            // For full-sangam, check both open and close sessions
-            if (bid.game_type === 'full-sangam') {
-                const openResult = await MainMarketResult.findOne({
-                    game_id: bid.game_id,
-                    result_date: formattedDate,
-                    session: 'open'
-                });
-                
-                const closeResult = await MainMarketResult.findOne({
-                    game_id: bid.game_id,
-                    result_date: formattedDate,
-                    session: 'close'
-                });
+            // For other game types, check if result exists
+            const existingResult = await MainMarketResult.findOne(resultQuery);
 
-                if (openResult && closeResult) {
-                    throw new ApiError(`Bids are closed for this game. Results for both sessions have been declared.`);
-                }
-            } else {
-                // For other game types, check if result exists
-                const existingResult = await MainMarketResult.findOne(resultQuery);
-                
-                if (existingResult) {
-                    const sessionText = bid.session ? ` for ${bid.session} session` : '';
-                    throw new ApiError(`Bids are closed for this game. Result${sessionText} has been declared.`);
-                }
+            if (existingResult) {
+                const sessionText = bid.session ? ` for ${bid.session} session` : '';
+                throw new ApiError(`Bids are closed for this game. Result${sessionText} has been declared.`);
             }
 
+            // For full-sangam, check both open and close sessions
+            // if (bid.game_type === 'full-sangam') {
+            //     const openResult = await MainMarketResult.findOne({
+            //         game_id: bid.game_id,
+            //         result_date: formattedDate,
+            //         session: 'open'
+            //     });
+
+            //     const closeResult = await MainMarketResult.findOne({
+            //         game_id: bid.game_id,
+            //         result_date: formattedDate,
+            //         session: 'close'
+            //     });
+
+            //     if (openResult && closeResult) {
+            //         throw new ApiError(`Bids are closed for this game. Results for both sessions have been declared.`);
+            //     }
+            // } else {
+            //     // For other game types, check if result exists
+            //     const existingResult = await MainMarketResult.findOne(resultQuery);
+
+            //     if (existingResult) {
+            //         const sessionText = bid.session ? ` for ${bid.session} session` : '';
+            //         throw new ApiError(`Bids are closed for this game. Result${sessionText} has been declared.`);
+            //     }
+            // }
+
             // Session validation based on game type
-            if (!['full-sangam', 'jodi-digit', 'red-bracket','digit-base-jodi'].includes(bid.game_type)) {
+            if (!['full-sangam', 'jodi-digit', 'red-bracket', 'digit-base-jodi'].includes(bid.game_type)) {
                 if (!bid.session || !['open', 'close'].includes(bid.session)) {
                     throw new ApiError('Valid session is required (open/close) for this game type');
                 }
@@ -152,7 +160,7 @@ export async function POST(request: Request) {
                 delete bid.close_panna;
             }
 
-            if (['jodi-digit', 'red-bracket','digit-base-jodi'].includes(bid.game_type)) {
+            if (['jodi-digit', 'red-bracket', 'digit-base-jodi'].includes(bid.game_type)) {
                 if (!bid.digit || !/^[0-9]{2}$/.test(bid.digit)) {
                     throw new ApiError('Two digits (00-99) are required for this game type');
                 }
@@ -175,7 +183,7 @@ export async function POST(request: Request) {
                 if (!bid.session) {
                     throw new ApiError('Session is required for half-sangam');
                 }
-                
+
                 if (bid.session === 'open') {
                     if (!bid.digit || !/^[0-9]$/.test(bid.digit)) {
                         throw new ApiError('Single digit (0-9) is required for half-sangam in open session');
@@ -428,8 +436,8 @@ export async function PUT(request: Request) {
         if (panna !== undefined) {
             const currentGameType = game_type || originalBid.game_type;
             const pannaGames = [
-                'single-panna', 'double-panna', 'triple-panna', 
-                'sp-motor', 'dp-motor', 'sp-dp-tp-motor', 
+                'single-panna', 'double-panna', 'triple-panna',
+                'sp-motor', 'dp-motor', 'sp-dp-tp-motor',
                 'choice-panna', 'two-digit'
             ];
 
