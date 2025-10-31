@@ -150,7 +150,7 @@ const MainMarketSale = () => {
             <h1 className="text-2xl font-bold text-center">Starline Sale Report</h1>
 
             {/* Sale Report Form */}
-            <div className="rounded-lg shadow-md p-6">
+            <div className="rounded-lg shadow-md">
                 <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-4 gap-6">
                     {/* Date Picker */}
                     <div className="space-y-2">
@@ -162,7 +162,7 @@ const MainMarketSale = () => {
                                     className="w-full justify-start text-left font-normal"
                                 >
                                     <FiCalendar className="mr-2 h-4 w-4" />
-                                    {date ? format(date, "PPP") : <span>Pick a date</span>}
+                                    {date ? format(date, "MMM dd, yyyy") : <span>Pick a date</span>}
                                 </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0 bg-white dark:bg-gray-900">
@@ -209,7 +209,7 @@ const MainMarketSale = () => {
                             </SelectContent>
                         </Select>
                     </div>
-                    
+
                     {/* Submit Button */}
                     <div className="flex items-center mt-3">
                         <Button
@@ -290,7 +290,7 @@ const MainMarketSale = () => {
                                         </p>
                                     </div>
                                 </div>
-                            </div>                            
+                            </div>
 
                             {/* Total Items Card - Show total number of sale items if available */}
                             {saleReport && (
