@@ -159,7 +159,7 @@ const MainMarketSale = () => {
                             <PopoverTrigger asChild>
                                 <Button
                                     variant={"outline"}
-                                    className="w-full justify-start text-left font-normal"
+                                    className="w-full justify-start text-left font-normal text-xs"
                                 >
                                     <FiCalendar className="mr-2 h-4 w-4" />
                                     {date ? format(date, "MMM dd, yyyy") : <span>Pick a date</span>}
@@ -180,12 +180,12 @@ const MainMarketSale = () => {
                     <div className="space-y-2">
                         <Label>Game Name </Label>
                         <Select onValueChange={setGameId} value={gameId}>
-                            <SelectTrigger className='w-full'>
+                            <SelectTrigger className='w-full text-xs'>
                                 <SelectValue placeholder="Select Game" />
                             </SelectTrigger>
                             <SelectContent className='bg-white dark:bg-gray-900'>
                                 {games.map((game) => (
-                                    <SelectItem key={game._id} value={game._id}>
+                                    <SelectItem className='text-xs' key={game._id} value={game._id}>
                                         {game.game_name}
                                     </SelectItem>
                                 ))}
@@ -197,12 +197,12 @@ const MainMarketSale = () => {
                     <div className="space-y-2">
                         <Label>Game Type *</Label>
                         <Select onValueChange={setGameType} value={gameType}>
-                            <SelectTrigger className='w-full'>
+                            <SelectTrigger className='w-full text-xs'>
                                 <SelectValue placeholder="Select Game Type" />
                             </SelectTrigger>
                             <SelectContent className='bg-white dark:bg-gray-900'>
                                 {gameTypes.map((gametype) => (
-                                    <SelectItem key={gametype.value} value={gametype.value}>
+                                    <SelectItem className='text-xs' key={gametype.value} value={gametype.value}>
                                         {gametype.label}
                                     </SelectItem>
                                 ))}
@@ -214,7 +214,7 @@ const MainMarketSale = () => {
                     <div className="flex items-center mt-3">
                         <Button
                             type="submit"
-                            className="w-full"
+                            className="w-full text-xs"
                             disabled={loading}
                         >
                             {loading ? (
