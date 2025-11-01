@@ -149,7 +149,7 @@ const MainMarketSale = () => {
             <h1 className="text-2xl font-bold text-center">Galidisawar Sale Report</h1>
 
             {/* Sale Report Form */}
-            <div className="rounded-lg shadow-md p-6">
+            <div className="rounded-lg shadow-md">
                 <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-4 gap-3">
                     {/* Date Picker */}
                     <div className="space-y-2">
