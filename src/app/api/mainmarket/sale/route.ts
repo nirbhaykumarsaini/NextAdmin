@@ -2,8 +2,6 @@ import { NextResponse } from 'next/server';
 import dbConnect from '@/config/db';
 import MainMarketBid from '@/models/MainMarketBid';
 import mongoose, { Types } from 'mongoose';
-import SingleDigit from '@/models/SingleDigit';
-import JodiDigit from '@/models/JodiDigit';
 import SinglePanna from '@/models/SinglePanna';
 import DoublePanna from '@/models/DoublePanna';
 import TriplePanna from '@/models/TriplePanna';
@@ -28,6 +26,13 @@ interface DigitReportItem {
 interface GameTypeResult {
     [key: string]: DigitReportItem[];
 }
+
+// Define types for aggregation pipeline stages
+type AggregationStage = 
+    | { $match: object }
+    | { $unwind: string }
+    | { $group: object }
+    | { $project: object };
 
 export async function POST(request: Request) {
     try {
@@ -129,10 +134,10 @@ export async function POST(request: Request) {
                 matchConditions['bids.session'] = sess.toLowerCase();
             }
 
-            let aggregationPipeline: any[] = [
-                { $match: matchConditions as any },
+            const aggregationPipeline: AggregationStage[] = [
+                { $match: matchConditions },
                 { $unwind: '$bids' },
-                { $match: matchConditions as any }
+                { $match: matchConditions }
             ];
 
             // Special handling for different game types
@@ -192,7 +197,7 @@ export async function POST(request: Request) {
                 );
             } else {
                 // For other game types
-                let groupField: string | Record<string, unknown>;
+                let groupField: string;
                 
                 switch (type) {
                     case 'single-digit':

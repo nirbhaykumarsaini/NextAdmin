@@ -111,7 +111,7 @@ const MainMarketSale = () => {
     useEffect(() => {
         if (saleReport) {
             const sections: ReportSection[] = [];
-            
+
             // Define all possible report sections with their keys and titles
             const sectionConfigs = [
                 { key: 'singleDigitBid', title: 'Single Digit' },
@@ -146,7 +146,7 @@ const MainMarketSale = () => {
             });
 
             setReportSections(sections);
-            
+
             // Set active tab to the first available section if there are sections
             if (sections.length > 0) {
                 setActiveTab(sections[0].key);
@@ -170,10 +170,10 @@ const MainMarketSale = () => {
         const container = tabsContainerRef.current;
         if (container) {
             const scrollAmount = 200; // Adjust this value as needed
-            const newScrollLeft = direction === 'left' 
+            const newScrollLeft = direction === 'left'
                 ? container.scrollLeft - scrollAmount
                 : container.scrollLeft + scrollAmount;
-            
+
             container.scrollTo({
                 left: newScrollLeft,
                 behavior: 'smooth'
@@ -188,7 +188,7 @@ const MainMarketSale = () => {
             container.addEventListener('scroll', checkScrollPosition);
             // Initial check
             checkScrollPosition();
-            
+
             return () => {
                 container.removeEventListener('scroll', checkScrollPosition);
             };
@@ -327,8 +327,8 @@ const MainMarketSale = () => {
             <h1 className="text-2xl font-bold text-center">Main Market Sale Report</h1>
 
             {/* Sale Report Form */}
-            <div className="rounded-lg shadow-md p-6">
-                <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-5 gap-6">
+            <div className="rounded-lg shadow-md ">
+                <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-5 gap-2">
                     {/* Date Picker */}
                     <div className="space-y-2">
                         <Label>Date</Label>
@@ -336,10 +336,10 @@ const MainMarketSale = () => {
                             <PopoverTrigger asChild>
                                 <Button
                                     variant={"outline"}
-                                    className="w-full justify-start text-left font-normal"
+                                    className="w-full justify-start text-left font-normal text-xs"
                                 >
                                     <FiCalendar className="mr-2 h-4 w-4" />
-                                    {date ? format(date, "PPP") : <span>Pick a date</span>}
+                                    {date ? format(date, "MMM dd, yyyy") : <span>Pick a date</span>}
                                 </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0 bg-white dark:bg-gray-900">
@@ -357,7 +357,7 @@ const MainMarketSale = () => {
                     <div className="space-y-2">
                         <Label>Game Name </Label>
                         <Select onValueChange={setGameId} value={gameId}>
-                            <SelectTrigger className='w-full'>
+                            <SelectTrigger className='w-full text-xs'>
                                 <SelectValue placeholder="Select Game" />
                             </SelectTrigger>
                             <SelectContent className='bg-white dark:bg-gray-900'>
@@ -374,10 +374,10 @@ const MainMarketSale = () => {
                     <div className="space-y-2">
                         <Label>Game Type *</Label>
                         <Select onValueChange={setGameType} value={gameType}>
-                            <SelectTrigger className='w-full'>
-                                <SelectValue placeholder="Select Game Type" />
+                            <SelectTrigger className='w-full text-xs'>
+                                <SelectValue placeholder="Select Game Type " />
                             </SelectTrigger>
-                            <SelectContent className='bg-white dark:bg-gray-900'>
+                            <SelectContent className='bg-white dark:bg-gray-900 '>
                                 {gameTypes.map((gametype) => (
                                     <SelectItem key={gametype.value} value={gametype.value}>
                                         {gametype.label}
@@ -391,7 +391,7 @@ const MainMarketSale = () => {
                     <div className="space-y-2">
                         <Label>Session</Label>
                         <Select onValueChange={setSession} value={session}>
-                            <SelectTrigger className='w-full'>
+                            <SelectTrigger className='w-full text-xs'>
                                 <SelectValue placeholder="Select Session" />
                             </SelectTrigger>
                             <SelectContent className='bg-white dark:bg-gray-900'>
@@ -408,7 +408,7 @@ const MainMarketSale = () => {
                     <div className="flex items-center mt-3">
                         <Button
                             type="submit"
-                            className="w-full"
+                            className="w-full text-xs"
                             disabled={loading}
                         >
                             {loading ? (
@@ -462,7 +462,7 @@ const MainMarketSale = () => {
                                     </div>
                                     <div className="space-y-1">
                                         <p className="text-sm font-medium text-muted-foreground">Game Type</p>
-                                        <p className="text-sm font-semibold text-foreground">
+                                        <p className="text-xs font-semibold text-foreground">
                                             {getGameTypeLabel(gameType)}
                                         </p>
                                     </div>
@@ -540,11 +540,10 @@ const MainMarketSale = () => {
                                     <button
                                         key={section.key}
                                         onClick={() => setActiveTab(section.key)}
-                                        className={`whitespace-nowrap py-2 px-1  font-medium text-sm transition-colors ${
-                                            activeTab === section.key
+                                        className={`whitespace-nowrap py-2 px-1  font-medium text-sm transition-colors ${activeTab === section.key
                                                 ? 'border-b-2 border-b-white'
                                                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
-                                        }`}
+                                            }`}
                                     >
                                         {section.title}
                                         <span className="ml-2 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100 py-0.5 px-2 rounded-full text-xs">
