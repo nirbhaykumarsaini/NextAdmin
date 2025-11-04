@@ -336,7 +336,7 @@ const MainMarketSale = () => {
                 </form>
 
                 {error && (
-                    <div className="mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+                     <div className="text-center text-sm text-red-400 rounded">
                         {error}
                     </div>
                 )}
