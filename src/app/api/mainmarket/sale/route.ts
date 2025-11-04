@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import dbConnect from '@/config/db';
 import MainMarketBid from '@/models/MainMarketBid';
-import mongoose, { Types } from 'mongoose';
+import mongoose, { Types, PipelineStage } from 'mongoose';
 import SinglePanna from '@/models/SinglePanna';
 import DoublePanna from '@/models/DoublePanna';
 import TriplePanna from '@/models/TriplePanna';
@@ -26,13 +26,6 @@ interface DigitReportItem {
 interface GameTypeResult {
     [key: string]: DigitReportItem[];
 }
-
-// Define types for aggregation pipeline stages
-type AggregationStage = 
-    | { $match: object }
-    | { $unwind: string }
-    | { $group: object }
-    | { $project: object };
 
 // Define types for model documents
 interface PannaDocument {
@@ -139,7 +132,7 @@ export async function POST(request: Request) {
                 matchConditions['bids.session'] = sess.toLowerCase();
             }
 
-            const aggregationPipeline: AggregationStage[] = [
+            const aggregationPipeline: PipelineStage[] = [
                 { $match: matchConditions },
                 { $unwind: '$bids' },
                 { $match: matchConditions }
@@ -157,7 +150,7 @@ export async function POST(request: Request) {
                             },
                             totalPoints: { $sum: '$bids.bid_amount' }
                         }
-                    },
+                    } as PipelineStage,
                     {
                         $project: {
                             digit: {
@@ -170,7 +163,7 @@ export async function POST(request: Request) {
                             point: '$totalPoints',
                             _id: 0
                         }
-                    }
+                    } as PipelineStage
                 );
             } else if (type === 'half-sangam') {
                 // For half-sangam: combine digit with panna based on session
@@ -185,7 +178,7 @@ export async function POST(request: Request) {
                             },
                             totalPoints: { $sum: '$bids.bid_amount' }
                         }
-                    },
+                    } as PipelineStage,
                     {
                         $project: {
                             digit: {
@@ -198,7 +191,7 @@ export async function POST(request: Request) {
                             point: '$totalPoints',
                             _id: 0
                         }
-                    }
+                    } as PipelineStage
                 );
             } else {
                 // For other game types
@@ -234,14 +227,14 @@ export async function POST(request: Request) {
                             _id: groupField,
                             totalPoints: { $sum: '$bids.bid_amount' }
                         }
-                    },
+                    } as PipelineStage,
                     {
                         $project: {
                             digit: { $toString: '$_id' },
                             point: '$totalPoints',
                             _id: 0
                         }
-                    }
+                    } as PipelineStage
                 );
             }
 
