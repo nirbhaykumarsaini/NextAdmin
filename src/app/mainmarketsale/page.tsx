@@ -215,7 +215,6 @@ const MainMarketSale = () => {
             'odd-even',
             'two-digit',
             'choice-panna',
-            'digit-base-jodi',
             'half-sangam',
             'all'
         ];
@@ -424,7 +423,7 @@ const MainMarketSale = () => {
                 </form>
 
                 {error && (
-                    <div className="mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+                    <div className="text-center text-sm text-red-400 rounded">
                         {error}
                     </div>
                 )}
@@ -447,6 +446,22 @@ const MainMarketSale = () => {
                                         <p className="text-sm font-medium text-muted-foreground">Date</p>
                                         <p className="text-sm font-semibold text-foreground">
                                             {date ? format(date, 'PPP') : 'All dates'}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                             <div className="rounded-lg border p-4 shadow-sm bg-white dark:bg-gray-800">
+                                <div className="flex items-center space-x-2">
+                                    <div className="flex-shrink-0 rounded-full bg-blue-100 p-2 dark:bg-blue-900/20">
+                                        <svg className="h-4 w-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                                        </svg>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <p className="text-sm font-medium text-muted-foreground">Game</p>
+                                        <p className="text-sm font-semibold text-foreground">
+                                            {gameId ? getGameName(gameId) : 'All games'}
                                         </p>
                                     </div>
                                 </div>
@@ -541,8 +556,8 @@ const MainMarketSale = () => {
                                         key={section.key}
                                         onClick={() => setActiveTab(section.key)}
                                         className={`whitespace-nowrap py-2 px-1  font-medium text-sm transition-colors ${activeTab === section.key
-                                                ? 'border-b-2 border-b-white'
-                                                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+                                            ? 'border-b-2 border-b-white'
+                                            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
                                             }`}
                                     >
                                         {section.title}

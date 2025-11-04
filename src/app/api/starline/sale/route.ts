@@ -1,12 +1,14 @@
 import { NextResponse } from 'next/server';
 import dbConnect from '@/config/db';
 import StarlineBid from '@/models/StarlineBid';
-import mongoose, { Types } from 'mongoose';
+import mongoose, { Types, PipelineStage } from 'mongoose';
+import SinglePanna from '@/models/SinglePanna';
+import DoublePanna from '@/models/DoublePanna';
+import TriplePanna from '@/models/TriplePanna';
 
 // Define types for the aggregation match conditions
 interface MatchConditions {
     'bids.game_type': string;
-    'bids.bid_amount': { $gt: number };
     created_at?: {
         $gte: Date;
         $lte: Date;
@@ -22,6 +24,11 @@ interface DigitReportItem {
 
 interface GameTypeResult {
     [key: string]: DigitReportItem[];
+}
+
+// Define types for model documents
+interface PannaDocument {
+    digit: string | number;
 }
 
 export async function POST(request: Request) {
@@ -54,11 +61,10 @@ export async function POST(request: Request) {
             );
         }
 
-        // Function to get digit report for a specific game type (only where amount > 0)
+        // Function to get digit report for a specific game type (including all digits with 0 amounts)
         const getDigitReport = async (type: string): Promise<DigitReportItem[]> => {
             const matchConditions: MatchConditions = {
-                'bids.game_type': type,
-                'bids.bid_amount': { $gt: 0 } // Only include bids with amount > 0
+                'bids.game_type': type
             };
 
             if (bid_date) {
@@ -77,20 +83,32 @@ export async function POST(request: Request) {
                 matchConditions['bids.game_id'] = new mongoose.Types.ObjectId(game_id);
             }
 
-            const digitReport = await StarlineBid.aggregate([
-                { $match: matchConditions as MatchConditions }, // Cast to any for MongoDB aggregation
+            let groupField: string;
+            switch (type) {
+                case 'single-digit':
+                    groupField = '$bids.digit';
+                    break;
+                case 'single-panna':
+                case 'double-panna':
+                case 'triple-panna':
+                    groupField = '$bids.panna';
+                    break;
+                default:
+                    groupField = '$bids.digit';
+            }
+
+            const aggregationPipeline: PipelineStage[] = [
+                { $match: matchConditions },
                 { $unwind: '$bids' },
                 { $match: { 
-                    'bids.game_type': type,
-                    'bids.bid_amount': { $gt: 0 }
+                    'bids.game_type': type
                 }},
                 {
                     $group: {
-                        _id: '$bids.digit',
+                        _id: groupField,
                         totalPoints: { $sum: '$bids.bid_amount' }
                     }
                 },
-                { $match: { totalPoints: { $gt: 0 } } }, // Only include groups with total points > 0
                 {
                     $project: {
                         digit: { $toString: '$_id' },
@@ -98,27 +116,64 @@ export async function POST(request: Request) {
                         _id: 0
                     }
                 }
-            ]);
+            ];
 
+            const digitReport = await StarlineBid.aggregate(aggregationPipeline);
             return digitReport;
         };
 
-        // Function to process and merge digit reports (simplified since we only have non-zero data)
-        const processDigitReport = async (type: string, digitReport: DigitReportItem[]): Promise<DigitReportItem[]> => {
-            // Filter out any null or undefined digits
-            const filteredReport = digitReport.filter(item => 
-                item.digit !== null && item.digit !== undefined && item.digit !== ''
-            );
+        // Function to initialize all digits for a game type
+        const initializeAllDigits = async (type: string): Promise<DigitReportItem[]> => {
+            const getFormattedDigits = async (model: typeof SinglePanna | typeof DoublePanna | typeof TriplePanna): Promise<DigitReportItem[]> => {
+                const digits = await model.find({}, { digit: 1, _id: 0 });
+                return digits.map((p: PannaDocument) => ({
+                    digit: p.digit.toString(),
+                    point: 0
+                }));
+            };
+
+            switch (type) {
+                case 'single-digit':
+                    return Array.from({ length: 10 }, (_, i) => ({
+                        digit: i.toString(),
+                        point: 0
+                    }));
+                case 'single-panna':
+                    return await getFormattedDigits(SinglePanna);
+                case 'double-panna':
+                    return await getFormattedDigits(DoublePanna);
+                case 'triple-panna':
+                    return await getFormattedDigits(TriplePanna);
+                default:
+                    return [];
+            }
+        };
+
+        // Function to process and merge digit reports
+        const processDigitReport = async (type: string, digitReport: DigitReportItem[], allDigits: DigitReportItem[]): Promise<DigitReportItem[]> => {
+            // Create a map of digit to points from the actual bid data
+            const digitPointMap: { [key: string]: number } = {};
+            digitReport.forEach(item => {
+                if (item.digit !== null && item.digit !== undefined && item.digit !== '') {
+                    digitPointMap[item.digit] = item.point;
+                }
+            });
+
+            // Merge with all possible digits, using actual points where available, otherwise 0
+            const result = allDigits.map(digitItem => ({
+                ...digitItem,
+                point: digitPointMap[digitItem.digit] || 0
+            }));
 
             // Sort the results
-            filteredReport.sort((a, b) => {
+            result.sort((a, b) => {
                 if (!isNaN(Number(a.digit)) && !isNaN(Number(b.digit))) {
                     return Number(a.digit) - Number(b.digit);
                 }
                 return a.digit.localeCompare(b.digit);
             });
 
-            return filteredReport;
+            return result;
         };
 
         // Handle case when game_type is 'all'
@@ -132,24 +187,22 @@ export async function POST(request: Request) {
 
             const result: GameTypeResult = {};
 
-            // Process each game type in parallel
-            await Promise.all(gameTypesToProcess.map(async (type) => {
+            // Process each game type
+            for (const type of gameTypesToProcess) {
                 const digitReport = await getDigitReport(type);
-                const processedReport = await processDigitReport(type, digitReport);
+                const allDigits = await initializeAllDigits(type);
+                const processedReport = await processDigitReport(type, digitReport, allDigits);
 
-                // Only add to result if there are non-zero entries
-                if (processedReport.length > 0) {
-                    // Map game types to their result keys
-                    const resultKeyMap: Record<string, string> = {
-                        'single-digit': 'singleDigitBid',
-                        'single-panna': 'singlePannaBid',
-                        'double-panna': 'doublePannaBid',
-                        'triple-panna': 'triplePannaBid'
-                    };
+                // Map game types to their result keys
+                const resultKeyMap: Record<string, string> = {
+                    'single-digit': 'singleDigitBid',
+                    'single-panna': 'singlePannaBid',
+                    'double-panna': 'doublePannaBid',
+                    'triple-panna': 'triplePannaBid'
+                };
 
-                    result[resultKeyMap[type]] = processedReport;
-                }
-            }));
+                result[resultKeyMap[type]] = processedReport;
+            }
 
             return NextResponse.json({
                 status: true,
@@ -160,15 +213,8 @@ export async function POST(request: Request) {
 
         // Handle single game type case
         const digitReport = await getDigitReport(game_type);
-        const processedReport = await processDigitReport(game_type, digitReport);
-
-        // Only return if there are non-zero entries
-        if (processedReport.length === 0) {
-            return NextResponse.json({
-                status: true,
-                message: 'No starline sale data found for the selected criteria'
-            });
-        }
+        const allDigits = await initializeAllDigits(game_type);
+        const processedReport = await processDigitReport(game_type, digitReport, allDigits);
 
         // Map single game type to its result key
         const resultKeyMap: Record<string, string> = {
@@ -190,8 +236,7 @@ export async function POST(request: Request) {
         console.error('Error generating starline sale report:', error);
         const errorMessage = error instanceof Error ? error.message : 'Failed to generate starline sale report';
         return NextResponse.json(
-            { status: false, message: errorMessage },
-            { status: 500 }
+            { status: false, message: errorMessage }
         );
     }
 }
