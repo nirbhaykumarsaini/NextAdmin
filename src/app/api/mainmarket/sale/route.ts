@@ -2,11 +2,15 @@ import { NextResponse } from 'next/server';
 import dbConnect from '@/config/db';
 import MainMarketBid from '@/models/MainMarketBid';
 import mongoose, { Types } from 'mongoose';
+import SingleDigit from '@/models/SingleDigit';
+import JodiDigit from '@/models/JodiDigit';
+import SinglePanna from '@/models/SinglePanna';
+import DoublePanna from '@/models/DoublePanna';
+import TriplePanna from '@/models/TriplePanna';
 
 // Define types for the aggregation match conditions
 interface MatchConditions {
     'bids.game_type': string;
-    'bids.bid_amount': { $gt: number };
     created_at?: {
         $gte: Date;
         $lte: Date;
@@ -66,7 +70,7 @@ export async function POST(request: Request) {
             );
         }
 
-        // Validate session when game_type is 'all' or for specific game types
+        // Validate session for game types that require it
         const sessionRequiredGameTypes = [
             'single-digit',
             'single-panna',
@@ -78,7 +82,6 @@ export async function POST(request: Request) {
             'odd-even',
             'two-digit',
             'choice-panna',
-            'digit-base-jodi',
             'half-sangam',
             'all'
         ];
@@ -98,11 +101,10 @@ export async function POST(request: Request) {
             }
         }
 
-        // Function to get digit report for a specific game type (only where amount > 0)
+        // Function to get digit report for a specific game type
         const getDigitReport = async (type: string, sess?: string): Promise<DigitReportItem[]> => {
             const matchConditions: MatchConditions = {
-                'bids.game_type': type,
-                'bids.bid_amount': { $gt: 0 } // Only include bids with amount > 0
+                'bids.game_type': type
             };
 
             if (bid_date) {
@@ -121,87 +123,213 @@ export async function POST(request: Request) {
                 matchConditions['bids.game_id'] = new mongoose.Types.ObjectId(game_id);
             }
 
-            if (sess) {
+            // For session-less game types, don't add session filter
+            const sessionLessGameTypes = ['full-sangam', 'jodi-digit', 'red-bracket', 'digit-base-jodi'];
+            if (sess && !sessionLessGameTypes.includes(type)) {
                 matchConditions['bids.session'] = sess.toLowerCase();
             }
 
-            let groupField: string | Record<string, unknown>;
-            switch (type) {
-                case 'single-digit':
-                case 'odd-even':
-                case 'digit-base-jodi':
-                    groupField = {
-                        $cond: [
-                            { $eq: ['$bids.session', 'open'] },
-                            '$bids.digit',
-                            '$bids.digit'
-                        ]
-                    };
-                    break;
-                case 'jodi-digit':
-                case 'full-sangam':
-                case 'red-bracket':
-                    groupField = '$bids.digit';
-                    break;
-                case 'single-panna':
-                case 'double-panna':
-                case 'triple-panna':
-                case 'sp-motor':
-                case 'dp-motor':
-                case 'sp-dp-tp-motor':
-                case 'two-digit':
-                case 'choice-panna':
-                case 'half-sangam':
-                    groupField = {
-                        $cond: [
-                            { $eq: ['$bids.session', 'open'] },
-                            '$bids.panna',
-                            '$bids.panna'
-                        ]
-                    };
-                    break;
-                default:
-                    throw new Error('Unsupported game_type for this report');
+            let aggregationPipeline: any[] = [
+                { $match: matchConditions as any },
+                { $unwind: '$bids' },
+                { $match: matchConditions as any }
+            ];
+
+            // Special handling for different game types
+            if (type === 'full-sangam') {
+                // For full-sangam: combine open_panna and close_panna as "openPanna-closePanna"
+                aggregationPipeline.push(
+                    {
+                        $group: {
+                            _id: {
+                                openPanna: '$bids.open_panna',
+                                closePanna: '$bids.close_panna'
+                            },
+                            totalPoints: { $sum: '$bids.bid_amount' }
+                        }
+                    },
+                    {
+                        $project: {
+                            digit: {
+                                $concat: [
+                                    { $ifNull: ['$_id.openPanna', ''] },
+                                    '-',
+                                    { $ifNull: ['$_id.closePanna', ''] }
+                                ]
+                            },
+                            point: '$totalPoints',
+                            _id: 0
+                        }
+                    }
+                );
+            } else if (type === 'half-sangam') {
+                // For half-sangam: combine digit with panna based on session
+                aggregationPipeline.push(
+                    {
+                        $group: {
+                            _id: {
+                                digit: '$bids.digit',
+                                openPanna: '$bids.open_panna',
+                                closePanna: '$bids.close_panna',
+                                session: '$bids.session'
+                            },
+                            totalPoints: { $sum: '$bids.bid_amount' }
+                        }
+                    },
+                    {
+                        $project: {
+                            digit: {
+                                $cond: [
+                                    { $eq: ['$_id.session', 'open'] },
+                                    { $concat: [{ $toString: '$_id.digit' }, '-', { $ifNull: ['$_id.closePanna', ''] }] },
+                                    { $concat: [{ $toString: '$_id.digit' }, '-', { $ifNull: ['$_id.openPanna', ''] }] }
+                                ]
+                            },
+                            point: '$totalPoints',
+                            _id: 0
+                        }
+                    }
+                );
+            } else {
+                // For other game types
+                let groupField: string | Record<string, unknown>;
+                
+                switch (type) {
+                    case 'single-digit':
+                    case 'odd-even':
+                        groupField = '$bids.digit';
+                        break;
+                    case 'digit-base-jodi':
+                    case 'jodi-digit':
+                    case 'red-bracket':
+                        groupField = '$bids.digit';
+                        break;
+                    case 'single-panna':
+                    case 'double-panna':
+                    case 'triple-panna':
+                    case 'sp-motor':
+                    case 'dp-motor':
+                    case 'sp-dp-tp-motor':
+                    case 'two-digit':
+                    case 'choice-panna':
+                        groupField = '$bids.panna';
+                        break;
+                    default:
+                        groupField = '$bids.digit';
+                }
+
+                aggregationPipeline.push(
+                    {
+                        $group: {
+                            _id: groupField,
+                            totalPoints: { $sum: '$bids.bid_amount' }
+                        }
+                    },
+                    {
+                        $project: {
+                            digit: { $toString: '$_id' },
+                            point: '$totalPoints',
+                            _id: 0
+                        }
+                    }
+                );
             }
 
-            const digitReport = await MainMarketBid.aggregate([
-                { $match: matchConditions as MatchConditions }, // Cast to any for MongoDB aggregation
-                { $unwind: '$bids' },
-                { $match: matchConditions as MatchConditions }, // Cast to any for MongoDB aggregation
-                {
-                    $group: {
-                        _id: groupField,
-                        totalPoints: { $sum: '$bids.bid_amount' }
-                    }
-                },
-                { $match: { totalPoints: { $gt: 0 } } }, // Only include groups with total points > 0
-                {
-                    $project: {
-                        digit: { $toString: '$_id' },
-                        point: '$totalPoints',
-                        _id: 0
-                    }
-                }
-            ]);
-
+            const digitReport = await MainMarketBid.aggregate(aggregationPipeline);
             return digitReport;
         };
 
-        // Function to process and merge digit reports (simplified since we only have non-zero data)
-        const processDigitReport = async (type: string, digitReport: DigitReportItem[]): Promise<DigitReportItem[]> => {
-            const filteredReport = digitReport.filter(item => 
-                item.digit !== null && item.digit !== undefined && item.digit !== ''
-            );
+        // Function to initialize all digits for a game type
+        const initializeAllDigits = async (type: string): Promise<DigitReportItem[]> => {
+            const getFormattedDigits = async (model: any): Promise<DigitReportItem[]> => {
+                const digits = await model.find({}, { digit: 1, _id: 0 });
+                return digits.map((p: any) => ({
+                    digit: p.digit.toString(),
+                    point: 0
+                }));
+            };
+
+            switch (type) {
+                case 'single-digit':
+                case 'odd-even':
+                    return Array.from({ length: 10 }, (_, i) => ({
+                        digit: i.toString(),
+                        point: 0
+                    }));
+                case 'jodi-digit':
+                case 'red-bracket':
+                case 'digit-base-jodi':
+                    return Array.from({ length: 100 }, (_, i) => ({
+                        digit: i.toString().padStart(2, '0'),
+                        point: 0
+                    }));
+                case 'single-panna':
+                case 'sp-motor':
+                    return await getFormattedDigits(SinglePanna);
+                case 'double-panna':
+                case 'dp-motor':
+                    return await getFormattedDigits(DoublePanna);
+                case 'triple-panna':
+                    return await getFormattedDigits(TriplePanna);
+                case 'sp-dp-tp-motor':
+                case 'two-digit':
+                case 'choice-panna':
+                    const singlePannas = await getFormattedDigits(SinglePanna);
+                    const doublePannas = await getFormattedDigits(DoublePanna);
+                    const triplePannas = await getFormattedDigits(TriplePanna);
+                    const combinedPannas = [...singlePannas, ...doublePannas, ...triplePannas];
+                    const uniqueDigitsMap = new Map();
+                    combinedPannas.forEach(item => {
+                        uniqueDigitsMap.set(item.digit, item);
+                    });
+                    return Array.from(uniqueDigitsMap.values());
+                case 'half-sangam':
+                case 'full-sangam':
+                    // For sangam types, return empty array - we'll only show actual bids
+                    return [];
+                default:
+                    return [];
+            }
+        };
+
+        // Function to process and merge digit reports
+        const processDigitReport = async (type: string, digitReport: DigitReportItem[], allDigits: DigitReportItem[]): Promise<DigitReportItem[]> => {
+            // For sangam types, only return actual bids (no zeros)
+            if (type === 'full-sangam' || type === 'half-sangam') {
+                const filteredReport = digitReport.filter(item => 
+                    item.digit !== null && item.digit !== undefined && item.digit !== '' && item.point > 0
+                );
+                
+                // Sort the results
+                filteredReport.sort((a, b) => {
+                    return a.digit.localeCompare(b.digit);
+                });
+
+                return filteredReport;
+            }
+
+            // For other game types, return all possible digits with actual points or 0
+            const digitPointMap: { [key: string]: number } = {};
+            digitReport.forEach(item => {
+                if (item.digit !== null && item.digit !== undefined && item.digit !== '') {
+                    digitPointMap[item.digit] = item.point;
+                }
+            });
+
+            const result = allDigits.map(digitItem => ({
+                ...digitItem,
+                point: digitPointMap[digitItem.digit] || 0
+            }));
 
             // Sort the results
-            filteredReport.sort((a, b) => {
+            result.sort((a, b) => {
                 if (!isNaN(Number(a.digit)) && !isNaN(Number(b.digit))) {
                     return Number(a.digit) - Number(b.digit);
                 }
                 return a.digit.localeCompare(b.digit);
             });
 
-            return filteredReport;
+            return result;
         };
 
         // Handle case when game_type is 'all'
@@ -226,35 +354,42 @@ export async function POST(request: Request) {
 
             const result: GameTypeResult = {};
 
-            // Process each game type in parallel
-            await Promise.all(gameTypesToProcess.map(async (type) => {
-                const digitReport = await getDigitReport(type, session);
-                const processedReport = await processDigitReport(type, digitReport);
-
-                // Only add to result if there are non-zero entries
-                if (processedReport.length > 0) {
-                    // Map game types to their result keys
-                    const resultKeyMap: Record<string, string> = {
-                        'single-digit': 'singleDigitBid',
-                        'single-panna': 'singlePannaBid',
-                        'double-panna': 'doublePannaBid',
-                        'triple-panna': 'triplePannaBid',
-                        'sp-motor': 'spMotor',
-                        'dp-motor': 'dpMotor',
-                        'sp-dp-tp-motor': 'spdptpMotor',
-                        'odd-even': 'oddEven',
-                        'two-digit': 'twoDigit',
-                        'choice-panna': 'choicePanna',
-                        'digit-base-jodi': 'digitBaseJodi',
-                        'full-sangam': 'fullSangamBid',
-                        'half-sangam': 'halfSangamBid',
-                        'jodi-digit': 'jodiBid',
-                        'red-bracket': 'redBreaket'
-                    };
-
-                    result[resultKeyMap[type]] = processedReport;
+            // Process each game type
+            for (const type of gameTypesToProcess) {
+                let digitReport: DigitReportItem[] = [];
+                
+                if (['full-sangam', 'jodi-digit', 'red-bracket', 'digit-base-jodi'].includes(type)) {
+                    // For session-less game types, get data without session filter
+                    digitReport = await getDigitReport(type);
+                } else {
+                    // For other game types, use the provided session
+                    digitReport = await getDigitReport(type, session);
                 }
-            }));
+                
+                const allDigits = await initializeAllDigits(type);
+                const processedReport = await processDigitReport(type, digitReport, allDigits);
+
+                // Map game types to their result keys
+                const resultKeyMap: Record<string, string> = {
+                    'single-digit': 'singleDigitBid',
+                    'single-panna': 'singlePannaBid',
+                    'double-panna': 'doublePannaBid',
+                    'triple-panna': 'triplePannaBid',
+                    'sp-motor': 'spMotor',
+                    'dp-motor': 'dpMotor',
+                    'sp-dp-tp-motor': 'spdptpMotor',
+                    'odd-even': 'oddEven',
+                    'two-digit': 'twoDigit',
+                    'choice-panna': 'choicePanna',
+                    'digit-base-jodi': 'digitBaseJodi',
+                    'full-sangam': 'fullSangamBid',
+                    'half-sangam': 'halfSangamBid',
+                    'jodi-digit': 'jodiBid',
+                    'red-bracket': 'redBreaket'
+                };
+
+                result[resultKeyMap[type]] = processedReport;
+            }
 
             return NextResponse.json({
                 status: true,
@@ -264,16 +399,18 @@ export async function POST(request: Request) {
         }
 
         // Handle single game type case
-        const digitReport = await getDigitReport(game_type, session);
-        const processedReport = await processDigitReport(game_type, digitReport);
-
-        // Only return if there are non-zero entries
-        if (processedReport.length === 0) {
-            return NextResponse.json({
-                status: true,
-                message: 'No sale data found for the selected criteria'
-            });
+        let digitReport: DigitReportItem[] = [];
+        
+        if (['full-sangam', 'jodi-digit', 'red-bracket', 'digit-base-jodi'].includes(game_type)) {
+            // For session-less game types, get data without session filter
+            digitReport = await getDigitReport(game_type);
+        } else {
+            // For other game types, use the provided session
+            digitReport = await getDigitReport(game_type, session);
         }
+        
+        const allDigits = await initializeAllDigits(game_type);
+        const processedReport = await processDigitReport(game_type, digitReport, allDigits);
 
         // Map single game type to its result key
         const resultKeyMap: Record<string, string> = {
@@ -306,8 +443,7 @@ export async function POST(request: Request) {
         console.error('Error generating sale report:', error);
         const errorMessage = error instanceof Error ? error.message : 'Failed to generate sale report';
         return NextResponse.json(
-            { status: false, message: errorMessage },
-            { status: 500 }
+            { status: false, message: errorMessage }
         );
     }
 }

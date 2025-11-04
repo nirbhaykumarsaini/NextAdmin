@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import {
     Select,
@@ -24,7 +24,7 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover"
-import { FiCalendar, FiLoader } from 'react-icons/fi'
+import { FiCalendar, FiLoader, FiChevronLeft, FiChevronRight } from 'react-icons/fi'
 import { Label } from '@/components/ui/label'
 import { useAppDispatch, useAppSelector } from '@/hooks/redux'
 import { fetchGames } from '@/redux/slices/mainMarketSlice'
@@ -52,6 +52,14 @@ interface SaleReport {
     halfSangamBid?: SaleReportItem[];
     jodiBid?: SaleReportItem[];
     redBreaket?: SaleReportItem[];
+}
+
+interface ReportSection {
+    key: string;
+    title: string;
+    data: SaleReportItem[];
+    totalPoints: number;
+    totalItems: number;
 }
 
 const gameTypes = [
@@ -86,13 +94,106 @@ const MainMarketSale = () => {
     const [loading, setLoading] = useState(false);
     const [saleReport, setSaleReport] = useState<SaleReport | null>(null);
     const [error, setError] = useState("");
+    const [activeTab, setActiveTab] = useState<string>('summary');
+    const [reportSections, setReportSections] = useState<ReportSection[]>([]);
+    const [showLeftArrow, setShowLeftArrow] = useState(false);
+    const [showRightArrow, setShowRightArrow] = useState(true);
 
+    const tabsContainerRef = useRef<HTMLDivElement>(null);
     const dispatch = useAppDispatch();
     const { games } = useAppSelector(state => state.mainMarket);
 
     useEffect(() => {
         dispatch(fetchGames({}))
     }, [dispatch])
+
+    // Process sale report data into sections when saleReport changes
+    useEffect(() => {
+        if (saleReport) {
+            const sections: ReportSection[] = [];
+            
+            // Define all possible report sections with their keys and titles
+            const sectionConfigs = [
+                { key: 'singleDigitBid', title: 'Single Digit' },
+                { key: 'singlePannaBid', title: 'Single Panna' },
+                { key: 'doublePannaBid', title: 'Double Panna' },
+                { key: 'triplePannaBid', title: 'Triple Panna' },
+                { key: 'spMotor', title: 'SP Motor' },
+                { key: 'dpMotor', title: 'DP Motor' },
+                { key: 'spdptpMotor', title: 'SP/DP/TP Motor' },
+                { key: 'oddEven', title: 'Odd Even' },
+                { key: 'twoDigit', title: 'Two Digit' },
+                { key: 'choicePanna', title: 'Choice Panna' },
+                { key: 'digitBaseJodi', title: 'Digit Base Jodi' },
+                { key: 'halfSangamBid', title: 'Half Sangam' },
+                { key: 'jodiBid', title: 'Jodi Digit' },
+                { key: 'redBreaket', title: 'Red Bracket' },
+                { key: 'fullSangamBid', title: 'Full Sangam' },
+            ];
+
+            sectionConfigs.forEach(config => {
+                const data = saleReport[config.key as keyof SaleReport] as SaleReportItem[];
+                if (data && data.length > 0) {
+                    const totalPoints = data.reduce((sum, item) => sum + (item.point || 0), 0);
+                    sections.push({
+                        key: config.key,
+                        title: config.title,
+                        data,
+                        totalPoints,
+                        totalItems: data.length
+                    });
+                }
+            });
+
+            setReportSections(sections);
+            
+            // Set active tab to the first available section if there are sections
+            if (sections.length > 0) {
+                setActiveTab(sections[0].key);
+            }
+        }
+    }, [saleReport]);
+
+    // Check scroll position to show/hide arrows
+    const checkScrollPosition = () => {
+        const container = tabsContainerRef.current;
+        if (container) {
+            setShowLeftArrow(container.scrollLeft > 0);
+            setShowRightArrow(
+                container.scrollLeft < container.scrollWidth - container.clientWidth
+            );
+        }
+    };
+
+    // Scroll tabs left or right
+    const scrollTabs = (direction: 'left' | 'right') => {
+        const container = tabsContainerRef.current;
+        if (container) {
+            const scrollAmount = 200; // Adjust this value as needed
+            const newScrollLeft = direction === 'left' 
+                ? container.scrollLeft - scrollAmount
+                : container.scrollLeft + scrollAmount;
+            
+            container.scrollTo({
+                left: newScrollLeft,
+                behavior: 'smooth'
+            });
+        }
+    };
+
+    // Add event listener for scroll
+    useEffect(() => {
+        const container = tabsContainerRef.current;
+        if (container) {
+            container.addEventListener('scroll', checkScrollPosition);
+            // Initial check
+            checkScrollPosition();
+            
+            return () => {
+                container.removeEventListener('scroll', checkScrollPosition);
+            };
+        }
+    }, [reportSections]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -171,12 +272,19 @@ const MainMarketSale = () => {
         return game ? game.game_name : 'Unknown Game';
     };
 
-    const renderSaleReportTable = (reportItems: SaleReportItem[] | undefined, title: string) => {
+    const renderSaleReportTable = (reportItems: SaleReportItem[], title: string) => {
         if (!reportItems || reportItems.length === 0) return null;
 
+        const totalPoints = reportItems.reduce((sum, item) => sum + (item.point || 0), 0);
+
         return (
-            <div className="mb-8">
-                <h3 className="text-lg font-semibold mb-4">{title}</h3>
+            <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                    <h3 className="text-lg font-semibold">{title}</h3>
+                    <div className="text-sm text-muted-foreground">
+                        Total: {reportItems.length} items, {totalPoints.toLocaleString()} points
+                    </div>
+                </div>
                 <div className="border rounded-lg overflow-hidden">
                     <Table>
                         <TableHeader>
@@ -189,7 +297,7 @@ const MainMarketSale = () => {
                             {reportItems.map((item, index) => (
                                 <TableRow key={index}>
                                     <TableCell className="font-medium">{item.digit}</TableCell>
-                                    <TableCell>{item.point}</TableCell>
+                                    <TableCell>{item.point.toLocaleString()}</TableCell>
                                 </TableRow>
                             ))}
                         </TableBody>
@@ -199,13 +307,28 @@ const MainMarketSale = () => {
         );
     };
 
+    const getActiveSectionData = () => {
+        if (activeTab === 'summary') {
+            return null;
+        }
+        return reportSections.find(section => section.key === activeTab);
+    };
+
+    const calculateOverallTotals = () => {
+        const totalItems = reportSections.reduce((sum, section) => sum + section.totalItems, 0);
+        const totalPoints = reportSections.reduce((sum, section) => sum + section.totalPoints, 0);
+        return { totalItems, totalPoints };
+    };
+
+    const { totalItems, totalPoints } = calculateOverallTotals();
+
     return (
         <div className="container mx-auto space-y-8">
             <h1 className="text-2xl font-bold text-center">Main Market Sale Report</h1>
 
             {/* Sale Report Form */}
-            <div className="rounded-lg shadow-md">
-                <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-5 gap-3">
+            <div className="rounded-lg shadow-md p-6">
+                <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-5 gap-6">
                     {/* Date Picker */}
                     <div className="space-y-2">
                         <Label>Date</Label>
@@ -213,10 +336,10 @@ const MainMarketSale = () => {
                             <PopoverTrigger asChild>
                                 <Button
                                     variant={"outline"}
-                                    className="w-full justify-start text-left text-xs font-normal"
+                                    className="w-full justify-start text-left font-normal"
                                 >
                                     <FiCalendar className="mr-2 h-4 w-4" />
-                                    {date ? format(date, "MMM dd, yyyy") : <span>Pick a date</span>}
+                                    {date ? format(date, "PPP") : <span>Pick a date</span>}
                                 </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0 bg-white dark:bg-gray-900">
@@ -234,12 +357,12 @@ const MainMarketSale = () => {
                     <div className="space-y-2">
                         <Label>Game Name </Label>
                         <Select onValueChange={setGameId} value={gameId}>
-                            <SelectTrigger className='w-full text-xs'>
+                            <SelectTrigger className='w-full'>
                                 <SelectValue placeholder="Select Game" />
                             </SelectTrigger>
-                            <SelectContent className='bg-white dark:bg-gray-900 text-xs'>
+                            <SelectContent className='bg-white dark:bg-gray-900'>
                                 {games.map((game) => (
-                                    <SelectItem className='text-xs' key={game._id} value={game._id}>
+                                    <SelectItem key={game._id} value={game._id}>
                                         {game.game_name}
                                     </SelectItem>
                                 ))}
@@ -251,12 +374,12 @@ const MainMarketSale = () => {
                     <div className="space-y-2">
                         <Label>Game Type *</Label>
                         <Select onValueChange={setGameType} value={gameType}>
-                            <SelectTrigger className='w-full text-xs'>
+                            <SelectTrigger className='w-full'>
                                 <SelectValue placeholder="Select Game Type" />
                             </SelectTrigger>
                             <SelectContent className='bg-white dark:bg-gray-900'>
                                 {gameTypes.map((gametype) => (
-                                    <SelectItem className='text-xs' key={gametype.value} value={gametype.value}>
+                                    <SelectItem key={gametype.value} value={gametype.value}>
                                         {gametype.label}
                                     </SelectItem>
                                 ))}
@@ -268,12 +391,12 @@ const MainMarketSale = () => {
                     <div className="space-y-2">
                         <Label>Session</Label>
                         <Select onValueChange={setSession} value={session}>
-                            <SelectTrigger className='w-full text-xs'>
+                            <SelectTrigger className='w-full'>
                                 <SelectValue placeholder="Select Session" />
                             </SelectTrigger>
                             <SelectContent className='bg-white dark:bg-gray-900'>
                                 {sessions.map((session) => (
-                                    <SelectItem className='text-xs' key={session.value} value={session.value}>
+                                    <SelectItem key={session.value} value={session.value}>
                                         {session.label}
                                     </SelectItem>
                                 ))}
@@ -285,7 +408,7 @@ const MainMarketSale = () => {
                     <div className="flex items-center mt-3">
                         <Button
                             type="submit"
-                            className="w-full text-xs"
+                            className="w-full"
                             disabled={loading}
                         >
                             {loading ? (
@@ -308,12 +431,12 @@ const MainMarketSale = () => {
             </div>
 
             {/* Sale Report Results */}
-            {saleReport && (
+            {saleReport && reportSections.length > 0 && (
                 <div className="rounded-lg border shadow-md p-6">
-                    {/* Display basic info about the report */}
-                    <div>
+                    {/* Report Summary Cards */}
+                    <div className="mb-6">
                         <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">Report Summary</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                             {/* Date Card */}
                             <div className="rounded-lg border p-4 shadow-sm bg-white dark:bg-gray-800">
                                 <div className="flex items-center space-x-2">
@@ -324,23 +447,6 @@ const MainMarketSale = () => {
                                         <p className="text-sm font-medium text-muted-foreground">Date</p>
                                         <p className="text-sm font-semibold text-foreground">
                                             {date ? format(date, 'PPP') : 'All dates'}
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Game Card */}
-                            <div className="rounded-lg border p-4 shadow-sm bg-white dark:bg-gray-800">
-                                <div className="flex items-center space-x-2">
-                                    <div className="flex-shrink-0 rounded-full bg-blue-100 p-2 dark:bg-blue-900/20">
-                                        <svg className="h-4 w-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                                        </svg>
-                                    </div>
-                                    <div className="space-y-1">
-                                        <p className="text-sm font-medium text-muted-foreground">Game</p>
-                                        <p className="text-sm font-semibold text-foreground">
-                                            {gameId ? getGameName(gameId) : 'All games'}
                                         </p>
                                     </div>
                                 </div>
@@ -363,92 +469,110 @@ const MainMarketSale = () => {
                                 </div>
                             </div>
 
-                            {/* Session Card - Only show if session exists */}
-                            {session && (
-                                <div className="rounded-lg border p-4 shadow-sm bg-white dark:bg-gray-800">
-                                    <div className="flex items-center space-x-2">
-                                        <div className="flex-shrink-0 rounded-full bg-orange-100 p-2 dark:bg-orange-900/20">
-                                            <svg className="h-4 w-4 text-orange-600 dark:text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                            </svg>
-                                        </div>
-                                        <div className="space-y-1">
-                                            <p className="text-sm font-medium text-muted-foreground">Session</p>
-                                            <p className="text-sm font-semibold text-foreground">
-                                                {getSessionLabel(session)}
-                                            </p>
-                                        </div>
+                            {/* Total Items Card */}
+                            <div className="rounded-lg border p-4 shadow-sm bg-white dark:bg-gray-800">
+                                <div className="flex items-center space-x-2">
+                                    <div className="flex-shrink-0 rounded-full bg-purple-100 p-2 dark:bg-purple-900/20">
+                                        <svg className="h-4 w-4 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                                        </svg>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <p className="text-sm font-medium text-muted-foreground">Total Items</p>
+                                        <p className="text-sm font-semibold text-foreground">
+                                            {totalItems.toLocaleString()}
+                                        </p>
                                     </div>
                                 </div>
-                            )}
+                            </div>
 
-                            {/* Total Items Card - Show total number of sale items if available */}
-                            {saleReport && (
-                                <div className="rounded-lg border p-4 shadow-sm bg-white dark:bg-gray-800">
-                                    <div className="flex items-center space-x-2">
-                                        <div className="flex-shrink-0 rounded-full bg-purple-100 p-2 dark:bg-purple-900/20">
-                                            <svg className="h-4 w-4 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                                            </svg>
-                                        </div>
-                                        <div className="space-y-1">
-                                            <p className="text-sm font-medium text-muted-foreground">Total Items</p>
-                                            <p className="text-sm font-semibold text-foreground">
-                                                {Object.values(saleReport).reduce((total, report) => {
-                                                    if (Array.isArray(report)) {
-                                                        return total + report.length;
-                                                    }
-                                                    return total;
-                                                }, 0)}
-                                            </p>
-                                        </div>
+                            {/* Total Points Card */}
+                            <div className="rounded-lg border p-4 shadow-sm bg-white dark:bg-gray-800">
+                                <div className="flex items-center space-x-2">
+                                    <div className="flex-shrink-0 rounded-full bg-amber-100 p-2 dark:bg-amber-900/20">
+                                        <svg className="h-4 w-4 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <p className="text-sm font-medium text-muted-foreground">Total Points</p>
+                                        <p className="text-sm font-semibold text-foreground">
+                                            {totalPoints.toLocaleString()}
+                                        </p>
                                     </div>
                                 </div>
-                            )}
-
-                            {/* Total Points Card - Show total points if available */}
-                            {saleReport && (
-                                <div className="rounded-lg border p-4 shadow-sm bg-white dark:bg-gray-800">
-                                    <div className="flex items-center space-x-2">
-                                        <div className="flex-shrink-0 rounded-full bg-amber-100 p-2 dark:bg-amber-900/20">
-                                            <svg className="h-4 w-4 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                            </svg>
-                                        </div>
-                                        <div className="space-y-1">
-                                            <p className="text-sm font-medium text-muted-foreground">Total Points</p>
-                                            <p className="text-sm font-semibold text-foreground">
-                                                {Object.values(saleReport).reduce((total, report) => {
-                                                    if (Array.isArray(report)) {
-                                                        return total + report.reduce((sum, item) => sum + (item.point || 0), 0);
-                                                    }
-                                                    return total;
-                                                }, 0).toLocaleString()}
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
+                            </div>
                         </div>
                     </div>
 
-                    {/* Render all available report sections */}
-                    {saleReport.singleDigitBid && renderSaleReportTable(saleReport.singleDigitBid, 'Single Digit')}
-                    {saleReport.singlePannaBid && renderSaleReportTable(saleReport.singlePannaBid, 'Single Panna')}
-                    {saleReport.doublePannaBid && renderSaleReportTable(saleReport.doublePannaBid, 'Double Panna')}
-                    {saleReport.triplePannaBid && renderSaleReportTable(saleReport.triplePannaBid, 'Triple Panna')}
-                    {saleReport.spMotor && renderSaleReportTable(saleReport.spMotor, 'SP Motor')}
-                    {saleReport.dpMotor && renderSaleReportTable(saleReport.dpMotor, 'DP Motor')}
-                    {saleReport.spdptpMotor && renderSaleReportTable(saleReport.spdptpMotor, 'SP/DP/TP Motor')}
-                    {saleReport.oddEven && renderSaleReportTable(saleReport.oddEven, 'Odd Even')}
-                    {saleReport.twoDigit && renderSaleReportTable(saleReport.twoDigit, 'Two Digit')}
-                    {saleReport.choicePanna && renderSaleReportTable(saleReport.choicePanna, 'Choice Panna')}
-                    {saleReport.digitBaseJodi && renderSaleReportTable(saleReport.digitBaseJodi, 'Digit Base Jodi')}
-                    {saleReport.halfSangamBid && renderSaleReportTable(saleReport.halfSangamBid, 'Half Sangam')}
-                    {saleReport.jodiBid && renderSaleReportTable(saleReport.jodiBid, 'Jodi Digit')}
-                    {saleReport.redBreaket && renderSaleReportTable(saleReport.redBreaket, 'Red Bracket')}
-                    {saleReport.fullSangamBid && renderSaleReportTable(saleReport.fullSangamBid, 'Full Sangam')}
+                    {/* Tabs Navigation with Arrows */}
+                    <div className="relative mb-6 mt-6">
+                        {/* Left Arrow */}
+                        {showLeftArrow && (
+                            <button
+                                onClick={() => scrollTabs('left')}
+                                className="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-full p-2 shadow-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                                aria-label="Scroll tabs left"
+                            >
+                                <FiChevronLeft className="h-4 w-4" />
+                            </button>
+                        )}
 
+                        {/* Right Arrow */}
+                        {showRightArrow && (
+                            <button
+                                onClick={() => scrollTabs('right')}
+                                className="absolute right-0 top-1/2 transform -translate-y-1/2 z-10 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-full p-2 shadow-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                                aria-label="Scroll tabs right"
+                            >
+                                <FiChevronRight className="h-4 w-4" />
+                            </button>
+                        )}
+
+                        {/* Tabs Container */}
+                        <div
+                            ref={tabsContainerRef}
+                            className=" dark:border-gray-700 overflow-x-auto scrollbar-hide"
+                            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                        >
+                            <nav className="flex space-x-8 min-w-max">
+                                {reportSections.map((section) => (
+                                    <button
+                                        key={section.key}
+                                        onClick={() => setActiveTab(section.key)}
+                                        className={`whitespace-nowrap py-2 px-1  font-medium text-sm transition-colors ${
+                                            activeTab === section.key
+                                                ? 'border-b-2 border-b-white'
+                                                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+                                        }`}
+                                    >
+                                        {section.title}
+                                        <span className="ml-2 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100 py-0.5 px-2 rounded-full text-xs">
+                                            {section.totalItems}
+                                        </span>
+                                    </button>
+                                ))}
+                            </nav>
+                        </div>
+
+                        {/* Hide scrollbar for Webkit browsers */}
+                        <style jsx>{`
+                            .scrollbar-hide::-webkit-scrollbar {
+                                display: none;
+                            }
+                        `}</style>
+                    </div>
+
+                    {/* Active Tab Content */}
+                    <div className="mt-4">
+                        {activeTab && getActiveSectionData() ? (
+                            renderSaleReportTable(getActiveSectionData()!.data, getActiveSectionData()!.title)
+                        ) : (
+                            <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                                Select a tab to view the report data
+                            </div>
+                        )}
+                    </div>
                 </div>
             )}
         </div>
