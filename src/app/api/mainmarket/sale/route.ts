@@ -34,6 +34,11 @@ type AggregationStage =
     | { $group: object }
     | { $project: object };
 
+// Define types for model documents
+interface PannaDocument {
+    digit: string | number;
+}
+
 export async function POST(request: Request) {
     try {
         await dbConnect();
@@ -246,9 +251,9 @@ export async function POST(request: Request) {
 
         // Function to initialize all digits for a game type
         const initializeAllDigits = async (type: string): Promise<DigitReportItem[]> => {
-            const getFormattedDigits = async (model: any): Promise<DigitReportItem[]> => {
+            const getFormattedDigits = async (model: typeof SinglePanna | typeof DoublePanna | typeof TriplePanna): Promise<DigitReportItem[]> => {
                 const digits = await model.find({}, { digit: 1, _id: 0 });
-                return digits.map((p: any) => ({
+                return digits.map((p: PannaDocument) => ({
                     digit: p.digit.toString(),
                     point: 0
                 }));
