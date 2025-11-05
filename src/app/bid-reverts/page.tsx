@@ -31,11 +31,26 @@ import { FiCalendar } from "react-icons/fi";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { useAppDispatch, useAppSelector } from "@/hooks/redux";
-
-// ✅ Import slices
 import { fetchGames as fetchMainGames } from "@/redux/slices/mainMarketSlice";
 import { fetchGames as fetchStarlineGames } from "@/redux/slices/starlineSlice";
 import { fetchGames as fetchGalidisawarGames } from "@/redux/slices/galidisawarSlice";
+
+
+interface Game {
+  _id: string;
+  game_name: string;
+}
+
+interface MarketSectionProps {
+  games: Game[];
+  gameId: string;
+  setGameId: (id: string) => void;
+  date: Date | undefined;
+  setDate: (date: Date | undefined) => void;
+  isLoading: boolean;
+  handleDeleteBids: () => void;
+  marketLabel: string;
+}
 
 export default function RevertBidsForm() {
   const [marketType, setMarketType] = useState("mainmarket");
@@ -196,7 +211,7 @@ function MarketSection({
   isLoading,
   handleDeleteBids,
   marketLabel,
-}: any) {
+}: MarketSectionProps) {
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -207,7 +222,7 @@ function MarketSection({
           </SelectTrigger>
           <SelectContent className="bg-white dark:bg-gray-900">
             {games?.length > 0 ? (
-              games.map((game: any) => (
+              games.map((game: Game) => (
                 <SelectItem key={game._id} value={game._id}>
                   {game.game_name}
                 </SelectItem>

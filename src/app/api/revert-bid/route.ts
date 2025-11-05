@@ -1,22 +1,44 @@
 import { NextResponse } from "next/server";
-import mongoose from "mongoose";
+import mongoose, { ClientSession } from "mongoose";
 import dbConnect from "@/config/db";
 import ApiError from "@/lib/errors/APiError";
 
-import AppUser from "@/models/AppUser";
-import Transaction from "@/models/Transaction";
-import MainMarketBid from "@/models/MainMarketBid";
-import StarlineBid from "@/models/StarlineBid";
-import GalidisawarBid from "@/models/GalidisawarBid";
+import AppUser, { IAppUser } from "@/models/AppUser";
+import Transaction, { ITransaction } from "@/models/Transaction";
+import MainMarketBid, { IMainMarketBid } from "@/models/MainMarketBid";
+import StarlineBid, { IStarlineBid } from "@/models/StarlineBid";
+import GalidisawarBid, { IGalidisawarBid } from "@/models/GalidisawarBid";
+
+// --- Define shared bid type ---
+interface IBid {
+  game_id: {
+    _id: mongoose.Types.ObjectId;
+    game_name?: string;
+  };
+  bid_amount: number;
+}
+
+type BidModelType = typeof MainMarketBid | typeof StarlineBid | typeof GalidisawarBid;
+
+interface RefundDetail {
+  user_id: mongoose.Types.ObjectId;
+  refunded_amount: number;
+  game_name: string;
+  transaction_id: mongoose.Types.ObjectId;
+}
 
 export async function POST(request: Request) {
-  const session = await mongoose.startSession();
+  const session: ClientSession = await mongoose.startSession();
   session.startTransaction();
 
   try {
     await dbConnect();
     const body = await request.json();
-    const { market_type, game_id, date } = body;
+    const { market_type, game_id, date } = body as {
+      market_type: string;
+      game_id: string;
+      date: string;
+    };
 
     if (!market_type || !game_id || !date) {
       throw new ApiError("market_type, game_id, and date are required");
@@ -31,7 +53,7 @@ export async function POST(request: Request) {
     const endOfDay = new Date(targetDate);
     endOfDay.setHours(23, 59, 59, 999);
 
-    let BidModel;
+    let BidModel: BidModelType;
     switch (market_type) {
       case "mainmarket":
         BidModel = MainMarketBid;
@@ -61,23 +83,20 @@ export async function POST(request: Request) {
       });
     }
 
-    const refundDetails: any[] = [];
+    const refundDetails: RefundDetail[] = [];
 
     for (const mainBid of mainBids) {
       const user = await AppUser.findById(mainBid.user_id).session(session);
       if (!user) continue;
 
       // Match only bids for this game
-      const matchingBids = mainBid.bids.filter(
-        (b: any) => b.game_id._id.toString() === gameObjectId.toString()
+      const matchingBids = (mainBid.bids as IBid[]).filter(
+        (b) => b.game_id._id.toString() === gameObjectId.toString()
       );
 
       if (matchingBids.length === 0) continue;
 
-      const totalRefund = matchingBids.reduce(
-        (sum: number, b: any) => sum + b.bid_amount,
-        0
-      );
+      const totalRefund = matchingBids.reduce((sum, b) => sum + b.bid_amount, 0);
 
       // ✅ Get game name for description
       const gameName = matchingBids[0]?.game_id?.game_name || "Unknown Game";
@@ -101,15 +120,15 @@ export async function POST(request: Request) {
       );
 
       // Remove refunded bids
-      mainBid.bids = mainBid.bids.filter(
-        (b: any) => b.game_id._id.toString() !== gameObjectId.toString()
+      (mainBid.bids as IBid[]) = (mainBid.bids as IBid[]).filter(
+        (b) => b.game_id._id.toString() !== gameObjectId.toString()
       );
 
       if (mainBid.bids.length === 0) {
         await BidModel.deleteOne({ _id: mainBid._id }).session(session);
       } else {
-        mainBid.total_amount = mainBid.bids.reduce(
-          (sum: number, b: any) => sum + b.bid_amount,
+        mainBid.total_amount = (mainBid.bids as IBid[]).reduce(
+          (sum, b) => sum + b.bid_amount,
           0
         );
         await mainBid.save({ session });
@@ -129,14 +148,16 @@ export async function POST(request: Request) {
     return NextResponse.json({
       status: true,
       message: "Bids reverted successfully",
-    //   data: refundDetails,
+      // data: refundDetails,
     });
-  } catch (error: any) {
+  } catch (error) {
     await session.abortTransaction();
     session.endSession();
 
     const message =
-      error instanceof ApiError ? error.message : error.message || "Failed to revert bids";
+      error instanceof ApiError
+        ? error.message
+        : (error as Error).message || "Failed to revert bids";
 
     return NextResponse.json({
       status: false,
