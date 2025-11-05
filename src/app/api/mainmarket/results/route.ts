@@ -206,7 +206,7 @@ export async function POST(request: NextRequest) {
       { status: false, message: errorMessage });
   }
 }
-// GET all results
+
 
 export async function GET(request: NextRequest) {
   try {
@@ -226,7 +226,7 @@ export async function GET(request: NextRequest) {
       .populate("game_id", "game_name"); // ensure model name matches
 
     // ✅ Safely handle cases where game_id is missing
-    const groupedResults = results.reduce((acc: Record<string, any>, result: any) => {
+    const groupedResults = results.reduce((acc: Record<string, GroupedResult>, result: any) => {
       const gameName = result?.game_id?.game_name || "Unknown Game";
       const key = `${result.result_date}-${gameName}`;
 
@@ -268,7 +268,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ status: false, message: errorMessage });
   }
 }
-
 
 async function deleteMainMarketResult(resultId: string, sessionType: 'open' | 'close') {
   if (!resultId || !mongoose.Types.ObjectId.isValid(resultId)) {

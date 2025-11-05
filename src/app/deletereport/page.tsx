@@ -20,7 +20,7 @@ export default function DeleteDataForm() {
 
   const endpointMap: Record<string, string> = {
     bids: "/api/delete/bids",
-    winners: "/api/delete/winners",
+    results: "/api/delete/results",
     withdrawals: "/api/delete/withdrawals",
     funds: "/api/delete/funds",
   }
@@ -31,7 +31,7 @@ export default function DeleteDataForm() {
       return
     }
 
-    if ((activeTab === "bids" || activeTab === "winners") && !marketType) {
+    if ((activeTab === "bids" || activeTab === "results") && !marketType) {
       toast.warning("Please select market type")
       return
     }
@@ -76,7 +76,7 @@ export default function DeleteDataForm() {
         <div className="overflow-x-auto">
           <TabsList className="flex w-max sm:w-full justify-start sm:justify-center mb-4 bg-white dark:bg-gray-800 rounded-lg shadow-sm p-1">
             <TabsTrigger value="bids" className="px-3 sm:px-4 py-2 text-sm sm:text-base">Bids</TabsTrigger>
-            <TabsTrigger value="winners" className="px-3 sm:px-4 py-2 text-sm sm:text-base">Winners</TabsTrigger>
+            <TabsTrigger value="results" className="px-3 sm:px-4 py-2 text-sm sm:text-base">Results</TabsTrigger>
             <TabsTrigger value="withdrawals" className="px-3 sm:px-4 py-2 text-sm sm:text-base">Withdrawals</TabsTrigger>
             <TabsTrigger value="funds" className="px-3 sm:px-4 py-2 text-sm sm:text-base">Funds</TabsTrigger>
           </TabsList>
@@ -85,7 +85,7 @@ export default function DeleteDataForm() {
         <TabsContent value={activeTab}>
           <CardContent className="flex flex-col items-center gap-4 sm:gap-6">
             {/* Market Type */}
-            {(activeTab === "bids" || activeTab === "winners") && (
+            {(activeTab === "bids" || activeTab === "results") && (
               <Select value={marketType} onValueChange={setMarketType}>
                 <SelectTrigger className="w-full sm:w-64">
                   <SelectValue placeholder="Select Market Type" />
@@ -135,7 +135,7 @@ export default function DeleteDataForm() {
                   isLoading ||
                   !fromDate ||
                   !toDate ||
-                  ((activeTab === "bids" || activeTab === "winners") && !marketType)
+                  ((activeTab === "bids" || activeTab === "results") && !marketType)
                 }
               >
                 {isLoading

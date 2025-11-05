@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
 import dbConnect from '@/config/db';
 import ApiError from '@/lib/errors/APiError';
-import MainMarketWinner from '@/models/MainMarketWinner';
-import StarlineWinner from '@/models/StarlineWinner';
-import GalidisawarWinner from '@/models/GalidisawarWinner';
+import MainMarketResult from '@/models/MainMarketResult';
+import StarlineResult from '@/models/StarlineResult';
+import GalidisawarResult from '@/models/GalidisawarResult';
 
 export async function POST(request: Request) {
     try {
@@ -33,7 +33,7 @@ export async function POST(request: Request) {
         // Delete bids based on market type - using created_at instead of createdAt
         switch (market_type) {
             case "mainmarket":
-                deleteResult = await MainMarketWinner.deleteMany({
+                deleteResult = await MainMarketResult.deleteMany({
                     createdAt: {
                         $gte: startDate,
                         $lte: endDate
@@ -43,7 +43,7 @@ export async function POST(request: Request) {
                 break;
 
             case "starline":
-                deleteResult = await StarlineWinner.deleteMany({
+                deleteResult = await StarlineResult.deleteMany({
                     createdAt: {
                         $gte: startDate,
                         $lte: endDate
@@ -53,7 +53,7 @@ export async function POST(request: Request) {
                 break;
 
             case "galidisawar":
-                deleteResult = await GalidisawarWinner.deleteMany({
+                deleteResult = await GalidisawarResult.deleteMany({
                     createdAt: {
                         $gte: startDate,
                         $lte: endDate
