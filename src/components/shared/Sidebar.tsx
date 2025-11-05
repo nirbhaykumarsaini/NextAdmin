@@ -138,6 +138,11 @@ export function Sidebar() {
       icon: <FiZap className="h-5 w-5" />,
       label: "Bid Revert",
     },
+     {
+      href: "/gametoggle",
+      icon: <FiZap className="h-5 w-5" />,
+      label: "Game ON/OFF",
+    },
     {
       label: "App Setting",
       icon: <FiSettings className="h-5 w-5" />,

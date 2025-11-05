@@ -3,6 +3,7 @@ import dbConnect from '@/config/db';
 import AppUser from '@/models/AppUser';
 import ApiError from '@/lib/errors/APiError';
 import mongoose from 'mongoose';
+import GameSettings from '@/models/GameSettings';
 
 export async function POST(request: Request) {
   try {
@@ -26,6 +27,10 @@ export async function POST(request: Request) {
       throw new ApiError('User not found');
     }
 
+    const settings = await GameSettings.findOne();
+    const galidisawar = settings?.galidisawar ?? false;
+    const starline = settings?.starline ?? false;
+
     return NextResponse.json({
       status: true,
       data: {
@@ -39,6 +44,8 @@ export async function POST(request: Request) {
         is_verified: user.is_verified ,
         batting: user.batting,
         balance: user.balance,
+        galidisawar,
+        starline,
       },
     });
 
