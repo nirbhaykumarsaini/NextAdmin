@@ -31,8 +31,8 @@ interface MainMarketResultDocument {
   panna: string;
   digit: string;
   _id: Types.ObjectId;
-  created_at?: Date;
-  updated_at?: Date;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 interface WinnerData {
@@ -207,69 +207,68 @@ export async function POST(request: NextRequest) {
   }
 }
 // GET all results
+
 export async function GET(request: NextRequest) {
   try {
     await connectDB();
 
     const { searchParams } = new URL(request.url);
-    const result_date = searchParams.get('result_date');
-    const game_id = searchParams.get('game_id');
+    const result_date = searchParams.get("result_date");
+    const game_id = searchParams.get("game_id");
 
-    let query = {};
-    if (result_date) {
-      query = { ...query, result_date };
-    }
-    if (game_id) {
-      query = { ...query, game_id };
-    }
+    const query: Record<string, any> = {};
+    if (result_date) query.result_date = result_date;
+    if (game_id) query.game_id = game_id;
 
-    // Get all results with proper typing
-    const results = await MainMarketResult.find(query).sort({ result_date: -1, created_at: -1 }).populate('game_id', 'game_name') as unknown as MainMarketResultDocument[];
+    // ✅ Use proper timestamps field (createdAt, not created_at)
+    const results = await MainMarketResult.find(query)
+      .sort({ result_date: -1, createdAt: -1 })
+      .populate("game_id", "game_name"); // ensure model name matches
 
-    // Group results by date and game
-    const groupedResults = results.reduce((acc: Record<string, GroupedResult>, result: MainMarketResultDocument) => {
-      const key = `${result.result_date}-${result.game_id.game_name}`;
+    // ✅ Safely handle cases where game_id is missing
+    const groupedResults = results.reduce((acc: Record<string, any>, result: any) => {
+      const gameName = result?.game_id?.game_name || "Unknown Game";
+      const key = `${result.result_date}-${gameName}`;
 
       if (!acc[key]) {
         acc[key] = {
           result_date: result.result_date,
-          game_name: result.game_id.game_name,
+          game_name: gameName,
           openSession: null,
-          closeSession: null
+          closeSession: null,
         };
       }
 
-      if (result.session === 'open') {
+      if (result.session === "open") {
         acc[key].openSession = {
           panna: result.panna,
           digit: result.digit,
-          _id: result._id
+          _id: result._id,
         };
-      } else if (result.session === 'close') {
+      } else if (result.session === "close") {
         acc[key].closeSession = {
           panna: result.panna,
           digit: result.digit,
-          _id: result._id
+          _id: result._id,
         };
       }
 
       return acc;
     }, {});
 
-    // Convert to array
     const groupedResultsArray = Object.values(groupedResults);
 
     return NextResponse.json({
       status: true,
-      data: groupedResultsArray
+      data: groupedResultsArray,
     });
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : 'Failed to retrieve results';
-    return NextResponse.json(
-      { status: false, message: errorMessage }
-    );
+    const errorMessage =
+      error instanceof Error ? error.message : "Failed to retrieve results";
+    return NextResponse.json({ status: false, message: errorMessage });
   }
 }
+
 
 async function deleteMainMarketResult(resultId: string, sessionType: 'open' | 'close') {
   if (!resultId || !mongoose.Types.ObjectId.isValid(resultId)) {

@@ -129,9 +129,9 @@ export function Sidebar() {
       ],
     },
     {
-      href: "/deletebidreport",
+      href: "/deletereport",
       icon: <FiZap className="h-5 w-5" />,
-      label: "Delete Bid Report",
+      label: "Delete Report",
     },
      {
       href: "/bid-reverts",

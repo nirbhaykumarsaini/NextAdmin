@@ -653,7 +653,7 @@ function UserDetailsContent() {
                     <div className="text-right text-sm text-muted-foreground">
                       <div className="flex items-center gap-1">
                         <Calendar className="h-3 w-3" />
-                        Last login: {formatDate(device.last_login)}
+                        Last Seen: {formatDate(device.last_login)}
                       </div>
                     </div>
                   </div>

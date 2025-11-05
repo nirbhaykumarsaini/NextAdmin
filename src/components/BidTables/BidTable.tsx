@@ -25,6 +25,8 @@ interface Bid {
   session: string;
   digit: string;
   panna: string;
+  close_panna: string;
+  open_panna: string;
   bid_amount: number;
   created_at: string;
 }
@@ -142,6 +144,8 @@ const Bids: React.FC<BidsProps> = ({ userId }) => {
               <TableHead>Session</TableHead>
               <TableHead>Digit</TableHead>
               <TableHead>Panna</TableHead>
+              <TableHead>Open Panna</TableHead>
+              <TableHead>ClosePanna</TableHead>
               <TableHead>Amount</TableHead>
             </TableRow>
           </TableHeader>
@@ -173,6 +177,8 @@ const Bids: React.FC<BidsProps> = ({ userId }) => {
                   </TableCell>
                   <TableCell>{bid.digit || '-'}</TableCell>
                   <TableCell>{bid.panna || '-'}</TableCell>
+                  <TableCell>{bid.close_panna || '-'}</TableCell>
+                  <TableCell>{bid.open_panna || '-'}</TableCell>
                   <TableCell className="font-medium">
                     {formatCurrency(bid.bid_amount)}
                   </TableCell>
