@@ -25,16 +25,12 @@ export async function POST(request: Request) {
             throw new ApiError('From date cannot be after to date');
         }
 
-        let deleteResult;
-        let deletedCount = 0;
-
-        deleteResult = await Fund.deleteMany({
+       const deleteResult = await Fund.deleteMany({
             created_at: {
                 $gte: startDate,
                 $lte: endDate
             }
         });
-        deletedCount = deleteResult.deletedCount;
 
         return NextResponse.json({
             status: true,
