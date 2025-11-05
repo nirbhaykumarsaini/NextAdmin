@@ -53,7 +53,7 @@ export default function GameToggleForm() {
   }
 
   return (
-    <Card className="w-full max-w-lg mx-auto mt-8 p-4 sm:p-6 border border-gray-200 shadow-sm">
+    <Card className="w-full max-w-lg mx-auto p-4 sm:p-6 border-0 bg-white dark:bg-gray-900">
       <CardHeader className="text-center">
         <CardTitle className="text-lg sm:text-xl font-semibold">
           Manage Game Availability
