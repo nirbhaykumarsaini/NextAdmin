@@ -133,6 +133,11 @@ export function Sidebar() {
       icon: <FiZap className="h-5 w-5" />,
       label: "Delete Bid Report",
     },
+     {
+      href: "/bid-reverts",
+      icon: <FiZap className="h-5 w-5" />,
+      label: "Bid Revert",
+    },
     {
       label: "App Setting",
       icon: <FiSettings className="h-5 w-5" />,
