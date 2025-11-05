@@ -216,17 +216,25 @@ export async function GET(request: NextRequest) {
     const result_date = searchParams.get("result_date");
     const game_id = searchParams.get("game_id");
 
-    const query: Record<string, any> = {};
+    // ✅ Strongly typed query
+    const query: Partial<{ result_date: string; game_id: string }> = {};
     if (result_date) query.result_date = result_date;
     if (game_id) query.game_id = game_id;
 
-    // ✅ Use proper timestamps field (createdAt, not created_at)
     const results = await MainMarketResult.find(query)
       .sort({ result_date: -1, createdAt: -1 })
-      .populate("game_id", "game_name"); // ensure model name matches
+      .populate("game_id", "game_name")
+      .lean<{
+        result_date: string;
+        session: string;
+        panna: string;
+        digit: string;
+        _id: Types.ObjectId;
+        game_id?: { game_name: string };
+      }[]>(); // ✅ Explicitly typed
 
-    // ✅ Safely handle cases where game_id is missing
-    const groupedResults = results.reduce((acc: Record<string, GroupedResult>, result: any) => {
+    // ✅ Type-safe reducer
+    const groupedResults = results.reduce<Record<string, GroupedResult>>((acc, result) => {
       const gameName = result?.game_id?.game_name || "Unknown Game";
       const key = `${result.result_date}-${gameName}`;
 
@@ -239,33 +247,22 @@ export async function GET(request: NextRequest) {
         };
       }
 
-      if (result.session === "open") {
-        acc[key].openSession = {
-          panna: result.panna,
-          digit: result.digit,
-          _id: result._id,
-        };
-      } else if (result.session === "close") {
-        acc[key].closeSession = {
-          panna: result.panna,
-          digit: result.digit,
-          _id: result._id,
-        };
-      }
+      const sessionData: SessionResult = {
+        panna: result.panna,
+        digit: result.digit,
+        _id: result._id,
+      };
+
+      if (result.session === "open") acc[key].openSession = sessionData;
+      else if (result.session === "close") acc[key].closeSession = sessionData;
 
       return acc;
     }, {});
 
-    const groupedResultsArray = Object.values(groupedResults);
-
-    return NextResponse.json({
-      status: true,
-      data: groupedResultsArray,
-    });
+    return NextResponse.json({ status: true, data: Object.values(groupedResults) });
   } catch (error: unknown) {
-    const errorMessage =
-      error instanceof Error ? error.message : "Failed to retrieve results";
-    return NextResponse.json({ status: false, message: errorMessage });
+    const message = error instanceof Error ? error.message : "Failed to retrieve results";
+    return NextResponse.json({ status: false, message });
   }
 }
 
