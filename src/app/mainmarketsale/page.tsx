@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useState, useRef } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import {
     Select,
@@ -24,7 +24,7 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover"
-import { FiCalendar, FiLoader, FiChevronLeft, FiChevronRight } from 'react-icons/fi'
+import { FiCalendar, FiLoader } from 'react-icons/fi'
 import { Label } from '@/components/ui/label'
 import { useAppDispatch, useAppSelector } from '@/hooks/redux'
 import { fetchGames } from '@/redux/slices/mainMarketSlice'
@@ -94,12 +94,8 @@ const MainMarketSale = () => {
     const [loading, setLoading] = useState(false);
     const [saleReport, setSaleReport] = useState<SaleReport | null>(null);
     const [error, setError] = useState("");
-    const [activeTab, setActiveTab] = useState<string>('summary');
     const [reportSections, setReportSections] = useState<ReportSection[]>([]);
-    const [showLeftArrow, setShowLeftArrow] = useState(false);
-    const [showRightArrow, setShowRightArrow] = useState(true);
 
-    const tabsContainerRef = useRef<HTMLDivElement>(null);
     const dispatch = useAppDispatch();
     const { games } = useAppSelector(state => state.mainMarket);
 
@@ -146,54 +142,8 @@ const MainMarketSale = () => {
             });
 
             setReportSections(sections);
-
-            // Set active tab to the first available section if there are sections
-            if (sections.length > 0) {
-                setActiveTab(sections[0].key);
-            }
         }
     }, [saleReport]);
-
-    // Check scroll position to show/hide arrows
-    const checkScrollPosition = () => {
-        const container = tabsContainerRef.current;
-        if (container) {
-            setShowLeftArrow(container.scrollLeft > 0);
-            setShowRightArrow(
-                container.scrollLeft < container.scrollWidth - container.clientWidth
-            );
-        }
-    };
-
-    // Scroll tabs left or right
-    const scrollTabs = (direction: 'left' | 'right') => {
-        const container = tabsContainerRef.current;
-        if (container) {
-            const scrollAmount = 200; // Adjust this value as needed
-            const newScrollLeft = direction === 'left'
-                ? container.scrollLeft - scrollAmount
-                : container.scrollLeft + scrollAmount;
-
-            container.scrollTo({
-                left: newScrollLeft,
-                behavior: 'smooth'
-            });
-        }
-    };
-
-    // Add event listener for scroll
-    useEffect(() => {
-        const container = tabsContainerRef.current;
-        if (container) {
-            container.addEventListener('scroll', checkScrollPosition);
-            // Initial check
-            checkScrollPosition();
-
-            return () => {
-                container.removeEventListener('scroll', checkScrollPosition);
-            };
-        }
-    }, [reportSections]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -237,7 +187,7 @@ const MainMarketSale = () => {
                 },
                 body: JSON.stringify({
                     bid_date: formattedDate,
-                    game_id: gameId || undefined,
+                    game_id: gameId === "all" ? undefined : gameId || undefined,
                     game_type: gameType,
                     session: session || undefined
                 }),
@@ -262,42 +212,87 @@ const MainMarketSale = () => {
         return gameTypes.find(gt => gt.value === value)?.label || value;
     };
 
-    const getSessionLabel = (value: string) => {
-        return sessions.find(s => s.value === value)?.label || value;
-    };
-
     const getGameName = (id: string) => {
         const game = games.find(g => g._id === id);
-        return game ? game.game_name : 'Unknown Game';
+        return game ? game.game_name : 'All';
     };
 
-    const renderSaleReportTable = (reportItems: SaleReportItem[], title: string) => {
-        if (!reportItems || reportItems.length === 0) return null;
+    const chunkArray = (array: any[], chunkSize: number) => {
+        const chunks = [];
+        for (let i = 0; i < array.length; i += chunkSize) {
+            chunks.push(array.slice(i, i + chunkSize));
+        }
+        return chunks;
+    };
 
-        const totalPoints = reportItems.reduce((sum, item) => sum + (item.point || 0), 0);
+    const renderWrappedTableForSection = (section: ReportSection) => {
+        if (!section.data || section.data.length === 0) return null;
+
+        // Split data into chunks of 10 items per row
+        const chunkSize = 10;
+        const dataChunks = chunkArray(section.data, chunkSize);
 
         return (
-            <div className="space-y-4">
+            <div className="space-y-4 mb-8" key={section.key}>
                 <div className="flex justify-between items-center">
-                    <h3 className="text-lg font-semibold">{title}</h3>
+                    <h3 className="text-lg font-semibold">{section.title}</h3>
                     <div className="text-sm text-muted-foreground">
-                        Total: {reportItems.length} items, {totalPoints.toLocaleString()} points
+                        Total: {section.totalItems} items, {section.totalPoints.toLocaleString()} points
                     </div>
                 </div>
+                
                 <div className="border rounded-lg overflow-hidden">
                     <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Digit/Panna</TableHead>
-                                <TableHead>Points</TableHead>
-                            </TableRow>
-                        </TableHeader>
                         <TableBody>
-                            {reportItems.map((item, index) => (
-                                <TableRow key={index}>
-                                    <TableCell className="font-medium">{item.digit}</TableCell>
-                                    <TableCell>{item.point.toLocaleString()}</TableCell>
-                                </TableRow>
+                            {dataChunks.map((chunk, chunkIndex) => (
+                                <React.Fragment key={`chunk-${chunkIndex}`}>
+                                    {/* Digit Row */}
+                                    <TableRow className="bg-muted/50">
+                                        <TableCell className="font-semibold text-center min-w-[80px]">
+                                            Digit
+                                        </TableCell>
+                                        {chunk.map((item, index) => (
+                                            <TableCell key={`digit-${index}`} className="text-center font-medium min-w-[80px]">
+                                                {item.digit}
+                                            </TableCell>
+                                        ))}
+                                        {/* Fill remaining cells if last chunk has fewer items */}
+                                        {chunkIndex === dataChunks.length - 1 && 
+                                            chunk.length < chunkSize && 
+                                            Array.from({ length: chunkSize - chunk.length }).map((_, index) => (
+                                                <TableCell key={`empty-digit-${index}`} className="text-center min-w-[80px]">
+                                                    -
+                                                </TableCell>
+                                            ))
+                                        }
+                                    </TableRow>
+                                    {/* Amount Row */}
+                                    <TableRow>
+                                        <TableCell className="font-semibold text-center min-w-[80px]">
+                                            Amount
+                                        </TableCell>
+                                        {chunk.map((item, index) => (
+                                            <TableCell key={`amount-${index}`} className="text-center min-w-[80px]">
+                                                {item.point.toLocaleString()}
+                                            </TableCell>
+                                        ))}
+                                        {/* Fill remaining cells if last chunk has fewer items */}
+                                        {chunkIndex === dataChunks.length - 1 && 
+                                            chunk.length < chunkSize && 
+                                            Array.from({ length: chunkSize - chunk.length }).map((_, index) => (
+                                                <TableCell key={`empty-amount-${index}`} className="text-center min-w-[80px]">
+                                                    -
+                                                </TableCell>
+                                            ))
+                                        }
+                                    </TableRow>
+                                    {/* Add spacing between chunks */}
+                                    {chunkIndex < dataChunks.length - 1 && (
+                                        <TableRow>
+                                            <TableCell colSpan={chunkSize + 1} className="p-2 bg-transparent"></TableCell>
+                                        </TableRow>
+                                    )}
+                                </React.Fragment>
                             ))}
                         </TableBody>
                     </Table>
@@ -306,11 +301,22 @@ const MainMarketSale = () => {
         );
     };
 
-    const getActiveSectionData = () => {
-        if (activeTab === 'summary') {
-            return null;
-        }
-        return reportSections.find(section => section.key === activeTab);
+    const renderAllTables = () => {
+        if (!reportSections || reportSections.length === 0) return null;
+
+        return (
+            <div className="space-y-6">
+                <div className="flex justify-between items-center">
+                    <h3 className="text-lg font-semibold">Complete Sale Report</h3>
+                    <div className="text-sm text-muted-foreground">
+                        Total Sections: {reportSections.length}
+                    </div>
+                </div>
+
+                {reportSections.map(section => renderWrappedTableForSection(section))}
+                
+            </div>
+        );
     };
 
     const calculateOverallTotals = () => {
@@ -360,6 +366,9 @@ const MainMarketSale = () => {
                                 <SelectValue placeholder="Select Game" />
                             </SelectTrigger>
                             <SelectContent className='bg-white dark:bg-gray-900'>
+                                 <SelectItem key="all" value="all">
+                                        All
+                                    </SelectItem>
                                 {games.map((game) => (
                                     <SelectItem key={game._id} value={game._id}>
                                         {game.game_name}
@@ -451,7 +460,7 @@ const MainMarketSale = () => {
                                 </div>
                             </div>
 
-                             <div className="rounded-lg border p-4 shadow-sm bg-white dark:bg-gray-800">
+                            <div className="rounded-lg border p-4 shadow-sm bg-white dark:bg-gray-800">
                                 <div className="flex items-center space-x-2">
                                     <div className="flex-shrink-0 rounded-full bg-blue-100 p-2 dark:bg-blue-900/20">
                                         <svg className="h-4 w-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -520,73 +529,8 @@ const MainMarketSale = () => {
                         </div>
                     </div>
 
-                    {/* Tabs Navigation with Arrows */}
-                    <div className="relative mb-6 mt-6">
-                        {/* Left Arrow */}
-                        {showLeftArrow && (
-                            <button
-                                onClick={() => scrollTabs('left')}
-                                className="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-full p-2 shadow-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                                aria-label="Scroll tabs left"
-                            >
-                                <FiChevronLeft className="h-4 w-4" />
-                            </button>
-                        )}
-
-                        {/* Right Arrow */}
-                        {showRightArrow && (
-                            <button
-                                onClick={() => scrollTabs('right')}
-                                className="absolute right-0 top-1/2 transform -translate-y-1/2 z-10 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-full p-2 shadow-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                                aria-label="Scroll tabs right"
-                            >
-                                <FiChevronRight className="h-4 w-4" />
-                            </button>
-                        )}
-
-                        {/* Tabs Container */}
-                        <div
-                            ref={tabsContainerRef}
-                            className=" dark:border-gray-700 overflow-x-auto scrollbar-hide"
-                            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-                        >
-                            <nav className="flex space-x-8 min-w-max">
-                                {reportSections.map((section) => (
-                                    <button
-                                        key={section.key}
-                                        onClick={() => setActiveTab(section.key)}
-                                        className={`whitespace-nowrap py-2 px-1  font-medium text-sm transition-colors ${activeTab === section.key
-                                            ? 'border-b-2 border-b-white'
-                                            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
-                                            }`}
-                                    >
-                                        {section.title}
-                                        <span className="ml-2 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100 py-0.5 px-2 rounded-full text-xs">
-                                            {section.totalItems}
-                                        </span>
-                                    </button>
-                                ))}
-                            </nav>
-                        </div>
-
-                        {/* Hide scrollbar for Webkit browsers */}
-                        <style jsx>{`
-                            .scrollbar-hide::-webkit-scrollbar {
-                                display: none;
-                            }
-                        `}</style>
-                    </div>
-
-                    {/* Active Tab Content */}
-                    <div className="mt-4">
-                        {activeTab && getActiveSectionData() ? (
-                            renderSaleReportTable(getActiveSectionData()!.data, getActiveSectionData()!.title)
-                        ) : (
-                            <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                                Select a tab to view the report data
-                            </div>
-                        )}
-                    </div>
+                    {/* All Tables Display */}
+                    {renderAllTables()}
                 </div>
             )}
         </div>

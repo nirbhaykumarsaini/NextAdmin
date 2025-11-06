@@ -151,6 +151,7 @@ export function Sidebar() {
         { href: "/footerlinks", label: "Footer Links" },
         { href: "/contactinfo", label: "Contact Info" },
         { href: "/manageupi", label: "Manage Upi" },
+        { href: "/manage-qr", label: "Manage QR" },
         { href: "/accountsettings", label: "Account Rules & Limits" },
       ],
     },

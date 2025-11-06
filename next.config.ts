@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 /** @type {import('next').NextConfig} */
-const nextConfig:NextConfig = {
+const nextConfig: NextConfig = {
   env: {
     MONGODB_URI: process.env.MONGODB_URI,
     JWT_SECRET: process.env.JWT_SECRET,
@@ -11,8 +11,20 @@ const nextConfig:NextConfig = {
     FIREBASE_CLIENT_EMAIL: process.env.FIREBASE_CLIENT_EMAIL,
     FIREBASE_PRIVATE_KEY: process.env.FIREBASE_PRIVATE_KEY,
   },
-  // If you're using static exports
-  output: 'standalone', // or 'export' depending on your setup
-}
 
-module.exports = nextConfig
+  images: {
+    remotePatterns: [
+      {
+        protocol: "http",
+        hostname: "localhost",
+        port: "3000",
+        pathname: "/**",
+      },
+    ],
+  },
+
+  // If you're using static exports or Docker
+  output: "standalone",
+};
+
+module.exports = nextConfig;
