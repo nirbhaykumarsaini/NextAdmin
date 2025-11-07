@@ -245,14 +245,14 @@ const ManageQR = () => {
               <p className="text-sm text-muted-foreground">
                 Supported formats: JPEG, PNG, WebP. Max size: 5MB
               </p>
-              {(previewUrl || qrData?.qr_code_url) && (
+              {(previewUrl || qrData?.qr_code) && (
                 <div className="mt-2">
                   <p className="text-sm text-muted-foreground mb-2">
                     {qrFile ? 'Preview:' : 'Current QR Code:'}
                   </p>
                   <div className="relative w-48 h-48 border-2 border-dashed border-gray-300 rounded-lg overflow-hidden">
                     <Image
-                      src={previewUrl || qrData?.qr_code_url || ''}
+                      src={previewUrl || qrData?.qr_code || ''}
                       alt="QR Code"
                       fill
                       className="object-contain p-2"
