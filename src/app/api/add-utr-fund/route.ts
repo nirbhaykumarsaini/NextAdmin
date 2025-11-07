@@ -5,7 +5,6 @@ import connectDB from '@/config/db';
 import UtrFund from '@/models/UtrFund';
 import Transaction from '@/models/Transaction';
 import ApiError from '@/lib/errors/APiError';
-import { Types } from 'mongoose';
 
 interface Query {
     status: string;
