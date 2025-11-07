@@ -4,11 +4,11 @@ import UtrFund from '@/models/UtrFund';
 import Transaction from '@/models/Transaction';
 import ApiError from '@/lib/errors/APiError';
 import { uploadToCloudinary } from '@/utils/cloudnary';
-import mongoose from 'mongoose';
+import mongoose, { Types } from 'mongoose';
 
 interface Query {
-    status: string;
-    user_id: string;
+    status?: string;
+    user_id?: Types.ObjectId;
 }
 // Add a new fund request 
 export async function POST(request: NextRequest) {
@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
         await connectDB();
 
         const formData = await request.formData();
-        const user_id = formData.get('user_id') as mongoose.Types.ObjectId;
+        const user_id = formData.get('user_id') as string;
         const amount = Number(formData.get('amount'));
         const utr_id = formData.get('utr_id') as string;
         const payment_image = formData.get('payment_image') as File;
@@ -83,12 +83,11 @@ export async function GET(request: NextRequest) {
         const status = searchParams.get('status');
         const user_id = searchParams.get('user_id');
 
-        const query: Query = {
-            status: '',
-            user_id: ''
-        };
+        const query: Query = {};
         if (status) query.status = status;
-        if (user_id) query.user_id = user_id;
+        if (user_id && mongoose.Types.ObjectId.isValid(user_id)) {
+            query.user_id = new mongoose.Types.ObjectId(user_id);
+        }
 
         const funds = await UtrFund.find(query)
             .populate('user_id', 'name mobile_number balance')
