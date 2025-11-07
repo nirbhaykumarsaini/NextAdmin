@@ -79,7 +79,7 @@ const MainMarketSale = () => {
     useEffect(() => {
         if (saleReport) {
             const sections: ReportSection[] = [];
-            
+
             // Define all possible report sections with their keys and titles
             const sectionConfigs = [
                 { key: 'singleDigitBid', title: 'Single Digit' },
@@ -156,19 +156,20 @@ const MainMarketSale = () => {
         return game ? game.game_name : 'All';
     };
 
-    const chunkArray = (array: any[], chunkSize: number) => {
-        const chunks = [];
+    const chunkArray = <T,>(array: T[], chunkSize: number): T[][] => {
+        const chunks: T[][] = [];
         for (let i = 0; i < array.length; i += chunkSize) {
             chunks.push(array.slice(i, i + chunkSize));
         }
         return chunks;
     };
 
+
     const renderHorizontalTable = (reportItems: SaleReportItem[], title: string, key: string) => {
         if (!reportItems || reportItems.length === 0) return null;
 
         const totalPoints = reportItems.reduce((sum, item) => sum + (item.point || 0), 0);
-        
+
         // Split data into chunks of 10 items per row
         const chunkSize = 10;
         const dataChunks = chunkArray(reportItems, chunkSize);
@@ -197,8 +198,8 @@ const MainMarketSale = () => {
                                             </TableCell>
                                         ))}
                                         {/* Fill remaining cells if last chunk has fewer items */}
-                                        {chunkIndex === dataChunks.length - 1 && 
-                                            chunk.length < chunkSize && 
+                                        {chunkIndex === dataChunks.length - 1 &&
+                                            chunk.length < chunkSize &&
                                             Array.from({ length: chunkSize - chunk.length }).map((_, index) => (
                                                 <TableCell key={`empty-digit-${key}-${chunkIndex}-${index}`} className="text-center min-w-[80px]">
                                                     -
@@ -217,8 +218,8 @@ const MainMarketSale = () => {
                                             </TableCell>
                                         ))}
                                         {/* Fill remaining cells if last chunk has fewer items */}
-                                        {chunkIndex === dataChunks.length - 1 && 
-                                            chunk.length < chunkSize && 
+                                        {chunkIndex === dataChunks.length - 1 &&
+                                            chunk.length < chunkSize &&
                                             Array.from({ length: chunkSize - chunk.length }).map((_, index) => (
                                                 <TableCell key={`empty-amount-${key}-${chunkIndex}-${index}`} className="text-center min-w-[80px]">
                                                     -
@@ -253,10 +254,10 @@ const MainMarketSale = () => {
                     </div>
                 </div>
 
-                {reportSections.map(section => 
+                {reportSections.map(section =>
                     renderHorizontalTable(section.data, section.title, section.key)
                 )}
-        
+
             </div>
         );
     };
@@ -309,8 +310,8 @@ const MainMarketSale = () => {
                             </SelectTrigger>
                             <SelectContent className='bg-white dark:bg-gray-900'>
                                 <SelectItem className='text-xs' key="all" value="all">
-                                        All
-                                    </SelectItem>
+                                    All
+                                </SelectItem>
                                 {games.map((game) => (
                                     <SelectItem className='text-xs' key={game._id} value={game._id}>
                                         {game.game_name}

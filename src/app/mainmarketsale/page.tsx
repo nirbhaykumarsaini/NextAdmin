@@ -217,13 +217,14 @@ const MainMarketSale = () => {
         return game ? game.game_name : 'All';
     };
 
-    const chunkArray = (array: any[], chunkSize: number) => {
-        const chunks = [];
+    const chunkArray = <T,>(array: T[], chunkSize: number): T[][] => {
+        const chunks: T[][] = [];
         for (let i = 0; i < array.length; i += chunkSize) {
             chunks.push(array.slice(i, i + chunkSize));
         }
         return chunks;
     };
+
 
     const renderWrappedTableForSection = (section: ReportSection) => {
         if (!section.data || section.data.length === 0) return null;
@@ -240,7 +241,7 @@ const MainMarketSale = () => {
                         Total: {section.totalItems} items, {section.totalPoints.toLocaleString()} points
                     </div>
                 </div>
-                
+
                 <div className="border rounded-lg overflow-hidden">
                     <Table>
                         <TableBody>
@@ -257,8 +258,8 @@ const MainMarketSale = () => {
                                             </TableCell>
                                         ))}
                                         {/* Fill remaining cells if last chunk has fewer items */}
-                                        {chunkIndex === dataChunks.length - 1 && 
-                                            chunk.length < chunkSize && 
+                                        {chunkIndex === dataChunks.length - 1 &&
+                                            chunk.length < chunkSize &&
                                             Array.from({ length: chunkSize - chunk.length }).map((_, index) => (
                                                 <TableCell key={`empty-digit-${index}`} className="text-center min-w-[80px]">
                                                     -
@@ -277,8 +278,8 @@ const MainMarketSale = () => {
                                             </TableCell>
                                         ))}
                                         {/* Fill remaining cells if last chunk has fewer items */}
-                                        {chunkIndex === dataChunks.length - 1 && 
-                                            chunk.length < chunkSize && 
+                                        {chunkIndex === dataChunks.length - 1 &&
+                                            chunk.length < chunkSize &&
                                             Array.from({ length: chunkSize - chunk.length }).map((_, index) => (
                                                 <TableCell key={`empty-amount-${index}`} className="text-center min-w-[80px]">
                                                     -
@@ -314,7 +315,7 @@ const MainMarketSale = () => {
                 </div>
 
                 {reportSections.map(section => renderWrappedTableForSection(section))}
-                
+
             </div>
         );
     };
@@ -366,9 +367,9 @@ const MainMarketSale = () => {
                                 <SelectValue placeholder="Select Game" />
                             </SelectTrigger>
                             <SelectContent className='bg-white dark:bg-gray-900'>
-                                 <SelectItem key="all" value="all">
-                                        All
-                                    </SelectItem>
+                                <SelectItem key="all" value="all">
+                                    All
+                                </SelectItem>
                                 {games.map((game) => (
                                     <SelectItem key={game._id} value={game._id}>
                                         {game.game_name}

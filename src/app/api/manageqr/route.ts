@@ -179,7 +179,7 @@ export async function PUT(request: NextRequest) {
             throw new ApiError('QR code not found', 404);
         }
 
-        let updateData: UpdateData = {
+        const updateData: UpdateData = {
             qr_code: ''
         };
 
