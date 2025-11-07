@@ -16,10 +16,7 @@ export async function GET() {
 
         return NextResponse.json({
             status: true,
-            data: {
-                upis,
-                qrcode
-            }
+            data: upis
 
         });
     } catch (error: unknown) {
