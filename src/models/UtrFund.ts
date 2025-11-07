@@ -2,7 +2,7 @@ import mongoose, { Schema, Types } from "mongoose";
 import "@/models/AppUser";
 import "@/models/Transaction";
 
-export interface IFund {
+export interface IUtrFund {
     user_id: Types.ObjectId;
     transaction_id: Types.ObjectId;
     amount: number;
@@ -14,7 +14,7 @@ export interface IFund {
 }
 
 
-const fundSchema = new Schema<IFund>(
+const fundSchema = new Schema<IUtrFund>(
     {
         user_id: {
             type: Schema.Types.ObjectId,
@@ -51,5 +51,5 @@ const fundSchema = new Schema<IFund>(
     }
 );
 
-const Fund = mongoose.models.Fund || mongoose.model<IFund>('Fund', fundSchema);
-export default Fund;
+const UtrFund = mongoose.models.UtrFund || mongoose.model<IUtrFund>('UtrFund', fundSchema);
+export default UtrFund;
