@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
 import connectDB from '@/config/db';
-import Fund from '@/models/Fund';
+import UtrFund from '@/models/UtrFund';
 import Transaction from '@/models/Transaction';
 import ApiError from '@/lib/errors/APiError';
 import { Types } from 'mongoose';
@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
         });
 
         // Create fund request
-        await Fund.create({
+        await UtrFund.create({
             user_id,
             transaction_id: transaction._id,
             amount,
@@ -102,7 +102,7 @@ export async function GET(request: NextRequest) {
         if (status) query.status = status;
         if (user_id) query.user_id = user_id;
 
-        const funds = await Fund.find(query)
+        const funds = await UtrFund.find(query)
             .populate('user_id', 'name mobile_number balance')
             .populate('transaction_id', 'status type amount description')
             .sort({ created_at: -1 });
