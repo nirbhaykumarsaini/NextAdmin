@@ -5,7 +5,12 @@ import connectDB from '@/config/db';
 import Fund from '@/models/Fund';
 import Transaction from '@/models/Transaction';
 import ApiError from '@/lib/errors/APiError';
+import { Types } from 'mongoose';
 
+interface Query {
+    status: string;
+    user_id: string;
+}
 // Add a new fund request 
 export async function POST(request: NextRequest) {
     try {
@@ -81,7 +86,7 @@ export async function POST(request: NextRequest) {
     }
 }
 
- //Get all fund requests (optional filter)
+//Get all fund requests (optional filter)
 export async function GET(request: NextRequest) {
     try {
         await connectDB();
@@ -90,7 +95,10 @@ export async function GET(request: NextRequest) {
         const status = searchParams.get('status');
         const user_id = searchParams.get('user_id');
 
-        const query: any = {};
+        const query: Query = {
+            status: '',
+            user_id: ''
+        };
         if (status) query.status = status;
         if (user_id) query.user_id = user_id;
 
