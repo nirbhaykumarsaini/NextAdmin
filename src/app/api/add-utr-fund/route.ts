@@ -5,6 +5,7 @@ import connectDB from '@/config/db';
 import UtrFund from '@/models/UtrFund';
 import Transaction from '@/models/Transaction';
 import ApiError from '@/lib/errors/APiError';
+import { uploadToCloudinary } from '@/utils/cloudnary';
 
 interface Query {
     status: string;
@@ -41,18 +42,7 @@ export async function POST(request: NextRequest) {
             throw new ApiError('Only image files are allowed');
         }
 
-        // Save image
-        const uploadsDir = join(process.cwd(), 'public/payments');
-        await mkdir(uploadsDir, { recursive: true });
-
-        const timestamp = Date.now();
-        const ext = payment_image.name.split('.').pop();
-        const filename = `fund_${timestamp}.${ext}`;
-        const filePath = join(uploadsDir, filename);
-        const buffer = Buffer.from(await payment_image.arrayBuffer());
-        await writeFile(filePath, buffer);
-
-        const relativePath = `/payments/${filename}`;
+        const uploaded = await uploadToCloudinary(payment_image);
 
         // Create pending transaction
         const transaction = await Transaction.create({
@@ -69,7 +59,7 @@ export async function POST(request: NextRequest) {
             transaction_id: transaction._id,
             amount,
             utr_id,
-            payment_image: relativePath,
+            payment_image: uploaded.secure_url,
             status: 'pending'
         });
 
