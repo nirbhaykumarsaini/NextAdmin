@@ -174,10 +174,10 @@ const MainMarketSale = () => {
 
         return (
             <div className="space-y-4 mb-8" key={key}>
-                <div className="flex justify-between items-center">
+                <div className="flex justify-center items-center gap-3">
                     <h3 className="text-lg font-semibold">{title}</h3>
                     <div className="text-sm text-muted-foreground">
-                        Total: {reportItems.length} items, {totalPoints.toLocaleString()} points
+                        Total: {totalPoints.toLocaleString()} points
                     </div>
                 </div>
                 <div className="border rounded-lg overflow-hidden">
@@ -211,8 +211,8 @@ const MainMarketSale = () => {
                                             Amount
                                         </TableCell>
                                         {chunk.map((item, index) => (
-                                            <TableCell key={`amount-${key}-${chunkIndex}-${index}`} className="text-center min-w-[80px]">
-                                                {item.point.toLocaleString()}
+                                           <TableCell key={`amount-${index}`} className="text-center min-w-[80px] p">
+                                                <span className={item.point > 0 ? 'text-green-700 bg-green-50 font-semibold p-1 rounded-sm' : 'text-red-700 font-semibold bg-red-50 p-1 rounded-sm'}>{item.point.toLocaleString()}</span>
                                             </TableCell>
                                         ))}
                                         {/* Fill remaining cells if last chunk has fewer items */}

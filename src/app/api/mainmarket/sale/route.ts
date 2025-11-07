@@ -303,10 +303,11 @@ export async function POST(request: Request) {
 
     const processDigitReport = async (type: string, digitReport: DigitReportItem[], allDigits: DigitReportItem[]): Promise<DigitReportItem[]> => {
       if (type === 'full-sangam' || type === 'half-sangam') {
+        // For sangam types, sort by point in descending order (highest first)
         const filteredReport = digitReport.filter(item =>
           item.digit && item.point > 0
         );
-        filteredReport.sort((a, b) => a.digit.localeCompare(b.digit));
+        filteredReport.sort((a, b) => b.point - a.point || a.digit.localeCompare(b.digit));
         return filteredReport;
       }
 
@@ -320,7 +321,13 @@ export async function POST(request: Request) {
         point: digitPointMap[digitItem.digit] || 0
       }));
 
+      // Sort by point in descending order (highest first), then by digit for ties
       result.sort((a, b) => {
+        if (b.point !== a.point) {
+          return b.point - a.point; // Higher points first
+        }
+        
+        // If points are equal, sort by digit
         if (!isNaN(Number(a.digit)) && !isNaN(Number(b.digit))) {
           return Number(a.digit) - Number(b.digit);
         }

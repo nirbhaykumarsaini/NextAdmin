@@ -22,12 +22,13 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { FiSearch } from 'react-icons/fi';
+import { FiSearch, FiX } from 'react-icons/fi';
 import { toast } from 'sonner';
 import axios from 'axios';
 import { Tabs } from "@/components/ui/tabs";
 import Link from 'next/link';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import Image from 'next/image';
 
 interface Fund {
   _id: string;
@@ -36,9 +37,12 @@ interface Fund {
   user_id: {
     _id: string;
     name: string;
-  }
+  };
+  transaction_id:string;
   description: string;
   status: string;
+  utr_id:string;
+  payment_image:string;
   created_at: string;
 }
 
@@ -56,6 +60,7 @@ export default function Funds() {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   useEffect(() => {
     fetchFunds();
@@ -64,7 +69,7 @@ export default function Funds() {
   const fetchFunds = async () => {
     try {
       setDataLoading(true);
-      const response = await axios.get(`/api/funds`, {
+      const response = await axios.get(`/api/add-utr-fund`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('accessToken')}`
         }
@@ -86,7 +91,7 @@ export default function Funds() {
     status: "approved" | "rejected"
   ) => {
     try {
-      const res = await fetch(`/api/add-fund/${fund_id}`, {
+      const res = await fetch(`/api/add-utr-fund/${fund_id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -109,6 +114,16 @@ export default function Funds() {
       console.error("Error updating fund status:", err);
       toast.error("Error updating fund");
     }
+  };
+
+  // Open image popup
+  const openImagePopup = (imageUrl: string) => {
+    setSelectedImage(imageUrl);
+  };
+
+  // Close image popup
+  const closeImagePopup = () => {
+    setSelectedImage(null);
   };
 
   // Filter funds based on search term
@@ -165,214 +180,247 @@ export default function Funds() {
   };
 
   return (
-    <Tabs value="funds" className="space-y-4">
-      {/* Funds History Card */}
-        <div>
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div>
-              <CardTitle  className="text-2xl font-bold tracking-tight">Fund History</CardTitle>
+    <>
+      {/* Image Popup Modal */}
+      {selectedImage && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black opacity-90 p-4">
+          <div className="relative max-w-4xl max-h-full">
+            <button
+              onClick={closeImagePopup}
+              className="absolute -top-10 right-0 text-white hover:text-gray-300 transition-colors z-10"
+            >
+              <FiX className="h-6 w-6 cursor-pointer" />
+            </button>
+            <div className="bg-white rounded-lg overflow-hidden">
+              <Image
+                src={selectedImage}
+                alt="Payment receipt"
+                width={800}
+                height={600}
+                className="w-full h-auto max-h-[80vh] object-contain"
+              />
             </div>
-            <div className="relative w-full md:w-auto">
-              <div className="relative">
-                <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search funds..."
-                  className="pl-10 w-full md:w-[300px]"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
+          
+          </div>
+        </div>
+      )}
+
+      <Tabs value="funds" className="space-y-4">
+        {/* Funds History Card */}
+          <div>
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+              <div>
+                <CardTitle  className="text-2xl font-bold tracking-tight">Fund History</CardTitle>
+              </div>
+              <div className="relative w-full md:w-auto">
+                <div className="relative">
+                  <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search funds..."
+                    className="pl-10 w-full md:w-[300px]"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
               </div>
             </div>
           </div>
-        </div>
-        <div>
-          <>
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>#</TableHead>
-                    <TableHead>Date & Time</TableHead>
-                    <TableHead>User</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Amount</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {dataLoading ? (
-                    // Loading skeleton
-                    Array.from({ length: 10 }).map((_, index) => (
-                      <TableRow key={index}>
-                        <TableCell><Skeleton className="h-4 w-6" /></TableCell>
-                        <TableCell><Skeleton className="h-4 w-32" /></TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-3">
-                            <Skeleton className="h-9 w-9 rounded-full" />
-                            <Skeleton className="h-4 w-24" />
-                          </div>
-                        </TableCell>
-                        <TableCell><Skeleton className="h-4 w-20" /></TableCell>
-                        <TableCell><Skeleton className="h-4 w-20" /></TableCell>
-                        <TableCell><Skeleton className="h-4 w-16" /></TableCell>
-                        <TableCell><Skeleton className="h-6 w-16" /></TableCell>
-                        <TableCell><Skeleton className="h-8 w-16 ml-auto" /></TableCell>
-                      </TableRow>
-                    ))
-                  ) : funds.length === 0 ? (
+          <div>
+            <>
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
                     <TableRow>
-                      <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                        {searchTerm ? 'No withdrawals found matching your search' : 'No withdrawals found'}
-                      </TableCell>
+                      <TableHead>#</TableHead>
+                      <TableHead>Date & Time</TableHead>
+                      <TableHead>User</TableHead>
+                      <TableHead>Payment Image</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>UTR Id</TableHead>
+                      <TableHead>Amount</TableHead>
+                      <TableHead>Actions</TableHead>
                     </TableRow>
-                  ) : (
-                    paginatedFunds.map((fund, index) => {
-                      const globalIndex = startIndex + index + 1;
-
-                      return (
-                        <TableRow key={fund._id}>
-                          <TableCell className="font-medium">
-                            {globalIndex}
-                          </TableCell>
-                          <TableCell className="font-medium">
-                            {formatDate(fund.created_at)}
-                          </TableCell>
+                  </TableHeader>
+                  <TableBody>
+                    {dataLoading ? (
+                      // Loading skeleton
+                      Array.from({ length: 10 }).map((_, index) => (
+                        <TableRow key={index}>
+                          <TableCell><Skeleton className="h-4 w-6" /></TableCell>
+                          <TableCell><Skeleton className="h-4 w-32" /></TableCell>
                           <TableCell>
                             <div className="flex items-center gap-3">
-                              <Link href={`user-details/?userId=${fund.user_id._id}`}>
-                                <Avatar className="h-9 w-9 capitalize">
-                                  <AvatarFallback>
-                                    {fund.user_id?.name?.charAt(0) || "U"}
-                                  </AvatarFallback>
-                                </Avatar>
-                              </Link>
-                              <Link className="text-blue-500 underline capitalize" href={`user-details/?userId=${fund.user_id._id}`}>
-                                <div className="font-medium">{fund.user_id?.name}</div>
-                              </Link>
+                              <Skeleton className="h-9 w-9 rounded-full" />
+                              <Skeleton className="h-4 w-24" />
                             </div>
                           </TableCell>
-                          <TableCell className="max-w-xs truncate">
-                            {fund.description}
-                          </TableCell>
-                          <TableCell>
-                            {fund.fund_type ? (
-                              <Badge>
-                                {fund.fund_type}
-                              </Badge>
-                            ) : "-"}
-                          </TableCell>
-                          <TableCell>
-                            <Badge
-                              variant={
-                                fund.status === "approved"
-                                  ? "default"
-                                  : fund.status === "pending"
-                                    ? "secondary"
-                                    : "destructive"
-                              }
-                              className={
-                                fund.status === "approved"
-                                  ? "bg-green-100 text-green-800"
-                                  : fund.status === "pending"
-                                    ? "bg-yellow-100 text-yellow-800"
-                                    : "bg-red-100 text-red-800"
-                              }
-                            >
-                              {fund.status.charAt(0).toUpperCase() + fund.status.slice(1)}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className={`${fund.status === 'approved' ? 'text-green-600' :
-                            fund.status === 'pending' ? 'text-yellow-800' :
-                              'text-red-600'
-                            } font-medium`}>
-                            {fund.status === 'approved' ? '+' : ''}{formatCurrency(fund.amount)}
-                          </TableCell>
-                          <TableCell className="space-x-2">
-                            {fund.status === "pending" ? (
-                              <>
-                                <Button
-                                  size="sm"
-                                  className="bg-green-600 text-white hover:bg-green-700"
-                                  onClick={() => handleStatusChange(fund._id, "approved")}
-                                >
-                                  Accept
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="destructive"
-                                  onClick={() => handleStatusChange(fund._id, "rejected")}
-                                >
-                                  Reject
-                                </Button>
-                              </>
-                            ) : (
-                              <span className="text-sm text-muted-foreground">
-                                No Actions
-                              </span>
-                            )}
-                          </TableCell>
+                          <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+                          <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+                          <TableCell><Skeleton className="h-4 w-16" /></TableCell>
+                          <TableCell><Skeleton className="h-6 w-16" /></TableCell>
+                          <TableCell><Skeleton className="h-8 w-16 ml-auto" /></TableCell>
                         </TableRow>
-                      );
-                    })
-                  )}
-                </TableBody>
-              </Table>
-            </div>
+                      ))
+                    ) : funds.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                          {searchTerm ? 'No withdrawals found matching your search' : 'No withdrawals found'}
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      paginatedFunds.map((fund, index) => {
+                        const globalIndex = startIndex + index + 1;
 
-            {!dataLoading && filteredFunds.length > 0 && (
-              <div className="space-y-4 mt-4">
-                <div className="text-sm text-muted-foreground">
-                  Showing {startIndex + 1} to {Math.min(startIndex + itemsPerPage, filteredFunds.length)} of {filteredFunds.length} fund transactions
-                </div>
+                        return (
+                          <TableRow key={fund._id}>
+                            <TableCell className="font-medium">
+                              {globalIndex}
+                            </TableCell>
+                            <TableCell className="font-medium">
+                              {formatDate(fund.created_at)}
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-3">
+                                <Link href={`user-details/?userId=${fund.user_id._id}`}>
+                                  <Avatar className="h-9 w-9 capitalize">
+                                    <AvatarFallback>
+                                      {fund.user_id?.name?.charAt(0) || "U"}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                </Link>
+                                <Link className="text-blue-500 underline capitalize" href={`user-details/?userId=${fund.user_id._id}`}>
+                                  <div className="font-medium">{fund.user_id?.name}</div>
+                                </Link>
+                              </div>
+                            </TableCell>
+                            <TableCell className="font-medium">
+                              <div 
+                                className="cursor-pointer hover:opacity-80 transition-opacity"
+                                onClick={() => openImagePopup(fund.payment_image)}
+                              >
+                                <Image 
+                                  src={fund.payment_image} 
+                                  alt='Payment receipt' 
+                                  width={40} 
+                                  height={30}
+                                  className="rounded border"
+                                />
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <Badge
+                                variant={
+                                  fund.status === "approved"
+                                    ? "default"
+                                    : fund.status === "pending"
+                                      ? "secondary"
+                                      : "destructive"
+                                }
+                                className={
+                                  fund.status === "approved"
+                                    ? "bg-green-100 text-green-800"
+                                    : fund.status === "pending"
+                                      ? "bg-yellow-100 text-yellow-800"
+                                      : "bg-red-100 text-red-800"
+                                }
+                              >
+                                {fund.status.charAt(0).toUpperCase() + fund.status.slice(1)}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="font-medium">
+                              {fund.utr_id}
+                            </TableCell>
+                            <TableCell className={`${fund.status === 'approved' ? 'text-green-600' :
+                              fund.status === 'pending' ? 'text-yellow-800' :
+                                'text-red-600'
+                              } font-medium`}>
+                              {fund.status === 'approved' ? '+' : ''}{formatCurrency(fund.amount)}
+                            </TableCell>
+                            <TableCell className="space-x-2">
+                              {fund.status === "pending" ? (
+                                <>
+                                  <Button
+                                    size="sm"
+                                    className="bg-green-600 text-white hover:bg-green-700"
+                                    onClick={() => handleStatusChange(fund._id, "approved")}
+                                  >
+                                    Accept
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="destructive"
+                                    onClick={() => handleStatusChange(fund._id, "rejected")}
+                                  >
+                                    Reject
+                                  </Button>
+                                </>
+                              ) : (
+                                <span className="text-sm text-muted-foreground">
+                                  No Actions
+                                </span>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
 
-                {totalPages > 1 && (
-                  <Pagination>
-                    <PaginationContent>
-                      <PaginationItem>
-                        <PaginationPrevious
-                          href="#"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            setCurrentPage(prev => Math.max(prev - 1, 1));
-                          }}
-                          className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
-                        />
-                      </PaginationItem>
+              {!dataLoading && filteredFunds.length > 0 && (
+                <div className="space-y-4 mt-4">
+                  <div className="text-sm text-muted-foreground">
+                    Showing {startIndex + 1} to {Math.min(startIndex + itemsPerPage, filteredFunds.length)} of {filteredFunds.length} fund transactions
+                  </div>
 
-                      {getPaginationRange().map(page => (
-                        <PaginationItem key={page}>
-                          <PaginationLink
+                  {totalPages > 1 && (
+                    <Pagination>
+                      <PaginationContent>
+                        <PaginationItem>
+                          <PaginationPrevious
                             href="#"
-                            isActive={currentPage === page}
                             onClick={(e) => {
                               e.preventDefault();
-                              setCurrentPage(page);
+                              setCurrentPage(prev => Math.max(prev - 1, 1));
                             }}
-                          >
-                            {page}
-                          </PaginationLink>
+                            className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
+                          />
                         </PaginationItem>
-                      ))}
 
-                      <PaginationItem>
-                        <PaginationNext
-                          href="#"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            setCurrentPage(prev => Math.min(prev + 1, totalPages));
-                          }}
-                          className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
-                        />
-                      </PaginationItem>
-                    </PaginationContent>
-                  </Pagination>
-                )}
-              </div>
-            )}
-          </>
-        </div>
-    </Tabs>
+                        {getPaginationRange().map(page => (
+                          <PaginationItem key={page}>
+                            <PaginationLink
+                              href="#"
+                              isActive={currentPage === page}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                setCurrentPage(page);
+                              }}
+                            >
+                              {page}
+                            </PaginationLink>
+                          </PaginationItem>
+                        ))}
+
+                        <PaginationItem>
+                          <PaginationNext
+                            href="#"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              setCurrentPage(prev => Math.min(prev + 1, totalPages));
+                            }}
+                            className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
+                          />
+                        </PaginationItem>
+                      </PaginationContent>
+                    </Pagination>
+                  )}
+                </div>
+              )}
+            </>
+          </div>
+      </Tabs>
+    </>
   );
 };

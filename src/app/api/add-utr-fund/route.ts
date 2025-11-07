@@ -90,8 +90,7 @@ export async function GET(request: NextRequest) {
         }
 
         const funds = await UtrFund.find(query)
-            .populate('user_id', 'name mobile_number balance')
-            .populate('transaction_id', 'status type amount description')
+            .populate('user_id', 'name')
             .sort({ created_at: -1 });
 
         return NextResponse.json({

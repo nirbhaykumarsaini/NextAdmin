@@ -111,20 +111,20 @@ const MainMarketSale = () => {
             // Define all possible report sections with their keys and titles
             const sectionConfigs = [
                 { key: 'singleDigitBid', title: 'Single Digit' },
+                { key: 'oddEven', title: 'Odd Even' },
+                { key: 'jodiBid', title: 'Jodi Digit' },
+                { key: 'redBreaket', title: 'Red Bracket' },
+                { key: 'digitBaseJodi', title: 'Digit Base Jodi' },
                 { key: 'singlePannaBid', title: 'Single Panna' },
                 { key: 'doublePannaBid', title: 'Double Panna' },
                 { key: 'triplePannaBid', title: 'Triple Panna' },
+                { key: 'halfSangamBid', title: 'Half Sangam' },
+                { key: 'fullSangamBid', title: 'Full Sangam' },
+                { key: 'choicePanna', title: 'Choice Panna' },
+                { key: 'twoDigit', title: 'Two Digit' },
+                { key: 'spdptpMotor', title: 'SP/DP/TP Motor' },
                 { key: 'spMotor', title: 'SP Motor' },
                 { key: 'dpMotor', title: 'DP Motor' },
-                { key: 'spdptpMotor', title: 'SP/DP/TP Motor' },
-                { key: 'oddEven', title: 'Odd Even' },
-                { key: 'twoDigit', title: 'Two Digit' },
-                { key: 'choicePanna', title: 'Choice Panna' },
-                { key: 'digitBaseJodi', title: 'Digit Base Jodi' },
-                { key: 'halfSangamBid', title: 'Half Sangam' },
-                { key: 'jodiBid', title: 'Jodi Digit' },
-                { key: 'redBreaket', title: 'Red Bracket' },
-                { key: 'fullSangamBid', title: 'Full Sangam' },
             ];
 
             sectionConfigs.forEach(config => {
@@ -235,7 +235,7 @@ const MainMarketSale = () => {
 
         return (
             <div className="space-y-4 mb-8" key={section.key}>
-                <div className="flex justify-between items-center">
+                <div className="flex justify-center items-center gap-3">
                     <h3 className="text-lg font-semibold">{section.title}</h3>
                     <div className="text-sm text-muted-foreground">
                         Total: {section.totalItems} items, {section.totalPoints.toLocaleString()} points
@@ -273,8 +273,8 @@ const MainMarketSale = () => {
                                             Amount
                                         </TableCell>
                                         {chunk.map((item, index) => (
-                                            <TableCell key={`amount-${index}`} className="text-center min-w-[80px]">
-                                                {item.point.toLocaleString()}
+                                            <TableCell key={`amount-${index}`} className="text-center min-w-[80px] p">
+                                                <span className={item.point > 0 ? 'text-green-700 bg-green-50 font-semibold p-1 rounded-sm' : 'text-red-700 font-semibold bg-red-50 p-1 rounded-sm'}>{item.point.toLocaleString()}</span>
                                             </TableCell>
                                         ))}
                                         {/* Fill remaining cells if last chunk has fewer items */}

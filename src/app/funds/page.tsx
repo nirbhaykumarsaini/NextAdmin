@@ -81,36 +81,6 @@ export default function Funds() {
     }
   };
 
-  const handleStatusChange = async (
-    fund_id: string,
-    status: "approved" | "rejected"
-  ) => {
-    try {
-      const res = await fetch(`/api/add-fund/${fund_id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          status,
-          description:
-            status === "approved"
-              ? "Fund approved by Admin"
-              : "Fund rejected by Admin",
-        }),
-      });
-
-      const data = await res.json();
-      if (data.status) {
-        toast.success(`Fund ${status} successfully`);
-        fetchFunds(); // refresh list
-      } else {
-        toast.error(data.message || "Failed to update fund");
-      }
-    } catch (err) {
-      console.error("Error updating fund status:", err);
-      toast.error("Error updating fund");
-    }
-  };
-
   // Filter funds based on search term
   const filteredFunds = useMemo(() => {
     return funds.filter(fund =>
@@ -198,7 +168,6 @@ export default function Funds() {
                     <TableHead>Type</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Amount</TableHead>
-                    <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -266,14 +235,14 @@ export default function Funds() {
                           <TableCell>
                             <Badge
                               variant={
-                                fund.status === "approved"
+                                fund.status === "completed"
                                   ? "default"
                                   : fund.status === "pending"
                                     ? "secondary"
                                     : "destructive"
                               }
                               className={
-                                fund.status === "approved"
+                                fund.status === "completed"
                                   ? "bg-green-100 text-green-800"
                                   : fund.status === "pending"
                                     ? "bg-yellow-100 text-yellow-800"
@@ -283,36 +252,13 @@ export default function Funds() {
                               {fund.status.charAt(0).toUpperCase() + fund.status.slice(1)}
                             </Badge>
                           </TableCell>
-                          <TableCell className={`${fund.status === 'approved' ? 'text-green-600' :
+                          <TableCell className={`${fund.status === 'completed' ? 'text-green-600' :
                             fund.status === 'pending' ? 'text-yellow-800' :
                               'text-red-600'
                             } font-medium`}>
-                            {fund.status === 'approved' ? '+' : ''}{formatCurrency(fund.amount)}
+                            {fund.status === 'completed' ? '+' : ''}{formatCurrency(fund.amount)}
                           </TableCell>
-                          <TableCell className="space-x-2">
-                            {fund.status === "pending" ? (
-                              <>
-                                <Button
-                                  size="sm"
-                                  className="bg-green-600 text-white hover:bg-green-700"
-                                  onClick={() => handleStatusChange(fund._id, "approved")}
-                                >
-                                  Accept
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="destructive"
-                                  onClick={() => handleStatusChange(fund._id, "rejected")}
-                                >
-                                  Reject
-                                </Button>
-                              </>
-                            ) : (
-                              <span className="text-sm text-muted-foreground">
-                                No Actions
-                              </span>
-                            )}
-                          </TableCell>
+                          
                         </TableRow>
                       );
                     })

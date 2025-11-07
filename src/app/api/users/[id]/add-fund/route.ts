@@ -117,7 +117,7 @@ export async function POST(
       const fund = new Fund({
         user_id: user._id,
         amount,
-        status: 'approved',
+        status: 'completed',
         description: description || 'Funds added by Admin'
       });
       await fund.save({ session });

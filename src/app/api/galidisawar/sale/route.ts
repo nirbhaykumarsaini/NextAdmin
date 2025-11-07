@@ -120,7 +120,7 @@ export async function POST(request: Request) {
             }
         };
 
-        // Function to process and merge digit reports
+        // Function to process and merge digit reports - UPDATED SORTING
         const processDigitReport = (type: string, digitReport: DigitReportItem[], allDigits: DigitReportItem[]): DigitReportItem[] => {
             // Create a map of digit to points from the actual bid data
             const digitPointMap: { [key: string]: number } = {};
@@ -136,8 +136,13 @@ export async function POST(request: Request) {
                 point: digitPointMap[digitItem.digit] || 0
             }));
 
-            // Sort the results
+            // UPDATED: Sort by point in descending order (highest first), then by digit for ties
             result.sort((a, b) => {
+                if (b.point !== a.point) {
+                    return b.point - a.point; // Higher points first
+                }
+                
+                // If points are equal, sort by digit
                 if (!isNaN(Number(a.digit)) && !isNaN(Number(b.digit))) {
                     return Number(a.digit) - Number(b.digit);
                 }
