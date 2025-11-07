@@ -99,7 +99,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Create uploads directory
-        const uploadsDir = join(process.cwd(), 'public/manageqr');
+        const uploadsDir = join(process.cwd(), 'public/uploads');
         await mkdir(uploadsDir, { recursive: true });
 
         // Generate unique filename
@@ -113,7 +113,7 @@ export async function POST(request: NextRequest) {
         const buffer = Buffer.from(bytes);
         await writeFile(filePath, buffer);
 
-        const relativePath = `/manageqr/${filename}`;
+        const relativePath = `/uploads/${filename}`;
 
         // Find existing QR code
         let qrCode = await ManageQR.findOne();
@@ -204,7 +204,7 @@ export async function PUT(request: NextRequest) {
             }
 
             // Create uploads directory
-            const uploadsDir = join(process.cwd(), 'public/manageqr');
+            const uploadsDir = join(process.cwd(), 'public/uploads');
             await mkdir(uploadsDir, { recursive: true });
 
             // Generate unique filename
@@ -218,7 +218,7 @@ export async function PUT(request: NextRequest) {
             const buffer = Buffer.from(bytes);
             await writeFile(filePath, buffer);
 
-            updateData.qr_code = `/manageqr/${filename}`;
+            updateData.qr_code = `/uploads/${filename}`;
         }
 
         // Update QR code
