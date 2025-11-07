@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { writeFile, mkdir } from 'fs/promises';
-import { join } from 'path';
 import connectDB from '@/config/db';
 import UtrFund from '@/models/UtrFund';
 import Transaction from '@/models/Transaction';
 import ApiError from '@/lib/errors/APiError';
 import { uploadToCloudinary } from '@/utils/cloudnary';
+import mongoose from 'mongoose';
 
 interface Query {
     status: string;
@@ -17,7 +16,7 @@ export async function POST(request: NextRequest) {
         await connectDB();
 
         const formData = await request.formData();
-        const user_id = formData.get('user_id') as string;
+        const user_id = formData.get('user_id') as mongoose.Types.ObjectId;
         const amount = Number(formData.get('amount'));
         const utr_id = formData.get('utr_id') as string;
         const payment_image = formData.get('payment_image') as File;

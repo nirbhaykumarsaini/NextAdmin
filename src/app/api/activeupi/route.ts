@@ -8,13 +8,13 @@ export async function GET() {
     try {
         await connectDB();
 
-        const upis = await ManageUpi.find({ is_active: true });
-        const qrcode = await ManageQR.find({ is_active: true });
+        const upi = await ManageUpi.findOne({ is_active: true });
+        const qrcode = await ManageQR.findOne({ is_active: true });
 
         return NextResponse.json({
             status: true,
             data: {
-                upis,
+                upi,
                 qrcode
             }
         });
