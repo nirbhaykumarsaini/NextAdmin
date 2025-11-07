@@ -3,7 +3,7 @@ import dbConnect from '@/config/db';
 import ApiError from '@/lib/errors/APiError';
 import AppUser from '@/models/AppUser';
 import Transaction from '@/models/Transaction';
-import Fund from '@/models/Fund';
+import UtrFund from '@/models/UtrFund';
 import mongoose from 'mongoose';
 
 interface StatusRequest {
@@ -32,7 +32,7 @@ export async function PATCH(
         }
 
         // Populate the transaction_id to access the original transaction
-        const fund = await Fund.findById(fund_id).populate('transaction_id');
+        const fund = await UtrFund.findById(fund_id).populate('transaction_id');
         if (!fund) {
             throw new ApiError('Fund not found');
         }
@@ -43,14 +43,14 @@ export async function PATCH(
 
         const user = await AppUser.findById({ _id: fund.user_id });
         if (!user) {
-            throw new ApiError('User not found for this fund');
+            throw new ApiError('User not found');
         }
 
         try {
             // Find the original transaction
             const originalTransaction = await Transaction.findById(fund.transaction_id);
             if (!originalTransaction) {
-                throw new ApiError('Original transaction not found');
+                throw new ApiError('Transaction not found');
             }
 
             if (status === 'approved') {

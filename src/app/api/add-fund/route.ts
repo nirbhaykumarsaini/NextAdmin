@@ -6,11 +6,14 @@ import Transaction from '@/models/Transaction';
 import Fund from '@/models/Fund';
 import mongoose from 'mongoose';
 import { getUserIdFromToken } from '@/middleware/authMiddleware';
+import AccountSetting from '@/models/AccountSettings';
 
 interface AddFundRequest {
     amount: number;
     description?: string;
-    fund_type: 'phonepay' | 'googlepay' | 'paytmpay';
+    fund_type: 'phonepay' | 'googlepay' | 'paytmpay' | 'airtal' | 'navi' | 'sbi' | 'whatsapp' | 'idfcbank';
+    transactionId: string;
+    status: 'pending' | 'completed' | 'failed';
 }
 
 export async function POST(request: NextRequest) { // Changed to NextRequest
@@ -19,24 +22,34 @@ export async function POST(request: NextRequest) { // Changed to NextRequest
 
         // Extract user_id from token
         const user_id = getUserIdFromToken(request);
-        
+
         if (!user_id) {
             throw new ApiError('Unauthorized - Invalid or missing token');
         }
 
         if (!mongoose.Types.ObjectId.isValid(user_id)) {
             throw new ApiError('Invalid user ID from token');
+
         }
 
         const body: Omit<AddFundRequest, 'user_id'> = await request.json(); // Remove user_id from body
-        const { amount, fund_type, description } = body;
+        const { amount, fund_type, description, transactionId, status } = body;
 
-        if (!['phonepay', 'googlepay', 'paytmpay'].includes(fund_type)) {
+        if (!['phonepay', 'googlepay', 'paytmpay', 'airtal', 'navi', 'sbi', 'whatsapp', 'idfcbank'].includes(fund_type)) {
             throw new ApiError(`Invalid fund_type`);
         }
 
-        if (!amount || amount <= 0) throw new ApiError('Amount must be greater than 0');
-        if (amount > 100000) throw new ApiError('Amount cannot exceed ₹100,000');
+        const accountSetting = await AccountSetting.findOne();
+
+        if (!accountSetting) throw new ApiError('Invalid user ID from token');
+
+
+        if (!amount || amount <= accountSetting.min_deposit) throw new ApiError(`Amount must be greater than ${accountSetting.min_deposit}`);
+        if (amount > accountSetting.max_deposit) throw new ApiError(`Amount cannot exceed ₹${accountSetting.max_deposit}`);
+
+        if (!status) throw new ApiError('Payment status is required');
+        if (!['pending', 'completed', 'failed'].includes(status))
+            throw new ApiError('Invalid payment status');
 
         const user = await AppUser.findById(user_id);
         if (!user) throw new ApiError('User not found');
@@ -47,7 +60,7 @@ export async function POST(request: NextRequest) { // Changed to NextRequest
             user_id: user._id,
             amount,
             type: 'credit',
-            status: 'pending',
+            status: status === 'completed' ? 'completed' : 'failed',
             description: description || `Funds added by ${user.name}`
         });
         await transaction.save();
@@ -58,14 +71,21 @@ export async function POST(request: NextRequest) { // Changed to NextRequest
             transaction_id: transaction._id,
             amount,
             fund_type,
-            status: 'pending',
-            description: description || `Funds added by ${user.name} via ${fund_type}`
+            status: status === 'completed' ? 'completed' : 'failed',
+            description: description || `Funds added by ${user.name} via ${fund_type}`,
+            transactionId
         });
         await fund.save();
 
+        // ✅ If payment successful, update user balance
+        if (status === 'completed') {
+            user.balance += amount;
+            await user.save();
+        }
+
         return NextResponse.json({
             status: true,
-            message: 'Funds added successfully',
+            message: status === 'completed' ? 'Funds added successfully' : 'Payment failed',
         });
     } catch (error: unknown) {
         console.error('Add Fund Error:', error);
@@ -78,6 +98,6 @@ export async function POST(request: NextRequest) { // Changed to NextRequest
 
         const errorMessage = error instanceof Error ? error.message : 'Failed to add funds';
         return NextResponse.json(
-            { status: false, message: errorMessage }        );
+            { status: false, message: errorMessage });
     }
 }

@@ -248,41 +248,60 @@ export async function PUT(request: NextRequest) {
 
 // PATCH - Toggle QR code status
 export async function PATCH(request: NextRequest) {
-    try {
-        await connectDB();
+  try {
+    await connectDB();
 
-        const { searchParams } = new URL(request.url);
-        const id = searchParams.get('id');
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get("id");
+    if (!id) throw new ApiError("QR code ID is required", 400);
 
-        if (!id) {
-            throw new ApiError('QR code ID is required', 400);
-        }
+    const qrCode = await ManageQR.findById(id);
+    if (!qrCode) throw new ApiError("QR code not found", 404);
 
-        const qrCode = await ManageQR.findById(id);
-        if (!qrCode) {
-            throw new ApiError('QR code not found', 404);
-        }
+    const ManageUpi = (await import("@/models/ManageUpi")).default;
 
-        // Toggle status
-        qrCode.is_active = !qrCode.is_active;
-        await qrCode.save();
+    if (!qrCode.is_active) {
+      // Activate this QR code and deactivate all UPIs
+      await ManageQR.updateMany({}, { is_active: false });
+      qrCode.is_active = true;
+      await ManageUpi.updateMany({}, { is_active: false });
+      await qrCode.save();
 
-        return NextResponse.json({
-            status: true,
-            message: `QR code ${qrCode.is_active ? 'activated' : 'deactivated'} successfully`,
-            data: qrCode
-        });
+      return NextResponse.json({
+        status: true,
+        message: "QR code activated successfully",
+        data: qrCode,
+      });
+    } else {
+      // Deactivate this QR code and activate UPI instead
+      qrCode.is_active = false;
+      await qrCode.save();
 
-    } catch (error: unknown) {
-        console.error('Error toggling QR code status:', error);
-        const errorMessage = error instanceof Error ? error.message : 'Failed to toggle QR code status';
-        const statusCode = error instanceof ApiError ? error.statusCode : 500;
-        
-        return NextResponse.json(
-            { status: false, message: errorMessage },
-            { status: statusCode }
-        );
+      // Ensure at least one UPI becomes active
+      const upi = await ManageUpi.findOne();
+      if (upi) {
+        await ManageUpi.updateMany({}, { is_active: false });
+        upi.is_active = true;
+        await upi.save();
+      }
+
+      return NextResponse.json({
+        status: true,
+        message: "QR code deactivated successfully and one UPI activated",
+        data: qrCode,
+      });
     }
+  } catch (error: unknown) {
+    console.error("Error toggling QR code status:", error);
+    const errorMessage =
+      error instanceof Error ? error.message : "Failed to toggle QR code status";
+    const statusCode = error instanceof ApiError ? error.statusCode : 500;
+
+    return NextResponse.json(
+      { status: false, message: errorMessage },
+      { status: statusCode }
+    );
+  }
 }
 
 // DELETE - Delete QR code

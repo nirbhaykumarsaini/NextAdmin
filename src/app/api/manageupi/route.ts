@@ -121,8 +121,7 @@ export async function DELETE(request: NextRequest) {
     }
 }
 
-// TOGGLE is_active status
-// TOGGLE is_active status
+// PATCH - Toggle UPI is_active status
 export async function PATCH(request: NextRequest) {
     try {
         await connectDB();
@@ -130,36 +129,36 @@ export async function PATCH(request: NextRequest) {
         const { searchParams } = new URL(request.url);
         const id = searchParams.get('id');
 
-        if (!id) {
-            throw new ApiError('ID is required');
-        }
+        if (!id) throw new ApiError('ID is required');
 
         const upi = await ManageUpi.findById(id);
-
-        if (!upi) {
-            throw new ApiError('UPI not found');
-        }
+        if (!upi) throw new ApiError('UPI not found');
 
         if (!upi.is_active) {
-            // If activating this UPI -> deactivate all others first
+            // Activate this UPI
             await ManageUpi.updateMany({}, { is_active: false });
             upi.is_active = true;
+
+            // Deactivate all QR codes
+            const ManageQR = (await import('@/models/ManageQR')).default;
+            await ManageQR.updateMany({}, { is_active: false });
         } else {
-            // If deactivating -> prevent having all inactive
-            throw new ApiError('At least one UPI must remain active');
+            // Prevent all inactive
+            throw new ApiError('At least one payment method must remain active');
         }
 
         await upi.save();
 
         return NextResponse.json({
             status: true,
-            message: `UPI ${upi.is_active ? 'activated' : 'deactivated'} successfully`,
+            message: 'UPI activated successfully',
         });
 
     } catch (error: unknown) {
         console.error('Error toggling UPI status:', error);
-        const errorMessage =
-            error instanceof Error ? error.message : 'Failed to toggle UPI status';
+        const errorMessage = error instanceof Error ? error.message : 'Failed to toggle UPI status';
         return NextResponse.json({ status: false, message: errorMessage });
     }
 }
+
+

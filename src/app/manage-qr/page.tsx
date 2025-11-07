@@ -175,8 +175,9 @@ const ManageQR = () => {
     try {
       setLoading(true)
       const response = await axios.patch(`/api/manageqr?id=${qrData._id}`)
+      console.log(response.data)
       if (response.data.status) {
-        toast.success(`QR code ${!qrData.is_active ? 'activated' : 'deactivated'} successfully`)
+        toast.success(response.data.message || `QR code ${!qrData.is_active ? 'activated' : 'deactivated'} successfully`)
         fetchQR()
       } else {
         toast.error(response.data.message || 'Failed to toggle QR code status')
@@ -255,6 +256,7 @@ const ManageQR = () => {
                       alt="QR Code"
                       fill
                       className="object-contain p-2"
+                      
                     />
                   </div>
                 </div>

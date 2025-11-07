@@ -4,6 +4,8 @@ import AppUser from '@/models/AppUser';
 import ApiError from '@/lib/errors/APiError';
 import mongoose from 'mongoose';
 import GameSettings from '@/models/GameSettings';
+import ManageQR from '@/models/ManageQR';
+import ManageUpi from '@/models/ManageUpi';
 
 export async function POST(request: Request) {
   try {
@@ -27,6 +29,12 @@ export async function POST(request: Request) {
       throw new ApiError('User not found');
     }
 
+    // ✅ Fetch payment method status
+    const activeQR = await ManageQR.findOne({ is_active: true });
+    const activeUPI = await ManageUpi.findOne({ is_active: true });
+
+    const payment_status = activeQR ? 1 : activeUPI ? 0 : null;
+
     const settings = await GameSettings.findOne();
     const galidisawar = settings?.galidisawar ?? false;
     const starline = settings?.starline ?? false;
@@ -37,15 +45,16 @@ export async function POST(request: Request) {
         id: user._id,
         name: user.name,
         mobile_number: user.mobile_number,
-        email:user.email || "",
-        date_of_birth:user.date_of_birth || "",
-        address:user.address || "",
-        occupation:user.occupation || "",
-        is_verified: user.is_verified ,
+        email: user.email || "",
+        date_of_birth: user.date_of_birth || "",
+        address: user.address || "",
+        occupation: user.occupation || "",
+        is_verified: user.is_verified,
         batting: user.batting,
         balance: user.balance,
         galidisawar,
         starline,
+        payment_status // 1 = QR active, 0 = UPI active
       },
     });
 
