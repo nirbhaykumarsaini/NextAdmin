@@ -179,7 +179,7 @@ const MainMarketSale = () => {
                 <div className="flex justify-center items-center gap-3">
                     <h3 className="text-lg font-semibold">{title}</h3>
                     <div className="text-sm text-muted-foreground">
-                        Total: {reportItems.length} items, {totalPoints.toLocaleString()} points
+                        Total: {totalPoints.toLocaleString()} points
                     </div>
                 </div>
                 <div className="border rounded-lg overflow-hidden">

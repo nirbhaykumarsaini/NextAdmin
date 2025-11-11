@@ -238,7 +238,7 @@ const MainMarketSale = () => {
                 <div className="flex justify-center items-center gap-3">
                     <h3 className="text-lg font-semibold">{section.title}</h3>
                     <div className="text-sm text-muted-foreground">
-                        Total: {section.totalItems} items, {section.totalPoints.toLocaleString()} points
+                        Total: {section.totalPoints.toLocaleString()} points
                     </div>
                 </div>
 
