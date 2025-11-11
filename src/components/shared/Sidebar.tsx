@@ -81,7 +81,7 @@ export function Sidebar() {
      {
       href: "/utr-funds",
       icon: <FiFileText className="h-5 w-5" />,
-      label: "Manaual Funds",
+      label: "Manual Funds",
     },
     //  {
     //   href: "/profit-loss",

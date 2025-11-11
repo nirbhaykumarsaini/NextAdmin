@@ -369,7 +369,7 @@ const MainMarketSale = () => {
                         <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">Report Summary</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                             {/* Date Card */}
-                            <div className="rounded-lg border p-4 shadow-sm bg-white dark:bg-gray-800">
+                            {/* <div className="rounded-lg border p-4 shadow-sm bg-white dark:bg-gray-800">
                                 <div className="flex items-center space-x-2">
                                     <div className="flex-shrink-0 rounded-full bg-primary/10 p-2">
                                         <FiCalendar className="h-4 w-4 text-primary" />
@@ -381,7 +381,7 @@ const MainMarketSale = () => {
                                         </p>
                                     </div>
                                 </div>
-                            </div>
+                            </div> */}
 
                             {/* Game Card */}
                             <div className="rounded-lg border p-4 shadow-sm bg-white dark:bg-gray-800">

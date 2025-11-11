@@ -193,7 +193,7 @@ export default function Funds() {
                   ) : funds.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                        {searchTerm ? 'No withdrawals found matching your search' : 'No withdrawals found'}
+                        {searchTerm ? 'No funds found matching your search' : 'No funds found'}
                       </TableCell>
                     </TableRow>
                   ) : (
