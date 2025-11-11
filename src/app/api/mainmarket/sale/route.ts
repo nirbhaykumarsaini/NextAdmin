@@ -113,7 +113,7 @@ export async function POST(request: Request) {
     }
 
     // Function to get declared result for the date and game
-    const getDeclaredResult = async (): Promise<{openDigit?: string, closeDigit?: string} | undefined> => {
+    const getDeclaredResult = async (): Promise<DeclaredDigits | undefined> => {
       if (!bid_date || !game_id) return undefined;
 
       try {
@@ -155,10 +155,14 @@ export async function POST(request: Request) {
       return jodis;
     };
 
-    // Function to filter and sort jodi-digit data based on declared result
-    const filterJodiDigitByDeclaredResult = (digitReport: DigitReportItem[], declaredResult?: {openDigit?: string, closeDigit?: string}): DigitReportItem[] => {
+    // Function to filter and sort jodi-based data based on declared result
+    const filterJodiBasedByDeclaredResult = (digitReport: DigitReportItem[], allDigits: DigitReportItem[], declaredResult?: DeclaredDigits): DigitReportItem[] => {
       if (!declaredResult?.openDigit || !declaredResult?.closeDigit) {
-        return digitReport;
+        // If no declared result, return all digits with 0 points
+        return allDigits.map(digitItem => ({
+          ...digitItem,
+          point: 0
+        }));
       }
 
       const winningJodi = declaredResult.openDigit + declaredResult.closeDigit;
@@ -390,10 +394,12 @@ export async function POST(request: Request) {
       }
     };
 
-    const processDigitReport = async (type: string, digitReport: DigitReportItem[], allDigits: DigitReportItem[], declaredResult?: {openDigit?: string, closeDigit?: string}): Promise<DigitReportItem[]> => {
-      // Special handling for jodi-digit when session is close and declared result exists
-      if (type === 'jodi-digit' && session === 'close' && declaredResult?.openDigit && declaredResult?.closeDigit) {
-        return filterJodiDigitByDeclaredResult(digitReport, declaredResult);
+    const processDigitReport = async (type: string, digitReport: DigitReportItem[], allDigits: DigitReportItem[], declaredResult?: DeclaredDigits): Promise<DigitReportItem[]> => {
+      // Special handling only for jodi-based games when session is close
+      const jodiBasedGames = ['jodi-digit', 'red-bracket', 'digit-base-jodi'];
+      
+      if (jodiBasedGames.includes(type) && session === 'close') {
+        return filterJodiBasedByDeclaredResult(digitReport, allDigits, declaredResult);
       }
 
       if (type === 'full-sangam' || type === 'half-sangam') {
@@ -466,9 +472,10 @@ export async function POST(request: Request) {
         
         let processedReport: DigitReportItem[] = [];
         
-        // Special handling for jodi-digit when session is close and declared result exists
-        if (type === 'jodi-digit' && session === 'close' && declaredResult?.openDigit && declaredResult?.closeDigit) {
-          processedReport = filterJodiDigitByDeclaredResult(digitReport, declaredResult);
+        // Special handling only for jodi-based games when session is close
+        const jodiBasedGames = ['jodi-digit', 'red-bracket', 'digit-base-jodi'];
+        if (jodiBasedGames.includes(type) && session === 'close') {
+          processedReport = filterJodiBasedByDeclaredResult(digitReport, allDigits, declaredResult);
         } else {
           processedReport = await processDigitReport(type, digitReport, allDigits, declaredResult);
         }
@@ -526,9 +533,10 @@ export async function POST(request: Request) {
     
     let processedReport: DigitReportItem[] = [];
     
-    // Special handling for jodi-digit when session is close and declared result exists
-    if (game_type === 'jodi-digit' && session === 'close' && declaredResult?.openDigit && declaredResult?.closeDigit) {
-      processedReport = filterJodiDigitByDeclaredResult(digitReport, declaredResult);
+    // Special handling only for jodi-based games when session is close
+    const jodiBasedGames = ['jodi-digit', 'red-bracket', 'digit-base-jodi'];
+    if (jodiBasedGames.includes(game_type) && session === 'close') {
+      processedReport = filterJodiBasedByDeclaredResult(digitReport, allDigits, declaredResult);
     } else {
       processedReport = await processDigitReport(game_type, digitReport, allDigits, declaredResult);
     }
@@ -551,15 +559,16 @@ export async function POST(request: Request) {
       'red-bracket': 'redBreaket'
     };
 
-    // Prepare response with declared digits when session is close
+    // Prepare response with proper typing
     const responseData: ResponseData = {
       status: true,
       message: 'Sale report generated successfully',
       [resultKeyMap[game_type]]: processedReport
     };
 
-    // Add declared digits to response when session is close for jodi-digit or all game types
-    if ((game_type === 'jodi-digit' || game_type === 'all') && session === 'close' && declaredResult) {
+    // Add declared digits to response when session is close for jodi-based games or all game types
+    const jodiBasedOrAll = [...jodiBasedGames, 'all'];
+    if (jodiBasedOrAll.includes(game_type) && session === 'close' && declaredResult) {
       responseData.declaredDigits = {
         openDigit: declaredResult.openDigit,
         closeDigit: declaredResult.closeDigit
