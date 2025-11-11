@@ -30,6 +30,18 @@ interface PannaDocument {
   digit: string | number;
 }
 
+interface DeclaredDigits {
+  openDigit?: string;
+  closeDigit?: string;
+}
+
+interface ResponseData {
+  status: boolean;
+  message: string;
+  declaredDigits?: DeclaredDigits;
+  [key: string]: DigitReportItem[] | boolean | string | DeclaredDigits | undefined;
+}
+
 export async function POST(request: Request) {
   try {
     await dbConnect();
@@ -540,7 +552,7 @@ export async function POST(request: Request) {
     };
 
     // Prepare response with declared digits when session is close
-    const responseData: any = {
+    const responseData: ResponseData = {
       status: true,
       message: 'Sale report generated successfully',
       [resultKeyMap[game_type]]: processedReport
