@@ -77,9 +77,10 @@ export async function POST(request: NextRequest) { // Changed to NextRequest
         });
         await fund.save();
 
-        // ✅ If payment successful, update user balance
         if (status === 'completed') {
-            user.balance += amount;
+            const currentBalance = Number(user.balance) || 0; // ensure numeric
+            const addedAmount = Number(amount) || 0;
+            user.balance = currentBalance + addedAmount;
             await user.save();
         }
 
