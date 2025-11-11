@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) { // Changed to NextRequest
         await fund.save();
 
         if (status === 'completed') {
-            const currentBalance = Number(user.balance) || 0; // ensure numeric
+            const currentBalance = Number(user.balance) || 0; 
             const addedAmount = Number(amount) || 0;
             user.balance = currentBalance + addedAmount;
             await user.save();

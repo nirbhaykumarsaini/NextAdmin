@@ -293,7 +293,7 @@ function UserDetailsContent() {
         fetchTabData("funds", 1);
         fetchTabData("transactions", 1);
         fetchAllBids(userId); // Refresh bids data
-         fetchUserDetails(userId)
+        fetchUserDetails(userId)
       } else {
         toast.error(response.data.message);
       }
@@ -653,7 +653,7 @@ function UserDetailsContent() {
                     <div className="text-right text-sm text-muted-foreground">
                       <div className="flex items-center gap-1">
                         <Calendar className="h-3 w-3" />
-                        Last Seen: {formatDate(device.last_login)}
+                        Last Seen: {formatDate(user.updatedAt)}
                       </div>
                     </div>
                   </div>
@@ -825,9 +825,9 @@ function UserDetailsContent() {
                             <TableCell>{fund.description}</TableCell>
                             <TableCell>
                               <Badge variant={
-                                  fund.status === 'approved' ? 'default' :
-                                    fund.status === 'pending' ? 'secondary' : 'destructive'
-                                }>
+                                fund.status === 'approved' ? 'default' :
+                                  fund.status === 'pending' ? 'secondary' : 'destructive'
+                              }>
                                 {fund.status}
                               </Badge>
                             </TableCell>
