@@ -127,7 +127,7 @@ const MainMarketResult = () => {
         try {
             const response = await fetch('/api/mainmarket/results');
             const result = await response.json();
-
+console.log(result)
             if (result.status) {
                 setResults(result.data);
             } else {

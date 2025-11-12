@@ -212,17 +212,16 @@ export async function GET(request: NextRequest) {
   try {
     await connectDB();
 
-    const { searchParams } = new URL(request.url);
-    const result_date = searchParams.get("result_date");
-    const game_id = searchParams.get("game_id");
+    // ✅ Get today's date in DD-MM-YYYY format
+    const today = new Date();
+    const day = String(today.getDate()).padStart(2, '0');
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const year = today.getFullYear();
+    const todayDate = `${day}-${month}-${year}`;
 
-    // ✅ Strongly typed query
-    const query: Partial<{ result_date: string; game_id: string }> = {};
-    if (result_date) query.result_date = result_date;
-    if (game_id) query.game_id = game_id;
-
-    const results = await MainMarketResult.find(query)
-      .sort({ result_date: -1, createdAt: -1 })
+    // ✅ Filter results by today's date
+    const results = await MainMarketResult.find({ result_date: todayDate })
+      .sort({ createdAt: -1 })
       .populate("game_id", "game_name")
       .lean<{
         result_date: string;
@@ -231,9 +230,9 @@ export async function GET(request: NextRequest) {
         digit: string;
         _id: Types.ObjectId;
         game_id?: { game_name: string };
-      }[]>(); // ✅ Explicitly typed
+      }[]>();
 
-    // ✅ Type-safe reducer
+    // ✅ Group by game name and session
     const groupedResults = results.reduce<Record<string, GroupedResult>>((acc, result) => {
       const gameName = result?.game_id?.game_name || "Unknown Game";
       const key = `${result.result_date}-${gameName}`;
@@ -259,7 +258,11 @@ export async function GET(request: NextRequest) {
       return acc;
     }, {});
 
-    return NextResponse.json({ status: true, data: Object.values(groupedResults) });
+    return NextResponse.json({
+      status: true,
+      date: todayDate,
+      data: Object.values(groupedResults),
+    });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Failed to retrieve results";
     return NextResponse.json({ status: false, message });

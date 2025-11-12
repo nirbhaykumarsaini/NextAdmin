@@ -10,7 +10,7 @@ import { parseDDMMYYYY } from '@/utils/date';
 import NotificationService from '@/services/notificationService';
 import GalidisawarGame from '@/models/GalidisawarGame';
 
-interface StarlineResultDocument {
+interface GalidisawarResultDocument {
     result_date: string;
     game_id: { game_name: string };
     panna: string;
@@ -143,46 +143,50 @@ export async function POST(request: NextRequest) {
 
 // GET all results
 export async function GET(request: NextRequest) {
-    try {
-        await connectDB();
+  try {
+    await connectDB();
 
-        const { searchParams } = new URL(request.url);
-        const result_date = searchParams.get('result_date');
-        const game_id = searchParams.get('game_id');
+    // ✅ Generate today's date in DD-MM-YYYY format
+    const today = new Date();
+    const day = String(today.getDate()).padStart(2, '0');
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const year = today.getFullYear();
+    const todayDate = `${day}-${month}-${year}`;
 
-        let query = {};
-        if (result_date) {
-            query = { ...query, result_date };
-        }
-        if (game_id) {
-            query = { ...query, game_id };
-        }
+    const { searchParams } = new URL(request.url);
+    const game_id = searchParams.get('game_id');
 
-        // Get all results
-        const results = await GalidisawarResult.find(query)
-            .populate('game_id', 'game_name')
-            .sort({ result_date: -1, createdAt: -1 }) as unknown as StarlineResultDocument[];
+    // ✅ Always filter by today’s date
+    let query: Record<string, any> = { result_date: todayDate };
+    if (game_id) query.game_id = game_id;
 
-        const transformedResults = results.map(result => ({
-            _id: result._id,
-            result_date: result.result_date,
-            game_name: result.game_id?.game_name || 'Unknown Game', // Extract game_name
-            panna: result.panna,
-            digit: result.digit,
-            createdAt: result.created_at,
-            updatedAt: result.updated_at,
-        }));
+    // ✅ Fetch today's results
+    const results = await GalidisawarResult.find(query)
+      .populate('game_id', 'game_name')
+      .sort({ createdAt: -1 })
+      .lean() as unknown as GalidisawarResultDocument[];
 
-        return NextResponse.json({
-            status: true,
-            data: transformedResults
-        });
-    } catch (error: unknown) {
-        const errorMessage = error instanceof Error ? error.message : 'Failed to retrieve results'
-        return NextResponse.json(
-            { status: false, message: errorMessage }
-        );
-    }
+    // ✅ Transform results
+    const transformedResults = results.map(result => ({
+      _id: result._id,
+      result_date: result.result_date,
+      game_name: result.game_id?.game_name || 'Unknown Game',
+      panna: result.panna,
+      digit: result.digit,
+      createdAt: result.created_at,
+      updatedAt: result.updated_at,
+    }));
+
+    return NextResponse.json({
+      status: true,
+      date: todayDate,
+      data: transformedResults,
+    });
+  } catch (error: unknown) {
+    const errorMessage =
+      error instanceof Error ? error.message : 'Failed to retrieve results';
+    return NextResponse.json({ status: false, message: errorMessage });
+  }
 }
 
 // DELETE a result by ID
