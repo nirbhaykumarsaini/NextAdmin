@@ -157,8 +157,10 @@ export async function GET(request: NextRequest) {
     const game_id = searchParams.get('game_id');
 
     // ✅ Always filter by today’s date
-    let query: Record<string, any> = { result_date: todayDate };
-    if (game_id) query.game_id = game_id;
+     const query: { result_date: string; game_id?: string } = { result_date: todayDate };
+        if (game_id) {
+            query.game_id = game_id;
+        }
 
     // ✅ Fetch today's results
     const results = await GalidisawarResult.find(query)
