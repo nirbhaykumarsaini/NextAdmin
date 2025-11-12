@@ -164,49 +164,50 @@ export async function POST(request: NextRequest) {
 
 // GET all results
 export async function GET(request: NextRequest) {
-  try {
-    await connectDB();
+    try {
+        await connectDB();
 
-    // ✅ Get today's date in DD-MM-YYYY format
-    const today = new Date();
-    const day = String(today.getDate()).padStart(2, '0');
-    const month = String(today.getMonth() + 1).padStart(2, '0');
-    const year = today.getFullYear();
-    const todayDate = `${day}-${month}-${year}`;
+        // ✅ Get today's date in DD-MM-YYYY format
+        const today = new Date();
+        const day = String(today.getDate()).padStart(2, '0');
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const year = today.getFullYear();
+        const todayDate = `${day}-${month}-${year}`;
 
-    const { searchParams } = new URL(request.url);
-    const game_id = searchParams.get('game_id');
+        const { searchParams } = new URL(request.url);
+        const game_id = searchParams.get('game_id');
 
-    // ✅ Default query filters by today's date
-    let query: Record<string, any> = { result_date: todayDate };
-    if (game_id) query.game_id = game_id;
+        const query: { result_date: string; game_id?: string } = { result_date: todayDate };
+        if (game_id) {
+            query.game_id = game_id;
+        }
 
-    // ✅ Fetch results for today
-    const results = await StarlineResult.find(query)
-      .populate('game_id', 'game_name')
-      .sort({ createdAt: -1 })
-      .lean() as unknown as StarlineResultDocument[];
+        // ✅ Fetch results for today
+        const results = await StarlineResult.find(query)
+            .populate('game_id', 'game_name')
+            .sort({ createdAt: -1 })
+            .lean() as unknown as StarlineResultDocument[];
 
-    // ✅ Transform and flatten response
-    const transformedResults = results.map(result => ({
-      _id: result._id,
-      result_date: result.result_date,
-      game_name: result.game_id?.game_name || 'Unknown Game',
-      panna: result.panna,
-      digit: result.digit,
-      createdAt: result.created_at,
-      updatedAt: result.updated_at,
-    }));
+        // ✅ Transform and flatten response
+        const transformedResults = results.map(result => ({
+            _id: result._id,
+            result_date: result.result_date,
+            game_name: result.game_id?.game_name || 'Unknown Game',
+            panna: result.panna,
+            digit: result.digit,
+            createdAt: result.created_at,
+            updatedAt: result.updated_at,
+        }));
 
-    return NextResponse.json({
-      status: true,
-      date: todayDate,
-      data: transformedResults,
-    });
-  } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : 'Failed to retrieve results';
-    return NextResponse.json({ status: false, message: errorMessage });
-  }
+        return NextResponse.json({
+            status: true,
+            date: todayDate,
+            data: transformedResults,
+        });
+    } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : 'Failed to retrieve results';
+        return NextResponse.json({ status: false, message: errorMessage });
+    }
 }
 
 // DELETE a result by ID
