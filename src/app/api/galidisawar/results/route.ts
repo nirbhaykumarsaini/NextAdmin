@@ -10,7 +10,7 @@ import { parseDDMMYYYY } from '@/utils/date';
 import NotificationService from '@/services/notificationService';
 import GalidisawarGame from '@/models/GalidisawarGame';
 
-interface GalidisawarResultDocument {
+export interface GalidisawarResultDocument {
     result_date: string;
     game_id: { game_name: string };
     panna: string;

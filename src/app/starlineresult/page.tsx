@@ -61,7 +61,7 @@ interface GroupedResult {
     digit: string;
 }
 
-const MainMarketResult = () => {
+const StarlineResult = () => {
     const [result_date, setDate] = useState<Date | undefined>(new Date())
     const [game_id, setGameName] = useState("")
     const [panna, setPanna] = useState("")
@@ -85,12 +85,17 @@ const MainMarketResult = () => {
     useEffect(() => {
         dispatch(fetchGames({}));
         fetchAllPanna();
-        fetchResults();
+        fetchResultsByDate(); // Fetch results for current date on initial load
     }, [dispatch]);
 
     useEffect(() => {
+        // Fetch results whenever date changes
+        fetchResultsByDate();
+    }, [result_date]);
+
+    useEffect(() => {
         if (allPanna && searchPanna) {
-            const filtered = allPanna.filter(pannaItem => 
+            const filtered = allPanna.filter(pannaItem =>
                 pannaItem.digit.includes(searchPanna)
             );
             setFilteredPanna(filtered);
@@ -117,7 +122,45 @@ const MainMarketResult = () => {
         }
     };
 
-    const fetchResults = async () => {
+    // ✅ NEW: Fetch results by specific date for Starline
+    const fetchResultsByDate = async () => {
+        try {
+            if (!result_date) return;
+
+            const formattedDate = format(result_date, "dd-MM-yyyy");
+            
+            const response = await fetch('/api/result-by-date/starline', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    result_date: formattedDate
+                }),
+            });
+
+            const result = await response.json();
+            console.log('Starline results by date:', result);
+
+            if (result.status) {
+                setResults(result.data);
+            } else {
+                // If no results found for the date, set empty array
+                setResults([]);
+                // Only show error if it's not a "no results" scenario
+                if (!result.message.includes('No results') && !result.message.includes('no result')) {
+                    toast.error(result.message || "Failed to fetch results");
+                }
+            }
+        } catch (error) {
+            console.error('Error fetching starline results by date:', error);
+            toast.error('Failed to fetch results');
+            setResults([]); // Set empty array on error
+        }
+    };
+
+    // ✅ OLD: Keep this function if you still need to fetch all results somewhere
+    const fetchAllResults = async () => {
         try {
             const response = await fetch('/api/starline/results');
             const result = await response.json();
@@ -135,7 +178,7 @@ const MainMarketResult = () => {
 
     const handlePannaSearch = (value: string) => {
         setSearchPanna(value);
-        
+
         // If input is empty, clear both panna and digit
         if (!value.trim()) {
             setPanna("");
@@ -246,8 +289,8 @@ const MainMarketResult = () => {
                 setDigit("");
                 setSearchPanna("");
 
-                // Refresh results
-                fetchResults();
+                // Refresh results for the current date
+                fetchResultsByDate();
                 fetchAllPanna();
             } else {
                 toast.error(saveResult.message || "Failed to save result");
@@ -278,9 +321,8 @@ const MainMarketResult = () => {
 
             if (result.status) {
                 toast.success("Result deleted successfully");
-                // Update the results with the new grouped data
-                setResults(result.groupedResults);
-                fetchResults();
+                // Refresh results for the current date
+                fetchResultsByDate();
                 fetchAllPanna();
             } else {
                 toast.error(result.message || "Failed to delete result");
@@ -291,9 +333,8 @@ const MainMarketResult = () => {
         }
     };
 
-    // Filter games that have results declared
+    // Filter games that have results declared for the selected date
     const getAvailableGames = () => {
-
         const formattedDate = result_date ? format(result_date, "dd-MM-yyyy") : "";
 
         const gameOptions = games.map((game: IStarlineGame) => ({
@@ -301,10 +342,13 @@ const MainMarketResult = () => {
             name: game.game_name
         }));
 
-        // Filter out games that already have  results
+        // Filter out games that already have results for the selected date
         return gameOptions.filter(game => {
-            const gameResults = results?.find(r => r?.game_name === game?.name && r?.result_date === formattedDate);
-            // Only show games that don't have declared result
+            const gameResults = results?.find(r => 
+                r?.game_name === game?.name && 
+                r?.result_date === formattedDate
+            );
+            // Only show games that don't have declared result for this date
             return !gameResults;
         });
     };
@@ -371,7 +415,7 @@ const MainMarketResult = () => {
                             maxLength={3}
                             onFocus={() => {
                                 if (searchPanna && allPanna) {
-                                    const filtered = allPanna.filter(pannaItem => 
+                                    const filtered = allPanna.filter(pannaItem =>
                                         pannaItem.digit.includes(searchPanna)
                                     );
                                     setFilteredPanna(filtered);
@@ -421,56 +465,81 @@ const MainMarketResult = () => {
                 </form>
             </div>
 
-            {/* Results Table */}
-            <div className="rounded-lg border shadow-md overflow-hidden">
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>S. No.</TableHead>
-                            <TableHead>Date</TableHead>
-                            <TableHead>Game Name</TableHead>
-                            <TableHead>Result</TableHead>
-                            <TableHead>Action</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {results?.length > 0 ? (
-                            results?.map((result, index) => (
-                                <TableRow key={`${result?.result_date}-${result?.game_name}`}>
-                                    <TableCell>{index + 1}</TableCell>
-                                    <TableCell>{result?.result_date}</TableCell>
-                                    <TableCell>{result?.game_name}</TableCell>
-
-                                    <TableCell>
-                                        {result?.panna && result?.digit ? (
-                                            <div className="flex items-center gap-2">
-                                                <span>{result?.panna} - {result?.digit}</span>
-                                            </div>
-                                        ) : (
-                                            <span className="text-gray-400">Not declared</span>
-                                        )}
-                                    </TableCell>
-                                    <TableCell> 
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="text-red-600 hover:text-red-800 hover:bg-red-100"
-                                            onClick={() => handleDeleteResult(result?._id || '')}
-                                        >
-                                            <FiTrash2 size={16} />
-                                        </Button>
+            {/* Results Section */}
+            <div className="space-y-4">
+                <div className="space-y-2">
+                    <Label>Select Date to View Results</Label>
+                    <Popover>
+                        <PopoverTrigger asChild>
+                            <Button
+                                variant={"outline"}
+                                className="w-fit justify-start text-left font-normal"
+                            >
+                                <FiCalendar className="mr-2 h-4 w-4" />
+                                {result_date ? format(result_date, "PPP") : <span>Pick a date</span>}
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0 bg-white dark:bg-gray-900">
+                            <Calendar
+                                mode="single"
+                                selected={result_date}
+                                onSelect={setDate}
+                                initialFocus
+                            />
+                        </PopoverContent>
+                    </Popover>
+                </div>
+                
+                {/* Results Table */}
+                <div className="rounded-lg border shadow-md overflow-hidden">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>S. No.</TableHead>
+                                <TableHead>Date</TableHead>
+                                <TableHead>Game Name</TableHead>
+                                <TableHead>Result</TableHead>
+                                <TableHead>Action</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {results?.length > 0 ? (
+                                results?.map((result, index) => (
+                                    <TableRow key={`${result?.result_date}-${result?.game_name}`}>
+                                        <TableCell>{index + 1}</TableCell>
+                                        <TableCell>{result?.result_date}</TableCell>
+                                        <TableCell>{result?.game_name}</TableCell>
+                                        <TableCell>
+                                            {result?.panna && result?.digit ? (
+                                                <div className="flex items-center gap-2">
+                                                    <span>{result?.panna} - {result?.digit}</span>
+                                                </div>
+                                            ) : (
+                                                <span className="text-gray-400">Not declared</span>
+                                            )}
+                                        </TableCell>
+                                        <TableCell>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="text-red-600 hover:text-red-800 hover:bg-red-100"
+                                                onClick={() => handleDeleteResult(result?._id || '')}
+                                            >
+                                                <FiTrash2 size={16} />
+                                            </Button>
+                                        </TableCell>
+                                    </TableRow>
+                                ))
+                            ) : (
+                                <TableRow>
+                                    <TableCell colSpan={5} className="text-center py-4">
+                                        No results found for selected date
                                     </TableCell>
                                 </TableRow>
-                            ))
-                        ) : (
-                            <TableRow>
-                                <TableCell colSpan={5} className="text-center py-4">
-                                    No result found
-                                </TableCell>
-                            </TableRow>
-                        )}
-                    </TableBody>
-                </Table>
+                            )}
+                        </TableBody>
+                    </Table>
+                </div>
             </div>
 
             {/* Winner Dialog */}
@@ -549,4 +618,4 @@ const MainMarketResult = () => {
     )
 }
 
-export default MainMarketResult
+export default StarlineResult

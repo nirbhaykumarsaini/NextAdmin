@@ -11,7 +11,7 @@ import { parseDDMMYYYY } from '@/utils/date';
 import NotificationService from '@/services/notificationService';
 import StarlineGame from '@/models/StarlineGame';
 
-interface StarlineResultDocument {
+export interface StarlineResultDocument {
     result_date: string;
     game_id: { game_name: string };
     panna: string;

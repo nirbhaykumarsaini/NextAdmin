@@ -10,32 +10,21 @@ import { parseDDMMYYYY } from '@/utils/date';
 import MainMarketGame from '@/models/MainMarketGame';
 import NotificationService from '@/services/notificationService';
 
-interface SessionResult {
+export interface SessionResult {
   panna: string;
   digit: string;
   _id: Types.ObjectId;
 }
 
-interface GroupedResult {
+export interface GroupedResult {
   result_date: string;
   game_name: string;
   openSession: SessionResult | null;
   closeSession: SessionResult | null;
 }
 
-// Interface for the MainMarketResult document
-interface MainMarketResultDocument {
-  result_date: string;
-  game_id: { game_name: string };
-  session: string;
-  panna: string;
-  digit: string;
-  _id: Types.ObjectId;
-  createdAt?: Date;
-  updatedAt?: Date;
-}
 
-interface WinnerData {
+export interface WinnerData {
   user_id: Types.ObjectId;
   user: string;
   game: string;
@@ -49,7 +38,7 @@ interface WinnerData {
   close_panna: string;
 }
 
-interface ProcessedWinner {
+export interface ProcessedWinner {
   _id?: Types.ObjectId;
   user_id?: Types.ObjectId;
   user?: string;
@@ -206,7 +195,6 @@ export async function POST(request: NextRequest) {
       { status: false, message: errorMessage });
   }
 }
-
 
 export async function GET(request: NextRequest) {
   try {
@@ -425,4 +413,7 @@ export async function DELETE(request: NextRequest) {
     );
   }
 }
+
+
+
 

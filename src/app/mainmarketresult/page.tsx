@@ -53,7 +53,7 @@ interface Winner {
     game_type: string;
     created_at: string;
     digit: string;
-    session:string;
+    session: string;
 }
 
 interface SessionResult {
@@ -93,8 +93,13 @@ const MainMarketResult = () => {
     useEffect(() => {
         dispatch(fetchGames({}));
         fetchAllPanna();
-        fetchResults();
+        fetchResultsByDate(); // Fetch results for current date on initial load
     }, [dispatch]);
+
+    useEffect(() => {
+        // Fetch results whenever date changes
+        fetchResultsByDate();
+    }, [result_date]);
 
     useEffect(() => {
         if (allPanna && searchPanna) {
@@ -123,11 +128,50 @@ const MainMarketResult = () => {
         }
     };
 
-    const fetchResults = async () => {
+    // ✅ NEW: Fetch results by specific date
+    const fetchResultsByDate = async () => {
+        try {
+            if (!result_date) return;
+
+            const formattedDate = format(result_date, "dd-MM-yyyy");
+            
+            const response = await fetch('/api/result-by-date/mainmarket', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    result_date: formattedDate
+                }),
+            });
+
+            const result = await response.json();
+            console.log('Results by date:', result);
+
+            if (result.status) {
+                setResults(result.data);
+            } else {
+                // If no results found for the date, set empty array
+                setResults([]);
+                // Only show error if it's not a "no results" scenario
+                if (!result.message.includes('No results') && !result.message.includes('no result')) {
+                    toast.error(result.message || "Failed to fetch results");
+                }
+            }
+        } catch (error) {
+            console.error('Error fetching results by date:', error);
+            toast.error('Failed to fetch results');
+            setResults([]); // Set empty array on error
+        }
+    };
+
+    // ✅ OLD: Keep this function if you still need to fetch all results somewhere
+    const fetchAllResults = async () => {
         try {
             const response = await fetch('/api/mainmarket/results');
             const result = await response.json();
-console.log(result)
+            console.log(result)
+
             if (result.status) {
                 setResults(result.data);
             } else {
@@ -255,8 +299,8 @@ console.log(result)
                 setDigit("");
                 setSearchPanna("");
 
-                // Refresh results
-                fetchResults();
+                // Refresh results for the current date
+                fetchResultsByDate();
                 fetchAllPanna();
             } else {
                 toast.error(saveResult.message || "Failed to save result");
@@ -287,9 +331,8 @@ console.log(result)
 
             if (result.status) {
                 toast.success("Result deleted successfully");
-                // Update the results with the new grouped data
-                setResults(result.groupedResults);
-                fetchResults();
+                // Refresh results for the current date
+                fetchResultsByDate();
                 fetchAllPanna();
             } else {
                 toast.error(result.message || "Failed to delete result");
@@ -436,70 +479,97 @@ console.log(result)
                 </form>
             </div>
 
+            <hr/>
+
             {/* Results Table */}
-            <div className="rounded-lg border shadow-md overflow-hidden">
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>S. No.</TableHead>
-                            <TableHead>Date</TableHead>
-                            <TableHead>Game Name</TableHead>
-                            <TableHead>Open Session Result</TableHead>
-                            <TableHead>Close Session Result</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {results?.length > 0 ? (
-                            results?.map((result, index) => (
-                                <TableRow key={`${result?.result_date}-${result?.game_name}`}>
-                                    <TableCell>{index + 1}</TableCell>
-                                    <TableCell>{result?.result_date}</TableCell>
-                                    <TableCell>{result?.game_name}</TableCell>
-                                    <TableCell>
-                                        {result?.openSession ? (
-                                            <div className="flex items-center gap-2">
-                                                <span>{result?.openSession?.panna} - {result?.openSession?.digit}</span>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="text-red-600 hover:text-red-800 hover:bg-red-100"
-                                                    onClick={() => handleDeleteResult(result?.openSession?._id || '', 'open')}
-                                                >
-                                                    <FiTrash2 size={16} />
-                                                </Button>
-                                            </div>
-                                        ) : (
-                                            <span className="text-gray-400">Not declared</span>
-                                        )}
-                                    </TableCell>
-                                    <TableCell>
-                                        {result?.closeSession ? (
-                                            <div className="flex items-center gap-2">
-                                                <span>{result?.closeSession?.panna} - {result?.closeSession?.digit}</span>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="text-red-600 hover:text-red-800 hover:bg-red-100"
-                                                    onClick={() => handleDeleteResult(result?.closeSession?._id || '', 'close')}
-                                                >
-                                                    <FiTrash2 size={16} />
-                                                </Button>
-                                            </div>
-                                        ) : (
-                                            <span className="text-gray-400">Not declared</span>
-                                        )}
+            <div className="space-y-4">
+                <div className="space-y-2">
+                    <Label>Select Date to View Results</Label>
+                    <Popover>
+                        <PopoverTrigger asChild>
+                            <Button
+                                variant={"outline"}
+                                className="w-fit justify-start text-left font-normal"
+                            >
+                                <FiCalendar className="mr-2 h-4 w-4" />
+                                {result_date ? format(result_date, "PPP") : <span>Pick a date</span>}
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-fit p-0 bg-white dark:bg-gray-900">
+                            <Calendar
+                                mode="single"
+                                selected={result_date}
+                                onSelect={setDate}
+                                initialFocus
+                            />
+                        </PopoverContent>
+                    </Popover>
+                </div>
+                
+                <div className="rounded-lg border shadow-md overflow-hidden">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>S. No.</TableHead>
+                                <TableHead>Date</TableHead>
+                                <TableHead>Game Name</TableHead>
+                                <TableHead>Open Session Result</TableHead>
+                                <TableHead>Close Session Result</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {results?.length > 0 ? (
+                                results?.map((result, index) => (
+                                    <TableRow key={`${result?.result_date}-${result?.game_name}`}>
+                                        <TableCell>{index + 1}</TableCell>
+                                        <TableCell>{result?.result_date}</TableCell>
+                                        <TableCell>{result?.game_name}</TableCell>
+                                        <TableCell>
+                                            {result?.openSession ? (
+                                                <div className="flex items-center gap-2">
+                                                    <span>{result?.openSession?.panna} - {result?.openSession?.digit}</span>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="text-red-600 hover:text-red-800 hover:bg-red-100"
+                                                        onClick={() => handleDeleteResult(result?.openSession?._id || '', 'open')}
+                                                    >
+                                                        <FiTrash2 size={16} />
+                                                    </Button>
+                                                </div>
+                                            ) : (
+                                                <span className="text-gray-400">Not declared</span>
+                                            )}
+                                        </TableCell>
+                                        <TableCell>
+                                            {result?.closeSession ? (
+                                                <div className="flex items-center gap-2">
+                                                    <span>{result?.closeSession?.panna} - {result?.closeSession?.digit}</span>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="text-red-600 hover:text-red-800 hover:bg-red-100"
+                                                        onClick={() => handleDeleteResult(result?.closeSession?._id || '', 'close')}
+                                                    >
+                                                        <FiTrash2 size={16} />
+                                                    </Button>
+                                                </div>
+                                            ) : (
+                                                <span className="text-gray-400">Not declared</span>
+                                            )}
+                                        </TableCell>
+                                    </TableRow>
+                                ))
+                            ) : (
+                                <TableRow>
+                                    <TableCell colSpan={5} className="text-center py-4">
+                                        No results found for selected date
                                     </TableCell>
                                 </TableRow>
-                            ))
-                        ) : (
-                            <TableRow>
-                                <TableCell colSpan={5} className="text-center py-4">
-                                    No result found
-                                </TableCell>
-                            </TableRow>
-                        )}
-                    </TableBody>
-                </Table>
+                            )}
+                        </TableBody>
+                    </Table>
+                </div>
             </div>
 
             {/* Winner Dialog */}
@@ -556,7 +626,7 @@ console.log(result)
                                         ))
                                     ) : (
                                         <TableRow>
-                                            <TableCell colSpan={5} className="text-center py-4">
+                                            <TableCell colSpan={8} className="text-center py-4">
                                                 No winning bids found
                                             </TableCell>
                                         </TableRow>
