@@ -6,7 +6,8 @@ import GalidisawarBid from '@/models/GalidisawarBid';
 import StarlineBid from '@/models/StarlineBid';
 import AppUser from '@/models/AppUser';
 import Transaction from '@/models/Transaction';
-import mongoose from 'mongoose';
+import Fund from '@/models/Fund';
+import Withdrawal from '@/models/Withdrawal';
 
 export async function GET(request: Request) {
   try {
@@ -14,17 +15,12 @@ export async function GET(request: Request) {
 
     // Get query parameters for date range
     const { searchParams } = new URL(request.url);
-    const days = parseInt(searchParams.get('days') || '7');
+    const days = parseInt(searchParams.get('days') || '1'); // Default to today
     
-    // Calculate date range
-    const startDate = new Date();
-    startDate.setDate(startDate.getDate() - days);
-    startDate.setHours(0, 0, 0, 0);
+    // Calculate date range based on selected option
+    const { startDate, endDate } = calculateDateRange(days);
 
-    const endDate = new Date();
-    endDate.setHours(23, 59, 59, 999);
-
-    // Fetch all data in parallel for better performance:cite[7]
+    // Fetch all data in parallel for better performance
     const [
       totalUsers,
       activeUsers,
@@ -35,7 +31,8 @@ export async function GET(request: Request) {
       totalWithdrawals,
       recentTransactions,
       userGrowthData,
-      revenueData
+      revenueData,
+      todayFinancialData
     ] = await Promise.all([
       // Total Users
       AppUser.countDocuments(),
@@ -58,19 +55,19 @@ export async function GET(request: Request) {
       
       // Total Main Market Bid Amount
       MainMarketBid.aggregate([
-        { $match: { created_at: { $gte: startDate } } },
+        { $match: { created_at: { $gte: startDate, $lte: endDate } } },
         { $group: { _id: null, total: { $sum: '$total_amount' } } }
       ]),
       
       // Total Galidisawar Bid Amount
       GalidisawarBid.aggregate([
-        { $match: { created_at: { $gte: startDate } } },
+        { $match: { created_at: { $gte: startDate, $lte: endDate } } },
         { $group: { _id: null, total: { $sum: '$total_amount' } } }
       ]),
       
       // Total Starline Bid Amount
       StarlineBid.aggregate([
-        { $match: { created_at: { $gte: startDate } } },
+        { $match: { created_at: { $gte: startDate, $lte: endDate } } },
         { $group: { _id: null, total: { $sum: '$total_amount' } } }
       ]),
       
@@ -80,7 +77,7 @@ export async function GET(request: Request) {
           $match: { 
             type: 'credit',
             status: 'completed',
-            created_at: { $gte: startDate }
+            created_at: { $gte: startDate, $lte: endDate }
           } 
         },
         { $group: { _id: null, total: { $sum: '$amount' } } }
@@ -92,7 +89,7 @@ export async function GET(request: Request) {
           $match: { 
             type: 'debit',
             status: 'completed',
-            created_at: { $gte: startDate }
+            created_at: { $gte: startDate, $lte: endDate }
           } 
         },
         { $group: { _id: null, total: { $sum: '$amount' } } }
@@ -101,7 +98,7 @@ export async function GET(request: Request) {
       // Recent Transactions (for activity feed)
       Transaction.find({ 
         status: 'completed',
-        created_at: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } // Last 24 hours
+        created_at: { $gte: startDate, $lte: endDate }
       })
         .populate('user_id', 'name mobile_number')
         .sort({ created_at: -1 })
@@ -111,7 +108,7 @@ export async function GET(request: Request) {
       AppUser.aggregate([
         {
           $match: {
-            createdAt: { $gte: startDate }
+            createdAt: { $gte: startDate, $lte: endDate }
           }
         },
         {
@@ -131,7 +128,7 @@ export async function GET(request: Request) {
       // Revenue data for chart (total bids by day)
       MainMarketBid.aggregate([
         {
-          $match: { created_at: { $gte: startDate } }
+          $match: { created_at: { $gte: startDate, $lte: endDate } }
         },
         {
           $group: {
@@ -144,7 +141,10 @@ export async function GET(request: Request) {
           }
         },
         { $sort: { '_id.year': 1, '_id.month': 1, '_id.day': 1 } }
-      ])
+      ]),
+
+      // Today's financial data (bids count)
+      getTodayFinancialData(startDate, endDate)
     ]);
 
     // Calculate total bid amount
@@ -186,6 +186,12 @@ export async function GET(request: Request) {
         totalWithdrawals: totalWithdrawals[0]?.total || 0,
         netFlow
       },
+      todayStats: {
+        deposits: todayFinancialData.deposits,
+        withdrawals: todayFinancialData.withdrawals,
+        profitLoss: todayFinancialData.profitLoss,
+        totalbid: todayFinancialData.totalbid
+      },
       charts: {
         userGrowth: formattedUserGrowth,
         revenue: formattedRevenueData
@@ -220,6 +226,154 @@ export async function GET(request: Request) {
       { status: false, message: errorMessage },
       { status: 500 }
     );
+  }
+}
+
+// Helper function to calculate date range based on selected option
+function calculateDateRange(days: number) {
+  const endDate = new Date();
+  const startDate = new Date();
+  
+  switch (days) {
+    case 1: // Today
+      startDate.setHours(0, 0, 0, 0);
+      endDate.setHours(23, 59, 59, 999);
+      break;
+    case 2: // Yesterday
+      startDate.setDate(startDate.getDate() - 1);
+      startDate.setHours(0, 0, 0, 0);
+      endDate.setDate(endDate.getDate() - 1);
+      endDate.setHours(23, 59, 59, 999);
+      break;
+    default: // Last X days
+      startDate.setDate(startDate.getDate() - days);
+      startDate.setHours(0, 0, 0, 0);
+      endDate.setHours(23, 59, 59, 999);
+      break;
+  }
+  
+  return { startDate, endDate };
+}
+
+// Helper function to get today's financial data
+async function getTodayFinancialData(startDate: Date, endDate: Date) {
+  try {
+    // Today's Deposits (only completed)
+    const depositsAgg = await Fund.aggregate([
+      {
+        $match: {
+          status: "approved",
+          created_at: { $gte: startDate, $lte: endDate },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          total: { $sum: "$amount" },
+        },
+      },
+    ]);
+
+    const todayDeposits = depositsAgg[0]?.total || 0;
+
+    // Today's Withdrawals (only completed)
+    const withdrawalsAgg = await Withdrawal.aggregate([
+      {
+        $match: {
+          status: "approved",
+          created_at: { $gte: startDate, $lte: endDate },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          total: { $sum: "$amount" },
+        },
+      },
+    ]);
+
+    const todayWithdrawals = withdrawalsAgg[0]?.total || 0;
+
+    // Today's Total Bids from all markets
+    const [mainMarketBids, starlineBids, galidisawarBids] = await Promise.all([
+      MainMarketBid.aggregate([
+        {
+          $match: {
+            created_at: { $gte: startDate, $lte: endDate },
+          },
+        },
+        {
+          $unwind: "$bids"
+        },
+        {
+          $group: {
+            _id: null,
+            total: { $sum: "$bids.bid_amount" },
+            count: { $sum: 1 }
+          },
+        },
+      ]),
+      
+      StarlineBid.aggregate([
+        {
+          $match: {
+            created_at: { $gte: startDate, $lte: endDate },
+          },
+        },
+        {
+          $unwind: "$bids"
+        },
+        {
+          $group: {
+            _id: null,
+            total: { $sum: "$bids.bid_amount" },
+            count: { $sum: 1 }
+          },
+        },
+      ]),
+      
+      GalidisawarBid.aggregate([
+        {
+          $match: {
+            created_at: { $gte: startDate, $lte: endDate },
+          },
+        },
+        {
+          $unwind: "$bids"
+        },
+        {
+          $group: {
+            _id: null,
+            total: { $sum: "$bids.bid_amount" },
+            count: { $sum: 1 }
+          },
+        },
+      ]),
+    ]);
+
+    const mainMarketCount = mainMarketBids[0]?.count || 0;
+    const starlineCount = starlineBids[0]?.count || 0;
+    const galidisawarCount = galidisawarBids[0]?.count || 0;
+
+    const totalbid = mainMarketCount + starlineCount + galidisawarCount;
+
+    // Profit/Loss (Deposits - Withdrawals)
+    const profitLoss = todayDeposits - todayWithdrawals;
+
+    return {
+      deposits: todayDeposits,
+      withdrawals: todayWithdrawals,
+      profitLoss,
+      totalbid
+    };
+  } catch (error) {
+    console.error('Error fetching today financial data:', error);
+    return {
+      deposits: 0,
+      withdrawals: 0,
+      profitLoss: 0,
+      totalbid: 0
+    };
   }
 }
 

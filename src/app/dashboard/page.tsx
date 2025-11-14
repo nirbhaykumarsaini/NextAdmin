@@ -1,24 +1,6 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import {
-  FiActivity,
-  FiDollarSign,
-  FiUserPlus,
-  FiTrendingUp,
-  FiArrowUp,
-  FiArrowDown,
-  FiLogOut,
-  FiRefreshCw,
-  FiUsers,
-  FiBarChart2
-} from "react-icons/fi";
-
 import { useAppDispatch } from "@/hooks/redux";
-import { logoutUser } from "@/redux/slices/authSlice";
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { toast } from "sonner";
@@ -28,7 +10,6 @@ import DashboardCard from "@/components/Dashboard/DashboardCard";
 import RevenueChart from "@/components/Dashboard/RevenueChart";
 import RecentActivity from "@/components/Dashboard/RecentActivity";
 
-
 interface DashboardData {
   stats: {
     totalUsers: number;
@@ -37,6 +18,12 @@ interface DashboardData {
     totalDeposits: number;
     totalWithdrawals: number;
     netFlow: number;
+  };
+  todayStats: {
+    deposits: number;
+    withdrawals: number;
+    profitLoss: number;
+    totalbid: number;
   };
   charts: {
     userGrowth: Array<{ name: string; value: number }>;
@@ -54,22 +41,11 @@ interface DashboardData {
   };
 }
 
-interface TodayData {
-  deposits: number;
-  withdrawals: number;
-  profitLoss: number;
-  totalbid: number
-}
-
-
-
 export default function Dashboard() {
   const dispatch = useAppDispatch();
   const [data, setData] = useState<DashboardData | null>(null);
-  const [todatData, setTodayData] = useState<TodayData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [timeRange, setTimeRange] = useState('7');
-  const [activeChart, setActiveChart] = useState('revenue');
+  const [timeRange, setTimeRange] = useState('1'); // Default to Today
 
   useEffect(() => {
     fetchDashboardData();
@@ -99,38 +75,9 @@ export default function Dashboard() {
     }
   };
 
-  useEffect(() => {
-    fetchTodayData();
-  }, []);
-
-  const fetchTodayData = async () => {
-    try {
-      setLoading(true);
-      const response = await axios.get(`/api/today-financial-summary`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('accessToken')}`
-        }
-      });
-
-      if (response.data.status) {
-        console.log(response.data.data)
-        setTodayData(response.data.data);
-      } else {
-        toast.error(response.data.message);
-      }
-    } catch (error: unknown) {
-      console.error('Failed to fetch dashboard data:', error);
-      if (axios.isAxiosError(error)) {
-        toast.error(error.response?.data?.message || 'Failed to fetch dashboard data');
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Calculate percentage changes (you would typically get this from your API)
+  // Calculate percentage changes
   const calculateChange = (current: number, previous: number) => {
-    if (previous === 0) return '+100%';
+    if (previous === 0) return current > 0 ? '+100%' : '0%';
     const change = ((current - previous) / previous) * 100;
     return `${change >= 0 ? '+' : ''}${change.toFixed(1)}%`;
   };
@@ -143,7 +90,7 @@ export default function Dashboard() {
     return <DashboardSkeleton />;
   }
 
-  const { stats, charts, recentActivity } = data;
+  const { stats, todayStats, charts, recentActivity } = data;
 
   return (
     <div className="space-y-6">
@@ -156,12 +103,20 @@ export default function Dashboard() {
       />
 
       {/* Stats Grid */}
-      <DashboardCard stats={stats} todatData={todatData} calculateChange={calculateChange} />
+      <DashboardCard 
+        stats={stats} 
+        todayStats={todayStats} 
+        calculateChange={calculateChange} 
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-
         {/* Charts */}
-        <RevenueChart activeChart={activeChart} fetchDashboardData={fetchDashboardData} setActiveChart={setActiveChart} charts={charts} />
+        <RevenueChart 
+          activeChart={'revenue'} 
+          fetchDashboardData={fetchDashboardData} 
+          setActiveChart={() => {}} 
+          charts={charts} 
+        />
 
         {/* Activity */}
         <RecentActivity recentActivity={recentActivity} />
@@ -169,4 +124,3 @@ export default function Dashboard() {
     </div>
   );
 }
-
