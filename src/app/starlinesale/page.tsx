@@ -61,8 +61,8 @@ const gameTypes = [
 
 const MainMarketSale = () => {
     const [date, setDate] = useState<Date | undefined>(new Date())
-    const [gameId, setGameId] = useState("")
-    const [gameType, setGameType] = useState("")
+    const [gameId, setGameId] = useState("all")
+    const [gameType, setGameType] = useState("all")
     const [loading, setLoading] = useState(false);
     const [saleReport, setSaleReport] = useState<SaleReport | null>(null);
     const [error, setError] = useState("");

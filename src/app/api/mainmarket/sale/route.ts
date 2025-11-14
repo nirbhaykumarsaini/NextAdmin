@@ -35,6 +35,7 @@ interface DeclaredDigits {
   closeDigit?: string;
 }
 
+
 interface ResponseData {
   status: boolean;
   message: string;

@@ -252,16 +252,29 @@ export async function POST(request: Request) {
         // Create transaction records
         const transactionIds: Types.ObjectId[] = [];
         for (const bid of bids) {
+            const game = await MainMarketGame.findById(bid.game_id);
+
+            // Build dynamic description
+            const fields: string[] = [];
+            if (bid.session) fields.push(`Session: ${bid.session}`);
+            if (bid.digit) fields.push(`Digit: ${bid.digit}`);
+            if (bid.panna) fields.push(`Panna: ${bid.panna}`);
+            if (bid.open_panna) fields.push(`Open: ${bid.open_panna}`);
+            if (bid.close_panna) fields.push(`Close: ${bid.close_panna}`);
+
+            const extra = fields.join(' | ') || 'No extra details';
+
+            const description = `Bid placed on ${game.game_name} | Game Type: ${bid.game_type} | ${extra} | Amount: ₹${bid.bid_amount}`;
+
             const transaction = new Transaction({
-                user_id: user_id,
+                user_id,
                 amount: bid.bid_amount,
                 type: 'debit',
                 status: 'completed',
-                description: `Bid placed on ${bid.game_type} game`
+                description
             });
 
             await transaction.save();
-            transactionIds.push(transaction._id);
         }
 
         // Create the main market bid

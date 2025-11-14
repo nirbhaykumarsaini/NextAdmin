@@ -88,9 +88,9 @@ const sessions = [
 
 const MainMarketSale = () => {
     const [date, setDate] = useState<Date | undefined>(new Date())
-    const [gameId, setGameId] = useState("")
-    const [gameType, setGameType] = useState("")
-    const [session, setSession] = useState("");
+    const [gameId, setGameId] = useState("all")
+    const [gameType, setGameType] = useState("all")
+    const [session, setSession] = useState("open");
     const [loading, setLoading] = useState(false);
     const [saleReport, setSaleReport] = useState<SaleReport | null>(null);
     const [error, setError] = useState("");
