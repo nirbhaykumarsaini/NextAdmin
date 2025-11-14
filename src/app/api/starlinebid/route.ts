@@ -140,6 +140,26 @@ export async function POST(request: Request) {
         user.balance -= totalBidAmount;
         await user.save({ session });
 
+
+        let descriptionLines: string[] = [];
+
+        for (const bid of bids) {
+            const game = await StarlineGame.findById(bid.game_id).session(session);
+
+            const extraParts: string[] = [];
+
+            if (bid.digit) extraParts.push(`Digit: ${bid.digit}`);
+            if (bid.panna) extraParts.push(`Panna: ${bid.panna}`);
+
+            const extra = extraParts.join(' | ') || 'No extra details';
+
+            descriptionLines.push(
+                ` ${game.game_name} | Game Type: ${bid.game_type} | ${extra} | Amount: ₹${bid.bid_amount}`
+            );
+        }
+
+        const fullDescription = "Bid placed on" + descriptionLines.join(" || ");
+
         // Create transaction record
         const transaction = new Transaction({
             user_id: user_id,
@@ -147,7 +167,7 @@ export async function POST(request: Request) {
             type: 'debit',
             status: 'completed',
             balance_after: user.balance,
-            description: 'Starline bid placement'
+            description: fullDescription
         });
 
         await transaction.save({ session });

@@ -122,6 +122,30 @@ export async function POST(request: Request) {
         user.balance -= totalBidAmount;
         await user.save({ session });
 
+        const bidDescriptions: string[] = [];
+
+        for (const bid of bids) {
+            const game = await GalidisawarGame.findById(bid.game_id).session(session);
+
+            // Create extra details based on game type
+            let extra = '';
+
+            if (bid.game_type === 'left-digit') {
+                extra = `Left Digit: ${bid.digit}`;
+            } else if (bid.game_type === 'right-digit') {
+                extra = `Right Digit: ${bid.digit}`;
+            } else if (bid.game_type === 'jodi-digit') {
+                extra = `Jodi Digit: ${bid.digit}`;
+            }
+
+            const description = `Bid placed on ${game.game_name} | Game Type: ${bid.game_type} | ${extra} | Amount: ₹${bid.bid_amount}`;
+
+            bidDescriptions.push(description);
+        }
+
+        // Final description for transaction (multiple bids supported)
+        const finalDescription = bidDescriptions.join(' || ');
+
         // Create transaction record
         const transaction = new Transaction({
             user_id: user_id,
@@ -129,7 +153,7 @@ export async function POST(request: Request) {
             type: 'debit',
             status: 'completed',
             balance_after: user.balance,
-            description: 'Starline bid placement'
+            description: finalDescription
         });
 
         await transaction.save({ session });
