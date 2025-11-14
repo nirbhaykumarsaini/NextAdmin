@@ -193,6 +193,47 @@ export async function POST(request: Request) {
       return result;
     };
 
+    // Function to filter digits that match with declared openDigit for jodi-based games
+    const filterDigitsByOpenDigit = (digitReport: DigitReportItem[], allDigits: DigitReportItem[], declaredResult?: DeclaredDigits): DigitReportItem[] => {
+      if (!declaredResult?.openDigit) {
+        // If no declared open digit, return all digits with 0 points
+        return allDigits.map(digitItem => ({
+          ...digitItem,
+          point: 0
+        }));
+      }
+
+      const openDigit = declaredResult.openDigit;
+      
+      // For jodi-based games, filter digits that start with the openDigit
+      const filteredReport = digitReport.filter(item => 
+        item.digit.startsWith(openDigit)
+      );
+      
+      // Create result with all digits that start with openDigit, including those with 0 points
+      const matchingDigits = allDigits.filter(digitItem => 
+        digitItem.digit.startsWith(openDigit)
+      );
+      
+      const result = matchingDigits.map(digitItem => {
+        const existingItem = filteredReport.find(item => item.digit === digitItem.digit);
+        return {
+          digit: digitItem.digit,
+          point: existingItem?.point || 0
+        };
+      });
+      
+      // Sort by point (highest first) and then by digit
+      result.sort((a, b) => {
+        if (b.point !== a.point) {
+          return b.point - a.point;
+        }
+        return a.digit.localeCompare(b.digit);
+      });
+      
+      return result;
+    };
+
     const getDigitReport = async (type: string, sess?: string): Promise<DigitReportItem[]> => {
       const matchConditions: MatchConditions = {
         'bids.game_type': type
@@ -395,11 +436,12 @@ export async function POST(request: Request) {
     };
 
     const processDigitReport = async (type: string, digitReport: DigitReportItem[], allDigits: DigitReportItem[], declaredResult?: DeclaredDigits): Promise<DigitReportItem[]> => {
-      // Special handling only for jodi-based games when session is close
+      // Special handling for jodi-based games when session is close
       const jodiBasedGames = ['jodi-digit', 'red-bracket', 'digit-base-jodi'];
       
       if (jodiBasedGames.includes(type) && session === 'close') {
-        return filterJodiBasedByDeclaredResult(digitReport, allDigits, declaredResult);
+        // For close session, filter digits that match with declared openDigit
+        return filterDigitsByOpenDigit(digitReport, allDigits, declaredResult);
       }
 
       if (type === 'full-sangam' || type === 'half-sangam') {
@@ -472,10 +514,11 @@ export async function POST(request: Request) {
         
         let processedReport: DigitReportItem[] = [];
         
-        // Special handling only for jodi-based games when session is close
+        // Special handling for jodi-based games when session is close
         const jodiBasedGames = ['jodi-digit', 'red-bracket', 'digit-base-jodi'];
         if (jodiBasedGames.includes(type) && session === 'close') {
-          processedReport = filterJodiBasedByDeclaredResult(digitReport, allDigits, declaredResult);
+          // For close session, filter digits that match with declared openDigit
+          processedReport = filterDigitsByOpenDigit(digitReport, allDigits, declaredResult);
         } else {
           processedReport = await processDigitReport(type, digitReport, allDigits, declaredResult);
         }
@@ -533,10 +576,11 @@ export async function POST(request: Request) {
     
     let processedReport: DigitReportItem[] = [];
     
-    // Special handling only for jodi-based games when session is close
+    // Special handling for jodi-based games when session is close
     const jodiBasedGames = ['jodi-digit', 'red-bracket', 'digit-base-jodi'];
     if (jodiBasedGames.includes(game_type) && session === 'close') {
-      processedReport = filterJodiBasedByDeclaredResult(digitReport, allDigits, declaredResult);
+      // For close session, filter digits that match with declared openDigit
+      processedReport = filterDigitsByOpenDigit(digitReport, allDigits, declaredResult);
     } else {
       processedReport = await processDigitReport(game_type, digitReport, allDigits, declaredResult);
     }
@@ -566,9 +610,8 @@ export async function POST(request: Request) {
       [resultKeyMap[game_type]]: processedReport
     };
 
-    // Add declared digits to response when session is close for jodi-based games or all game types
-    const jodiBasedOrAll = [...jodiBasedGames, 'all'];
-    if (jodiBasedOrAll.includes(game_type) && session === 'close' && declaredResult) {
+    // Add declared digits to response when session is close for jodi-based games
+    if (jodiBasedGames.includes(game_type) && session === 'close' && declaredResult) {
       responseData.declaredDigits = {
         openDigit: declaredResult.openDigit,
         closeDigit: declaredResult.closeDigit
