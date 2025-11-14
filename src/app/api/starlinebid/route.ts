@@ -141,7 +141,7 @@ export async function POST(request: Request) {
         await user.save({ session });
 
 
-        let descriptionLines: string[] = [];
+        const descriptionLines: string[] = [];
 
         for (const bid of bids) {
             const game = await StarlineGame.findById(bid.game_id).session(session);
