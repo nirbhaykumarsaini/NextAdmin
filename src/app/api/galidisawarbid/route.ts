@@ -46,16 +46,17 @@ function getCurrentDayAndTime(): { currentDay: string; currentHours: number; cur
 function parseOpenTimeToMinutes(openTimeStr: string): { openHours: number; openMinutes: number } {
     const openTime = openTimeStr.toUpperCase().trim();
     const [timePart, period] = openTime.split(' ');
-    let [openHours, openMinutes] = timePart.split(':').map(Number);
+    const [openHours, openMinutes] = timePart.split(':').map(Number);
 
     // Convert to 24-hour format
+    let adjustedHours = openHours;
     if (period === 'PM' && openHours !== 12) {
-        openHours += 12;
+        adjustedHours += 12;
     } else if (period === 'AM' && openHours === 12) {
-        openHours = 0;
+        adjustedHours = 0;
     }
 
-    return { openHours, openMinutes };
+    return { openHours: adjustedHours, openMinutes };
 }
 
 // Helper function to check if bidding is allowed
