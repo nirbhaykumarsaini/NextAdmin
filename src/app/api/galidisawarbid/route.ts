@@ -2,17 +2,15 @@ import { NextResponse } from 'next/server';
 import dbConnect from '@/config/db';
 import GalidisawarBid from '@/models/GalidisawarBid';
 import ApiError from '@/lib/errors/APiError';
-import GalidisawarGame from '@/models/GalidisawarGame';
+import GalidisawarGame, { IGalidisawarGameDay } from '@/models/GalidisawarGame';
 import AppUser from '@/models/AppUser';
 import Transaction from '@/models/Transaction';
 import mongoose, { Types } from 'mongoose';
-
-
-
+import { validateBidEligibility } from '@/middleware/bidValidationMiddleware';
 
 interface BidRequest {
     user_id?: string;
-    bid_id: string
+    bid_id: string;
     digit: string;
     bid_amount: number;
     game_id: string;
@@ -33,6 +31,49 @@ interface FilterType {
     'bids.game_type'?: string;
 }
 
+// Helper function to get current day and time
+function getCurrentDayAndTime(): { currentDay: string; currentHours: number; currentMinutes: number } {
+    const now = new Date();
+    const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    const currentDay = days[now.getDay()];
+    const currentHours = now.getHours();
+    const currentMinutes = now.getMinutes();
+
+    return { currentDay, currentHours, currentMinutes };
+}
+
+// Helper function to parse open time to 24-hour format
+function parseOpenTimeToMinutes(openTimeStr: string): { openHours: number; openMinutes: number } {
+    const openTime = openTimeStr.toUpperCase().trim();
+    const [timePart, period] = openTime.split(' ');
+    let [openHours, openMinutes] = timePart.split(':').map(Number);
+
+    // Convert to 24-hour format
+    if (period === 'PM' && openHours !== 12) {
+        openHours += 12;
+    } else if (period === 'AM' && openHours === 12) {
+        openHours = 0;
+    }
+
+    return { openHours, openMinutes };
+}
+
+// Helper function to check if bidding is allowed
+function isBiddingAllowed(
+    currentHours: number,
+    currentMinutes: number,
+    openHours: number,
+    openMinutes: number
+): boolean {
+    return currentHours < openHours ||
+        (currentHours === openHours && currentMinutes < openMinutes);
+}
+
+// Helper function to find today's schedule
+function findTodaySchedule(days: IGalidisawarGameDay[], currentDay: string): IGalidisawarGameDay | null {
+    return days.find(day => day.day.toLowerCase() === currentDay) || null;
+}
+
 export async function POST(request: Request) {
     const session = await mongoose.startSession();
     session.startTransaction();
@@ -46,6 +87,14 @@ export async function POST(request: Request) {
         if (!user_id || !bids || !Array.isArray(bids) || bids.length === 0) {
             throw new ApiError('User ID and bids array are required');
         }
+
+        const eligibilityCheck = await validateBidEligibility(user_id);
+        if (!eligibilityCheck.isValid) {
+            throw new ApiError(eligibilityCheck.error || 'User not eligible for bidding');
+        }
+
+        // Get current day and time
+        const { currentDay, currentHours, currentMinutes } = getCurrentDayAndTime();
 
         // Validate each bid
         for (const bid of bids) {
@@ -70,10 +119,6 @@ export async function POST(request: Request) {
             // Validate digit format based on game type
             switch (bid.game_type) {
                 case 'left-digit':
-                    if (digitStr.length !== 1 || parseInt(digitStr) < 0 || parseInt(digitStr) > 9) {
-                        throw new ApiError('Single digit must be a single number between 0-9');
-                    }
-                    break;
                 case 'right-digit':
                     if (digitStr.length !== 1 || parseInt(digitStr) < 0 || parseInt(digitStr) > 9) {
                         throw new ApiError('Single digit must be a single number between 0-9');
@@ -81,7 +126,7 @@ export async function POST(request: Request) {
                     break;
                 case 'jodi-digit':
                     if (digitStr.length !== 2 || parseInt(digitStr) < 0 || parseInt(digitStr) > 99) {
-                        throw new ApiError('Single panna must be a two-digit number');
+                        throw new ApiError('Jodi digit must be a two-digit number between 00-99');
                     }
                     break;
             }
@@ -98,6 +143,22 @@ export async function POST(request: Request) {
             }
             if (!game.is_active) {
                 throw new ApiError(`Galidisawar game with ID ${bid.game_id} is inactive`);
+            }
+
+            // ✅ Check market status for today
+            const todaySchedule = findTodaySchedule(game.days, currentDay);
+            if (!todaySchedule) {
+                throw new ApiError(`No schedule found for ${currentDay} for game ID: ${bid.game_id}`);
+            }
+            if (!todaySchedule.market_status) {
+                throw new ApiError(`Market is closed for ${currentDay} for game ID: ${bid.game_id}`);
+            }
+
+            // ✅ Check game time validation - bids cannot be placed after open time
+            const { openHours, openMinutes } = parseOpenTimeToMinutes(todaySchedule.open_time);
+
+            if (!isBiddingAllowed(currentHours, currentMinutes, openHours, openMinutes)) {
+                throw new ApiError(`Bids cannot be placed after the game's open time (${todaySchedule.open_time})`);
             }
         }
 
@@ -118,45 +179,48 @@ export async function POST(request: Request) {
             throw new ApiError('Insufficient balance');
         }
 
-        // Deduct amount from user balance
-        user.balance -= totalBidAmount;
-        await user.save({ session });
-
-        const bidDescriptions: string[] = [];
+        // Create transaction records and deduct amount per bid
+        const transactionIds: Types.ObjectId[] = [];
+        let runningBalance = user.balance;
 
         for (const bid of bids) {
             const game = await GalidisawarGame.findById(bid.game_id).session(session);
 
-            // Create extra details based on game type
+            // Build description for each bid
             let extra = '';
-
-            if (bid.game_type === 'left-digit') {
-                extra = `Left Digit: ${bid.digit}`;
-            } else if (bid.game_type === 'right-digit') {
-                extra = `Right Digit: ${bid.digit}`;
-            } else if (bid.game_type === 'jodi-digit') {
-                extra = `Jodi Digit: ${bid.digit}`;
+            switch (bid.game_type) {
+                case 'left-digit':
+                    extra = `Left Digit: ${bid.digit}`;
+                    break;
+                case 'right-digit':
+                    extra = `Right Digit: ${bid.digit}`;
+                    break;
+                case 'jodi-digit':
+                    extra = `Jodi Digit: ${bid.digit}`;
+                    break;
             }
 
-            const description = `Bid placed on ${game.game_name} | Game Type: ${bid.game_type} | ${extra} | Amount: ₹${bid.bid_amount}`;
+            const description = `Galidisawar bid placed for ${game.game_name} (${bid.game_type.replace('-', ' ')} - ${extra})`;
 
-            bidDescriptions.push(description);
+            // Update running balance for this bid
+            runningBalance -= bid.bid_amount;
+
+            const transaction = new Transaction({
+                user_id,
+                amount: bid.bid_amount,
+                type: 'debit',
+                status: 'completed',
+                balance_after: runningBalance,
+                description
+            });
+
+            await transaction.save({ session });
+            transactionIds.push(transaction._id);
         }
 
-        // Final description for transaction (multiple bids supported)
-        const finalDescription = bidDescriptions.join(' || ');
-
-        // Create transaction record
-        const transaction = new Transaction({
-            user_id: user_id,
-            amount: totalBidAmount,
-            type: 'debit',
-            status: 'completed',
-            balance_after: user.balance,
-            description: finalDescription
-        });
-
-        await transaction.save({ session });
+        // Update user balance with final amount
+        user.balance = runningBalance;
+        await user.save({ session });
 
         // Transform bids to match schema format
         const transformedBids = bids.map(bid => ({
@@ -166,14 +230,18 @@ export async function POST(request: Request) {
             game_type: bid.game_type
         }));
 
-        // Create the starline bid
-        const starlineBid = new GalidisawarBid({
+        // Create the galidisawar bid
+        const galidisawarBid = new GalidisawarBid({
             user_id: new Types.ObjectId(user_id),
             bids: transformedBids,
-            total_amount: totalBidAmount
+            total_amount: totalBidAmount,
+            transaction: transactionIds
         });
 
-        await starlineBid.save({ session });
+        await galidisawarBid.save({ session });
+
+        // If you have referral reward logic, add it here
+        // await checkAndRewardReferral(user_id, session);
 
         // Commit transaction
         await session.commitTransaction();
@@ -183,10 +251,10 @@ export async function POST(request: Request) {
             status: true,
             message: 'Galidisawar bid placed successfully',
             data: {
-                bid_id: starlineBid._id,
+                bid_id: galidisawarBid._id,
                 total_amount: totalBidAmount,
                 new_balance: user.balance,
-                transaction_id: transaction._id
+                transaction_ids: transactionIds
             }
         });
 
@@ -202,7 +270,7 @@ export async function POST(request: Request) {
             }, { status: 400 });
         }
 
-        const errorMessage = error instanceof Error ? error.message : 'Failed to place starline bid';
+        const errorMessage = error instanceof Error ? error.message : 'Failed to place galidisawar bid';
 
         return NextResponse.json({
             status: false,

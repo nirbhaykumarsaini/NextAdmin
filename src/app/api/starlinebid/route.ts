@@ -7,6 +7,7 @@ import AppUser from '@/models/AppUser';
 import Transaction from '@/models/Transaction';
 import mongoose, { Types } from 'mongoose';
 import AccountSetting from '@/models/AccountSettings';
+import { validateBidEligibility } from '@/middleware/bidValidationMiddleware';
 
 interface BidRequest {
     user_id?: string;
@@ -32,6 +33,35 @@ interface FilterType {
     'bids.game_type'?: string;
 }
 
+// Helper function to convert time to 24-hour format and get current time in minutes
+function getCurrentTimeInMinutes(): number {
+    const now = new Date();
+    const currentHours = now.getHours();
+    const currentMinutes = now.getMinutes();
+    return currentHours * 60 + currentMinutes;
+}
+
+// Helper function to parse game open time to minutes
+function parseOpenTimeToMinutes(openTimeStr: string): number {
+    const openTime = openTimeStr.toUpperCase().trim();
+    const [timePart, period] = openTime.split(' ');
+    let [openHours, openMinutes] = timePart.split(':').map(Number);
+
+    // Convert to 24-hour format
+    if (period === 'PM' && openHours !== 12) {
+        openHours += 12;
+    } else if (period === 'AM' && openHours === 12) {
+        openHours = 0;
+    }
+
+    return openHours * 60 + openMinutes;
+}
+
+// Helper function to check if bidding is allowed before open time
+function isBiddingAllowed(currentTimeInMinutes: number, gameOpenTimeInMinutes: number): boolean {
+    return currentTimeInMinutes < gameOpenTimeInMinutes;
+}
+
 export async function POST(request: Request) {
     const session = await mongoose.startSession();
     session.startTransaction();
@@ -45,6 +75,14 @@ export async function POST(request: Request) {
         if (!user_id || !bids || !Array.isArray(bids) || bids.length === 0) {
             throw new ApiError('User ID and bids array are required');
         }
+
+        const eligibilityCheck = await validateBidEligibility(user_id);
+        if (!eligibilityCheck.isValid) {
+            throw new ApiError(eligibilityCheck.error || 'User not eligible for bidding');
+        }
+
+        // Get current time in minutes for comparison
+        const currentTimeInMinutes = getCurrentTimeInMinutes();
 
         // Get account settings for min/max bid validation
         const accountSettings = await AccountSetting.findOne();
@@ -117,6 +155,16 @@ export async function POST(request: Request) {
             if (!game.is_active) {
                 throw new ApiError(`Starline game with ID ${bid.game_id} is inactive`);
             }
+            if (!game.market_status) {
+                throw new ApiError(`Market is closed for game ID: ${bid.game_id}`);
+            }
+
+            // ✅ Check game time validation - bids cannot be placed after open time
+            const gameOpenTimeInMinutes = parseOpenTimeToMinutes(game.open_time);
+
+            if (!isBiddingAllowed(currentTimeInMinutes, gameOpenTimeInMinutes)) {
+                throw new ApiError(`Bids cannot be placed after the game's open time (${game.open_time})`);
+            }
         }
 
         // Check if user exists and has sufficient balance
@@ -136,41 +184,37 @@ export async function POST(request: Request) {
             throw new ApiError('Insufficient balance');
         }
 
-        // Deduct amount from user balance
-        user.balance -= totalBidAmount;
-        await user.save({ session });
-
-
-        const descriptionLines: string[] = [];
+        // Create transaction records and deduct amount per bid
+        const transactionIds: Types.ObjectId[] = [];
 
         for (const bid of bids) {
             const game = await StarlineGame.findById(bid.game_id).session(session);
 
+            // Build description for each bid
             const extraParts: string[] = [];
-
             if (bid.digit) extraParts.push(`Digit: ${bid.digit}`);
             if (bid.panna) extraParts.push(`Panna: ${bid.panna}`);
 
             const extra = extraParts.join(' | ') || 'No extra details';
 
-            descriptionLines.push(
-                ` ${game.game_name} | Game Type: ${bid.game_type} | ${extra} | Amount: ₹${bid.bid_amount}`
-            );
+            const description = `Starline bid placed for ${game.game_name} ( ${bid.game_type.replace('-', ' ')} - ${extra} )`;
+
+            const transaction = new Transaction({
+                user_id,
+                amount: bid.bid_amount,
+                type: 'debit',
+                status: 'completed',
+                balance_after: user.balance - bid.bid_amount,
+                description
+            });
+
+            await transaction.save({ session });
+            transactionIds.push(transaction._id);
         }
 
-        const fullDescription = "Bid placed on" + descriptionLines.join(" || ");
-
-        // Create transaction record
-        const transaction = new Transaction({
-            user_id: user_id,
-            amount: totalBidAmount,
-            type: 'debit',
-            status: 'completed',
-            balance_after: user.balance,
-            description: fullDescription
-        });
-
-        await transaction.save({ session });
+        // Deduct total amount from user balance
+        user.balance -= totalBidAmount;
+        await user.save({ session });
 
         // Transform bids to match schema format
         const transformedBids = bids.map(bid => ({
@@ -185,10 +229,14 @@ export async function POST(request: Request) {
         const starlineBid = new StarlineBid({
             user_id: new Types.ObjectId(user_id),
             bids: transformedBids,
-            total_amount: totalBidAmount
+            total_amount: totalBidAmount,
+            transaction: transactionIds
         });
 
         await starlineBid.save({ session });
+
+        // If you have referral reward logic, add it here
+        // await checkAndRewardReferral(user_id, session);
 
         // Commit transaction
         await session.commitTransaction();
@@ -201,7 +249,7 @@ export async function POST(request: Request) {
                 bid_id: starlineBid._id,
                 total_amount: totalBidAmount,
                 new_balance: user.balance,
-                transaction_id: transaction._id
+                transaction_ids: transactionIds
             }
         });
 
@@ -214,7 +262,7 @@ export async function POST(request: Request) {
             return NextResponse.json({
                 status: false,
                 message: error.message
-            }, { status: 400 });
+            });
         }
 
         const errorMessage = error instanceof Error ? error.message : 'Failed to place starline bid';
@@ -222,7 +270,7 @@ export async function POST(request: Request) {
         return NextResponse.json({
             status: false,
             message: errorMessage
-        }, { status: 500 });
+        });
     }
 }
 
