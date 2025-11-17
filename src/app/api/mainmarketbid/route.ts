@@ -34,117 +34,8 @@ interface RequestQuery {
     session?: 'open' | 'close';
 }
 
-// Define interfaces for game schedule
-interface DaySchedule {
-    openTime: string;
-    closeTime: string;
-    marketStatus: boolean;
-}
-
-interface GameSchedule {
-    monday: DaySchedule;
-    tuesday: DaySchedule;
-    wednesday: DaySchedule;
-    thursday: DaySchedule;
-    friday: DaySchedule;
-    saturday: DaySchedule;
-    sunday: DaySchedule;
-}
-
-interface MarketStatusResult {
-    isOpen: boolean;
-    message: string;
-}
-
-// Helper function to get current IST time and day
-function getCurrentIST(): { currentTime: string; currentDay: string } {
-    const now = new Date();
-    const istOptions: Intl.DateTimeFormatOptions = {
-        timeZone: 'Asia/Kolkata',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false,
-        weekday: 'long'
-    };
-    
-    const timeFormatter = new Intl.DateTimeFormat('en-US', istOptions);
-    const parts = timeFormatter.formatToParts(now);
-    
-    let currentTime = '';
-    let currentDay = '';
-    
-    parts.forEach(part => {
-        if (part.type === 'hour') currentTime += part.value;
-        else if (part.type === 'minute') currentTime += `:${part.value}`;
-        else if (part.type === 'weekday') currentDay = part.value.toLowerCase();
-    });
-    
-    return { currentTime, currentDay };
-}
-
-// Helper function to convert time string to minutes
-function timeToMinutes(timeString: string): number {
-    const [hours, minutes] = timeString.split(':').map(Number);
-    return hours * 60 + minutes;
-}
-
-// Helper function to check if market is open for bidding
-function isMarketOpen(gameSchedule: GameSchedule, gameType: string, session?: 'open' | 'close'): MarketStatusResult {
-    // For game types that don't have session restrictions, always allow bidding
-    if (['full-sangam', 'jodi-digit', 'red-bracket', 'digit-base-jodi'].includes(gameType)) {
-        return { isOpen: true, message: '' };
-    }
-
-    const { currentTime, currentDay } = getCurrentIST();
-    
-    // Check if today's schedule exists and market is open
-    const daySchedule = gameSchedule[currentDay as keyof GameSchedule];
-    if (!daySchedule || !daySchedule.marketStatus) {
-        return { 
-            isOpen: false, 
-            message: `Market is closed or no schedule found for ${currentDay}` 
-        };
-    }
-
-    const currentTimeInMinutes = timeToMinutes(currentTime);
-    const openTimeInMinutes = timeToMinutes(daySchedule.openTime);
-    const closeTimeInMinutes = timeToMinutes(daySchedule.closeTime);
-
-    // Check if current time is within market hours
-    if (currentTimeInMinutes < openTimeInMinutes) {
-        return { 
-            isOpen: false, 
-            message: `Market opens at ${daySchedule.openTime}` 
-        };
-    }
-
-    if (currentTimeInMinutes >= closeTimeInMinutes) {
-        return { 
-            isOpen: false, 
-            message: `Market closed at ${daySchedule.closeTime}` 
-        };
-    }
-
-    // For session-specific validation
-    if (session) {
-        const isOpenSessionTime = currentTimeInMinutes >= openTimeInMinutes && 
-                                currentTimeInMinutes < closeTimeInMinutes;
-
-        if (isOpenSessionTime && session === 'open') {
-            return { 
-                isOpen: false, 
-                message: "Open session bidding is closed!" 
-            };
-        }
-    }
-
-    return { isOpen: true, message: '' };
-}
 
 export async function POST(request: Request) {
-    const session = await mongoose.startSession();
-    session.startTransaction();
-
     try {
         await dbConnect();
         const body: MainMarketBidRequest = await request.json();
@@ -198,21 +89,15 @@ export async function POST(request: Request) {
                 throw new ApiError('Game ID is required for each bid');
             }
 
-            const game = await MainMarketGame.findById(bid.game_id).session(session);
-            if (!game) {
+            const games = await MainMarketGame.findById(bid.game_id);
+            if (!games) {
                 throw new ApiError(`Game not found for ID: ${bid.game_id}`);
             }
-            if (!game.is_active) {
+            if (!games.is_active) {
                 throw new ApiError(`Game with ID ${bid.game_id} is inactive`);
             }
 
-            // ✅ Check market timing
-            const marketStatus = isMarketOpen(game.schedule as GameSchedule, bid.game_type, bid.session);
-            if (!marketStatus.isOpen) {
-                throw new ApiError(marketStatus.message);
-            }
-
-            // ✅ Check if result is already declared for this game
+            // ✅ NEW: Check if result is already declared for this game
             const today = new Date();
             const formattedDate = today.toLocaleDateString('en-GB').split('/').join('-'); // DD-MM-YYYY format
 
@@ -227,7 +112,7 @@ export async function POST(request: Request) {
             }
 
             // For other game types, check if result exists
-            const existingResult = await MainMarketResult.findOne(resultQuery).session(session);
+            const existingResult = await MainMarketResult.findOne(resultQuery);
 
             if (existingResult) {
                 const sessionText = bid.session ? ` for ${bid.session} session` : '';
@@ -311,10 +196,19 @@ export async function POST(request: Request) {
                 delete bid.panna;
                 delete bid.session;
             }
+
+            // Check if game exists and is active
+            const game = await MainMarketGame.findById(bid.game_id);
+            if (!game) {
+                throw new ApiError(`Game not found for ID: ${bid.game_id}`);
+            }
+            if (!game.is_active) {
+                throw new ApiError(`Game with ID ${bid.game_id} is inactive`);
+            }
         }
 
         // Check if user exists and has sufficient balance
-        const user = await AppUser.findById(user_id).session(session);
+        const user = await AppUser.findById(user_id);
         if (!user) {
             throw new ApiError('User not found');
         }
@@ -330,11 +224,14 @@ export async function POST(request: Request) {
             throw new ApiError('Insufficient balance');
         }
 
-        // Create transaction records and deduct amount
+        // Deduct amount from user balance
+        user.balance -= totalBidAmount;
+        await user.save();
+
+        // Create transaction records
         const transactionIds: Types.ObjectId[] = [];
-        
         for (const bid of bids) {
-            const game = await MainMarketGame.findById(bid.game_id).session(session);
+            const game = await MainMarketGame.findById(bid.game_id);
 
             // Build dynamic description
             const fields: string[] = [];
@@ -353,33 +250,20 @@ export async function POST(request: Request) {
                 amount: bid.bid_amount,
                 type: 'debit',
                 status: 'completed',
-                description,
-                balance_after: user.balance - bid.bid_amount
+                description
             });
 
-            await transaction.save({ session });
-            transactionIds.push(transaction._id);
+            await transaction.save();
         }
-
-        // Deduct total amount from user balance
-        user.balance -= totalBidAmount;
-        await user.save({ session });
 
         // Create the main market bid
         const mainMarketBid = new MainMarketBid({
             user_id: user_id,
             bids: bids,
-            total_amount: totalBidAmount,
-            transaction: transactionIds
+            total_amount: totalBidAmount
         });
 
-        await mainMarketBid.save({ session });
-
-        // If you have referral reward logic, add it here
-        // await checkAndRewardReferral(user_id, session);
-
-        await session.commitTransaction();
-        session.endSession();
+        await mainMarketBid.save();
 
         return NextResponse.json({
             status: true,
@@ -392,9 +276,6 @@ export async function POST(request: Request) {
         });
 
     } catch (error: unknown) {
-        await session.abortTransaction();
-        session.endSession();
-        
         if (error instanceof ApiError) {
             return NextResponse.json({ status: false, message: error.message });
         }
