@@ -5,6 +5,7 @@ import Transaction from '@/models/Transaction';
 import ApiError from '@/lib/errors/APiError';
 import { uploadToCloudinary } from '@/utils/cloudnary';
 import mongoose, { Types } from 'mongoose';
+import { validateBidEligibility } from '@/middleware/bidValidationMiddleware';
 
 interface Query {
     status?: string;
@@ -23,6 +24,11 @@ export async function POST(request: NextRequest) {
 
         if (!user_id) {
             throw new ApiError('user_id are required')
+        }
+
+        const eligibilityCheck = await validateBidEligibility(user_id);
+        if (!eligibilityCheck.isValid) {
+            throw new ApiError(eligibilityCheck.error || 'User not eligible for utr add fund');
         }
 
         if (!amount) {

@@ -7,6 +7,7 @@ import Fund from '@/models/Fund';
 import mongoose from 'mongoose';
 import { getUserIdFromToken } from '@/middleware/authMiddleware';
 import AccountSetting from '@/models/AccountSettings';
+import { validateBidEligibility } from '@/middleware/bidValidationMiddleware';
 
 interface AddFundRequest {
     amount: number;
@@ -30,6 +31,11 @@ export async function POST(request: NextRequest) { // Changed to NextRequest
         if (!mongoose.Types.ObjectId.isValid(user_id)) {
             throw new ApiError('Invalid user ID from token');
 
+        }
+
+        const eligibilityCheck = await validateBidEligibility(user_id);
+        if (!eligibilityCheck.isValid) {
+            throw new ApiError(eligibilityCheck.error || 'User not eligible for add fund');
         }
 
         const body: Omit<AddFundRequest, 'user_id'> = await request.json(); // Remove user_id from body
@@ -78,7 +84,7 @@ export async function POST(request: NextRequest) { // Changed to NextRequest
         await fund.save();
 
         if (status === 'completed') {
-            const currentBalance = Number(user.balance) || 0; 
+            const currentBalance = Number(user.balance) || 0;
             const addedAmount = Number(amount) || 0;
             user.balance = currentBalance + addedAmount;
             await user.save();
