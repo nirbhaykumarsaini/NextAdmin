@@ -34,8 +34,30 @@ interface RequestQuery {
     session?: 'open' | 'close';
 }
 
+// Define interfaces for game schedule
+interface DaySchedule {
+    openTime: string;
+    closeTime: string;
+    marketStatus: boolean;
+}
+
+interface GameSchedule {
+    monday: DaySchedule;
+    tuesday: DaySchedule;
+    wednesday: DaySchedule;
+    thursday: DaySchedule;
+    friday: DaySchedule;
+    saturday: DaySchedule;
+    sunday: DaySchedule;
+}
+
+interface MarketStatusResult {
+    isOpen: boolean;
+    message: string;
+}
+
 // Helper function to get current IST time and day
-function getCurrentIST() {
+function getCurrentIST(): { currentTime: string; currentDay: string } {
     const now = new Date();
     const istOptions: Intl.DateTimeFormatOptions = {
         timeZone: 'Asia/Kolkata',
@@ -67,7 +89,7 @@ function timeToMinutes(timeString: string): number {
 }
 
 // Helper function to check if market is open for bidding
-function isMarketOpen(gameSchedule: any, gameType: string, session?: 'open' | 'close'): { isOpen: boolean; message: string } {
+function isMarketOpen(gameSchedule: GameSchedule, gameType: string, session?: 'open' | 'close'): MarketStatusResult {
     // For game types that don't have session restrictions, always allow bidding
     if (['full-sangam', 'jodi-digit', 'red-bracket', 'digit-base-jodi'].includes(gameType)) {
         return { isOpen: true, message: '' };
@@ -76,7 +98,7 @@ function isMarketOpen(gameSchedule: any, gameType: string, session?: 'open' | 'c
     const { currentTime, currentDay } = getCurrentIST();
     
     // Check if today's schedule exists and market is open
-    const daySchedule = gameSchedule[currentDay];
+    const daySchedule = gameSchedule[currentDay as keyof GameSchedule];
     if (!daySchedule || !daySchedule.marketStatus) {
         return { 
             isOpen: false, 
@@ -185,7 +207,7 @@ export async function POST(request: Request) {
             }
 
             // ✅ Check market timing
-            const marketStatus = isMarketOpen(game.schedule, bid.game_type, bid.session);
+            const marketStatus = isMarketOpen(game.schedule as GameSchedule, bid.game_type, bid.session);
             if (!marketStatus.isOpen) {
                 throw new ApiError(marketStatus.message);
             }
