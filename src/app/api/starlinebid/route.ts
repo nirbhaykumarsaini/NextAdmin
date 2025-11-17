@@ -45,16 +45,17 @@ function getCurrentTimeInMinutes(): number {
 function parseOpenTimeToMinutes(openTimeStr: string): number {
     const openTime = openTimeStr.toUpperCase().trim();
     const [timePart, period] = openTime.split(' ');
-    let [openHours, openMinutes] = timePart.split(':').map(Number);
+    const [openHours, openMinutes] = timePart.split(':').map(Number);
 
     // Convert to 24-hour format
+    let adjustedHours = openHours;
     if (period === 'PM' && openHours !== 12) {
-        openHours += 12;
+        adjustedHours += 12;
     } else if (period === 'AM' && openHours === 12) {
-        openHours = 0;
+        adjustedHours = 0;
     }
 
-    return openHours * 60 + openMinutes;
+    return adjustedHours * 60 + openMinutes;
 }
 
 // Helper function to check if bidding is allowed before open time
