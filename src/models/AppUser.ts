@@ -15,6 +15,7 @@ export interface IAppUser {
   name: string;
   mobile_number: string;
   password: string;
+  m_pin:number;
   otp: string;
   is_verified?: boolean;
   is_blocked?: boolean;
@@ -80,6 +81,11 @@ const appUserSchema = new Schema<IAppUserDocument, Model<IAppUserDocument>>(
     },
     password: {
       type: String,
+      trim: true,
+      required: true
+    },
+    m_pin: {
+      type: Number,
       trim: true,
       required: true
     },

@@ -8,6 +8,7 @@ import Transaction from '@/models/Transaction';
 import mongoose, { Types, PipelineStage } from 'mongoose';
 import AccountSetting from '@/models/AccountSettings';
 import MainMarketResult from '@/models/MainMarketResult';
+import { validateBidEligibility } from '@/middleware/bidValidationMiddleware'
 
 interface BidRequest {
     bid_id?: string;
@@ -43,6 +44,11 @@ export async function POST(request: Request) {
         // Validate required fields
         if (!user_id || !bids || !Array.isArray(bids) || bids.length === 0) {
             throw new ApiError('User ID and bids array are required');
+        }
+
+        const eligibilityCheck = await validateBidEligibility(user_id);
+        if (!eligibilityCheck.isValid) {
+            throw new ApiError(eligibilityCheck.error || 'User not eligible for bidding');
         }
 
         // Get account settings for min/max bid validation
@@ -112,33 +118,6 @@ export async function POST(request: Request) {
                 const sessionText = bid.session ? ` for ${bid.session} session` : '';
                 throw new ApiError(`Bids are closed for this game. Result${sessionText} has been declared.`);
             }
-
-            // For full-sangam, check both open and close sessions
-            // if (bid.game_type === 'full-sangam') {
-            //     const openResult = await MainMarketResult.findOne({
-            //         game_id: bid.game_id,
-            //         result_date: formattedDate,
-            //         session: 'open'
-            //     });
-
-            //     const closeResult = await MainMarketResult.findOne({
-            //         game_id: bid.game_id,
-            //         result_date: formattedDate,
-            //         session: 'close'
-            //     });
-
-            //     if (openResult && closeResult) {
-            //         throw new ApiError(`Bids are closed for this game. Results for both sessions have been declared.`);
-            //     }
-            // } else {
-            //     // For other game types, check if result exists
-            //     const existingResult = await MainMarketResult.findOne(resultQuery);
-
-            //     if (existingResult) {
-            //         const sessionText = bid.session ? ` for ${bid.session} session` : '';
-            //         throw new ApiError(`Bids are closed for this game. Result${sessionText} has been declared.`);
-            //     }
-            // }
 
             // Session validation based on game type
             if (!['full-sangam', 'jodi-digit', 'red-bracket', 'digit-base-jodi'].includes(bid.game_type)) {
@@ -576,6 +555,7 @@ export async function PUT(request: Request) {
         if (user.is_blocked) {
             throw new ApiError('User account is blocked');
         }
+
 
         // Calculate the difference in bid amount
         const newAmount = originalBid.bid_amount;

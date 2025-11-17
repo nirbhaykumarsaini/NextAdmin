@@ -6,18 +6,7 @@ import AppUser from '@/models/AppUser';
 import ApiError from '@/lib/errors/APiError';
 import { headers } from 'next/headers';
 
-// Function to extract device info from request
-// async function getDeviceInfo() {
-//   const headersList = await headers();
 
-//   return {
-//     device_id: headersList.get('x-device-id') || 'unknown',
-//     device_model: headersList.get('x-device-model') || 'Unknown',
-//     os: headersList.get('x-os') || 'Unknown',
-//     browser: headersList.get('user-agent') || 'Unknown',
-//     ip_address: headersList.get('x-forwarded-for') || headersList.get('x-real-ip') || 'Unknown'
-//   };
-// }
 
 async function getDeviceInfo() {
   const headersList = await headers();
@@ -88,18 +77,19 @@ export async function POST(request: Request) {
     const body = await request.json();
     const deviceInfo = getDeviceInfo();
 
-    if (!body.name || !body.mobile_number || !body.password) {
+    if (!body.name || !body.mobile_number || !body.password ||  !body.m_pin) {
       const missingFields = [];
       if (!body.name) missingFields.push('name');
       if (!body.mobile_number) missingFields.push('mobile_number');
       if (!body.password) missingFields.push('password');
+      if (!body.m_pin) missingFields.push('m_pin');
 
       throw new ApiError(
         `${missingFields.join(' and ')} ${missingFields.length > 1 ? 'are' : 'is'} required`);
     }
 
     if (!body.name.trim() || !body.mobile_number.trim() || !body.password.trim()) {
-      throw new ApiError('Name, mobile number and password cannot be empty');
+      throw new ApiError('Name, mobile number password and m_pin cannot be empty');
     }
 
     const existingUser = await AppUser.findOne({ mobile_number: body.mobile_number });
@@ -111,6 +101,7 @@ export async function POST(request: Request) {
       name: body.name.trim(),
       mobile_number: body.mobile_number.trim(),
       password: body.password,
+      m_pin:body.m_pin,
       otp: '123456',
       is_verified: false,
       is_blocked: false,
@@ -120,7 +111,6 @@ export async function POST(request: Request) {
       address: body.address || '',
       occupation: body.occupation || '',
       deviceToken: body.deviceToken || '',
-
     });
 
     return NextResponse.json({

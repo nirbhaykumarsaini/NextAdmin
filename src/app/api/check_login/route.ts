@@ -45,6 +45,7 @@ export async function POST(request: Request) {
         id: user._id,
         name: user.name,
         mobile_number: user.mobile_number,
+        m_pin:user.m_pin,
         email: user.email || "",
         date_of_birth: user.date_of_birth || "",
         address: user.address || "",
