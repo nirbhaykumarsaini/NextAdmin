@@ -86,8 +86,7 @@ const appUserSchema = new Schema<IAppUserDocument, Model<IAppUserDocument>>(
     },
     m_pin: {
       type: Number,
-      trim: true,
-      required: true
+      trim: true
     },
     otp: {
       type: String,

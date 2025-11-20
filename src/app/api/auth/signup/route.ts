@@ -77,19 +77,18 @@ export async function POST(request: Request) {
     const body = await request.json();
     const deviceInfo = getDeviceInfo();
 
-    if (!body.name || !body.mobile_number || !body.password ||  !body.m_pin) {
+    if (!body.name || !body.mobile_number || !body.password ) {
       const missingFields = [];
       if (!body.name) missingFields.push('name');
       if (!body.mobile_number) missingFields.push('mobile_number');
       if (!body.password) missingFields.push('password');
-      if (!body.m_pin) missingFields.push('m_pin');
 
       throw new ApiError(
         `${missingFields.join(' and ')} ${missingFields.length > 1 ? 'are' : 'is'} required`);
     }
 
     if (!body.name.trim() || !body.mobile_number.trim() || !body.password.trim()) {
-      throw new ApiError('Name, mobile number password and m_pin cannot be empty');
+      throw new ApiError('Name, mobile number and password cannot be empty');
     }
 
     const existingUser = await AppUser.findOne({ mobile_number: body.mobile_number });
