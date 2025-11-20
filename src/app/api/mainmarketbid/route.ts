@@ -66,19 +66,19 @@ function getCurrentIST(): { currentTime: string; currentDay: string } {
         hour12: false,
         weekday: 'long'
     };
-    
+
     const timeFormatter = new Intl.DateTimeFormat('en-US', istOptions);
     const parts = timeFormatter.formatToParts(now);
-    
+
     let currentTime = '';
     let currentDay = '';
-    
+
     parts.forEach(part => {
         if (part.type === 'hour') currentTime += part.value;
         else if (part.type === 'minute') currentTime += `:${part.value}`;
         else if (part.type === 'weekday') currentDay = part.value.toLowerCase();
     });
-    
+
     return { currentTime, currentDay };
 }
 
@@ -96,13 +96,13 @@ function isMarketOpen(gameSchedule: GameSchedule, gameType: string, session?: 'o
     }
 
     const { currentTime, currentDay } = getCurrentIST();
-    
+
     // Check if today's schedule exists and market is open
     const daySchedule = gameSchedule[currentDay as keyof GameSchedule];
     if (!daySchedule || !daySchedule.marketStatus) {
-        return { 
-            isOpen: false, 
-            message: `Market is closed or no schedule found for ${currentDay}` 
+        return {
+            isOpen: false,
+            message: `Market is closed or no schedule found for ${currentDay}`
         };
     }
 
@@ -112,28 +112,28 @@ function isMarketOpen(gameSchedule: GameSchedule, gameType: string, session?: 'o
 
     // Check if current time is within market hours
     if (currentTimeInMinutes < openTimeInMinutes) {
-        return { 
-            isOpen: false, 
-            message: `Market opens at ${daySchedule.openTime}` 
+        return {
+            isOpen: false,
+            message: `Market opens at ${daySchedule.openTime}`
         };
     }
 
     if (currentTimeInMinutes >= closeTimeInMinutes) {
-        return { 
-            isOpen: false, 
-            message: `Market closed at ${daySchedule.closeTime}` 
+        return {
+            isOpen: false,
+            message: `Market closed at ${daySchedule.closeTime}`
         };
     }
 
     // For session-specific validation
     if (session) {
-        const isOpenSessionTime = currentTimeInMinutes >= openTimeInMinutes && 
-                                currentTimeInMinutes < closeTimeInMinutes;
+        const isOpenSessionTime = currentTimeInMinutes >= openTimeInMinutes &&
+            currentTimeInMinutes < closeTimeInMinutes;
 
         if (isOpenSessionTime && session === 'open') {
-            return { 
-                isOpen: false, 
-                message: "Open session bidding is closed!" 
+            return {
+                isOpen: false,
+                message: "Open session bidding is closed!"
             };
         }
     }
@@ -332,7 +332,7 @@ export async function POST(request: Request) {
 
         // Create transaction records and deduct amount
         const transactionIds: Types.ObjectId[] = [];
-        
+
         for (const bid of bids) {
             const game = await MainMarketGame.findById(bid.game_id).session(session);
 
@@ -394,7 +394,7 @@ export async function POST(request: Request) {
     } catch (error: unknown) {
         await session.abortTransaction();
         session.endSession();
-        
+
         if (error instanceof ApiError) {
             return NextResponse.json({ status: false, message: error.message });
         }

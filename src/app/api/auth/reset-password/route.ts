@@ -10,7 +10,7 @@ interface ResetPasswordRequest {
 
 // Validation functions
 function validateMobileNumber(mobile: string): boolean {
-  const mobileRegex = /^[6-9]\d{9}$/; // Indian mobile numbers starting with 6-9
+  const mobileRegex = /^[0-9]\d{9}$/; // Indian mobile numbers starting with 6-9
   return mobileRegex.test(mobile);
 }
 
