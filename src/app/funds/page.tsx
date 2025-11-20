@@ -17,7 +17,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -201,7 +201,7 @@ export default function Funds() {
                       const globalIndex = startIndex + index + 1;
 
                       return (
-                        <TableRow key={fund._id}>
+                        <TableRow key={fund?._id}>
                           <TableCell className="font-medium">
                             {globalIndex}
                           </TableCell>
@@ -210,14 +210,14 @@ export default function Funds() {
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-3">
-                              <Link href={`user-details/?userId=${fund.user_id._id}`}>
+                              <Link href={`user-details/?userId=${fund?.user_id?._id}`}>
                                 <Avatar className="h-9 w-9 capitalize">
                                   <AvatarFallback>
                                     {fund.user_id?.name?.charAt(0) || "U"}
                                   </AvatarFallback>
                                 </Avatar>
                               </Link>
-                              <Link className="text-blue-500 underline capitalize" href={`user-details/?userId=${fund.user_id._id}`}>
+                              <Link className="text-blue-500 underline capitalize" href={`user-details/?userId=${fund?.user_id?._id}`}>
                                 <div className="font-medium">{fund.user_id?.name}</div>
                               </Link>
                             </div>
