@@ -6,7 +6,6 @@ import ApiError from '@/lib/errors/APiError';
 interface ResetPasswordRequest {
   mobile_number: string;
   newPassword: string;
-  confirmPassword: string;
 }
 
 // Validation functions
@@ -22,11 +21,10 @@ export async function POST(request: Request) {
     const body: ResetPasswordRequest = await request.json();
 
     // Basic field validation
-    if (!body.mobile_number || !body.newPassword || !body.confirmPassword) {
+    if (!body.mobile_number || !body.newPassword) {
       const missingFields = [];
       if (!body.mobile_number) missingFields.push('mobile_number');
       if (!body.newPassword) missingFields.push('newPassword');
-      if (!body.confirmPassword) missingFields.push('confirmPassword');
 
       throw new ApiError(
         `${missingFields.join(', ')} ${missingFields.length > 1 ? 'are' : 'is'} required`
@@ -37,11 +35,6 @@ export async function POST(request: Request) {
     const mobileNumber = body.mobile_number.trim();
     if (!validateMobileNumber(mobileNumber)) {
       throw new ApiError('Please enter a valid 10-digit mobile number');
-    }
-
-    // Check if passwords match
-    if (body.newPassword !== body.confirmPassword) {
-      throw new ApiError('New password and confirm password do not match');
     }
 
     // Check if new password is different from current password
