@@ -1,4 +1,3 @@
-// src\app\api\auth\verify-otp\route.ts
 import { NextResponse } from 'next/server';
 import dbConnect from '@/config/db';
 import AppUser from '@/models/AppUser';
@@ -23,8 +22,9 @@ export async function POST(request: Request) {
     }
 
     // Validate type
-    if (!['signup', 'forgot'].includes(body.type)) {
-      throw new ApiError('Invalid type. Must be either "signup" or "forgot"');
+    const validTypes = ['signup', 'forgot', 'forgot-mpin'];
+    if (!validTypes.includes(body.type)) {
+      throw new ApiError('Invalid type. Must be "signup", "forgot", or "forgot-mpin"');
     }
 
     // Find user
@@ -40,7 +40,7 @@ export async function POST(request: Request) {
         throw new ApiError('User is already verified');
       }
 
-      // Verify OTP (using dummy OTP 1234)
+      // Verify OTP
       if (body.otp !== '123456') {
         throw new ApiError('Invalid OTP');
       }
@@ -67,8 +67,7 @@ export async function POST(request: Request) {
       });
 
     } else if (body.type === 'forgot') {
-      // For forgot password: Only verify OTP without marking user as verified
-      // Verify OTP (using dummy OTP 1234)
+      // For forgot password: Verify OTP
       if (body.otp !== '123456') {
         throw new ApiError('Invalid OTP');
       }
@@ -76,7 +75,19 @@ export async function POST(request: Request) {
       return NextResponse.json({
         status: true,
         message: 'OTP verified successfully. You can now reset your password.',
-        forgot: true
+        reset_type: 'password'
+      });
+
+    } else if (body.type === 'forgot-mpin') {
+      // For forgot M-PIN: Verify OTP
+      if (body.otp !== '123456') {
+        throw new ApiError('Invalid OTP');
+      }
+
+      return NextResponse.json({
+        status: true,
+        message: 'OTP verified successfully. You can now reset your M-PIN.',
+        reset_type: 'mpin'
       });
     }
 

@@ -39,6 +39,7 @@ export interface User {
   _id: string;
   name: string;
   mobile_number: string;
+  m_pin:number,
   balance: number;
   batting: boolean;
   is_blocked: boolean;
@@ -274,6 +275,7 @@ export default function ManageUsers() {
               <TableHead>S. No.</TableHead>
               <TableHead>User</TableHead>
               <TableHead>Mobile Number</TableHead>
+               <TableHead>M Pin</TableHead>
               <TableHead>Balance</TableHead>
               <TableHead>Batting</TableHead>
               <TableHead>Block User</TableHead>
@@ -322,6 +324,9 @@ export default function ManageUsers() {
                     </TableCell>
                     <TableCell className="text-sm">
                       {user.mobile_number}
+                    </TableCell>
+                    <TableCell className="text-sm">
+                      {user.m_pin}
                     </TableCell>
                     <TableCell className="text-sm font-medium">
                       ₹{user.balance.toLocaleString()}

@@ -6,7 +6,7 @@ export async function GET() {
   try {
     await dbConnect();
     
-    const users = await AppUser.find({}).select('name mobile_number is_blocked batting balance created_at devices');
+    const users = await AppUser.find({}).select('name mobile_number is_blocked batting balance created_at devices m_pin');
     
     return NextResponse.json({
       status: true,
