@@ -83,8 +83,6 @@ function isBiddingAllowed(currentTimeInMinutes: number, gameOpenTimeInMinutes: n
 }
 
 export async function POST(request: Request) {
-    const session = await mongoose.startSession();
-    session.startTransaction();
 
     try {
         await dbConnect();
@@ -168,7 +166,7 @@ export async function POST(request: Request) {
             }
 
             // Check if game exists and is active
-            const game = await StarlineGame.findById(bid.game_id).session(session);
+            const game = await StarlineGame.findById(bid.game_id);
             if (!game) {
                 throw new ApiError(`Starline game not found for ID: ${bid.game_id}`);
             }
@@ -199,7 +197,7 @@ export async function POST(request: Request) {
         }
 
         // Check if user exists and has sufficient balance
-        const user = await AppUser.findById(user_id).session(session);
+        const user = await AppUser.findById(user_id);
         if (!user) {
             throw new ApiError('User not found');
         }
@@ -219,7 +217,7 @@ export async function POST(request: Request) {
         const transactionIds: Types.ObjectId[] = [];
 
         for (const bid of bids) {
-            const game = await StarlineGame.findById(bid.game_id).session(session);
+            const game = await StarlineGame.findById(bid.game_id);
 
             // Build description for each bid
             const extraParts: string[] = [];
@@ -239,13 +237,13 @@ export async function POST(request: Request) {
                 description
             });
 
-            await transaction.save({ session });
+            await transaction.save();
             transactionIds.push(transaction._id);
         }
 
         // Deduct total amount from user balance
         user.balance -= totalBidAmount;
-        await user.save({ session });
+        await user.save();
 
         // Transform bids to match schema format
         const transformedBids = bids.map(bid => ({
@@ -264,14 +262,7 @@ export async function POST(request: Request) {
             transaction: transactionIds
         });
 
-        await starlineBid.save({ session });
-
-        // If you have referral reward logic, add it here
-        // await checkAndRewardReferral(user_id, session);
-
-        // Commit transaction
-        await session.commitTransaction();
-        session.endSession();
+        await starlineBid.save();
 
         return NextResponse.json({
             status: true,
@@ -285,9 +276,6 @@ export async function POST(request: Request) {
         });
 
     } catch (error: unknown) {
-        // Abort transaction on error
-        await session.abortTransaction();
-        session.endSession();
 
         if (error instanceof ApiError) {
             return NextResponse.json({
@@ -307,8 +295,6 @@ export async function POST(request: Request) {
 
 
 export async function PUT(request: Request) {
-    const session = await mongoose.startSession();
-    session.startTransaction();
 
     try {
         await dbConnect();
@@ -332,7 +318,7 @@ export async function PUT(request: Request) {
         const mainMarketBid = await StarlineBid.findOne({
             'bids._id': bid_id,
             user_id
-        }).session(session);
+        });
 
         if (!mainMarketBid) {
             throw new ApiError('Bid not found or does not belong to this user');
@@ -363,7 +349,7 @@ export async function PUT(request: Request) {
 
         if (game_id !== undefined) {
             // Check if game exists and is active
-            const game = await StarlineGame.findById(game_id).session(session);
+            const game = await StarlineGame.findById(game_id);
             if (!game) {
                 throw new ApiError(`Game not found for ID: ${game_id}`);
             }
@@ -403,7 +389,7 @@ export async function PUT(request: Request) {
         }
 
         // Check if user exists and has sufficient balance for the difference
-        const user = await AppUser.findById(user_id).session(session);
+        const user = await AppUser.findById(user_id);
         if (!user) {
             throw new ApiError('User not found');
         }
@@ -423,7 +409,7 @@ export async function PUT(request: Request) {
         // Update user balance if amount changed
         if (amountDifference !== 0) {
             user.balance -= amountDifference;
-            await user.save({ session });
+            await user.save();
 
             // Create transaction record for the difference
             const transaction = new Transaction({
@@ -434,15 +420,11 @@ export async function PUT(request: Request) {
                 description: `Bid ${amountDifference > 0 ? 'increase' : 'decrease'} for ${originalBid.game_type} game`
             });
 
-            await transaction.save({ session });
+            await transaction.save();
         }
 
         // Save the updated bid
-        await mainMarketBid.save({ session });
-
-        // Commit transaction
-        await session.commitTransaction();
-        session.endSession();
+        await mainMarketBid.save();
 
         return NextResponse.json({
             status: true,
@@ -455,9 +437,6 @@ export async function PUT(request: Request) {
         });
 
     } catch (error: unknown) {
-        // Abort transaction on error
-        await session.abortTransaction();
-        session.endSession();
 
         if (error instanceof ApiError) {
             return NextResponse.json({ status: false, message: error.message });
