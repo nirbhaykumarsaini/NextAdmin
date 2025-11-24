@@ -58,21 +58,23 @@ function getCurrentTimeInMinutes(): number {
     return currentHours * 60 + currentMinutes;
 }
 
-// Helper function to parse game open time to minutes
+// Improved helper function to parse game open time to minutes
 function parseOpenTimeToMinutes(openTimeStr: string): number {
-    const openTime = openTimeStr.toUpperCase().trim();
-    const [timePart, period] = openTime.split(' ');
-    const [openHours, openMinutes] = timePart.split(':').map(Number);
-
-    // Convert to 24-hour format
-    let adjustedHours = openHours;
-    if (period === 'PM' && openHours !== 12) {
+    // Remove any AM/PM indicators and trim
+    const timeStr = openTimeStr.replace(/[AP]M/gi, '').trim();
+    const [hours, minutes] = timeStr.split(':').map(Number);
+    
+    // Handle 12-hour format conversion if needed
+    const upperTimeStr = openTimeStr.toUpperCase();
+    let adjustedHours = hours;
+    
+    if (upperTimeStr.includes('PM') && hours !== 12) {
         adjustedHours += 12;
-    } else if (period === 'AM' && openHours === 12) {
+    } else if (upperTimeStr.includes('AM') && hours === 12) {
         adjustedHours = 0;
     }
-
-    return adjustedHours * 60 + openMinutes;
+    
+    return adjustedHours * 60 + minutes;
 }
 
 // Helper function to check if bidding is allowed before open time
