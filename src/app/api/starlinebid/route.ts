@@ -19,6 +19,20 @@ interface BidRequest {
     game_type: 'single-digit' | 'single-panna' | 'double-panna' | 'triple-panna';
 }
 
+interface StarlineBidRequest {
+    user_id: string;
+    bids: BidRequest[];
+}
+
+interface FilterType {
+    created_at?: {
+        $gte?: Date;
+        $lte?: Date;
+    };
+    'bids.game_id'?: Types.ObjectId;
+    'bids.game_type'?: string;
+}
+
 interface GameDay {
     day: string;
     open_time: string;
@@ -36,20 +50,6 @@ interface StarlineGameDocument {
     __v: number;
 }
 
-interface StarlineBidRequest {
-    user_id: string;
-    bids: BidRequest[];
-}
-
-interface FilterType {
-    created_at?: {
-        $gte?: Date;
-        $lte?: Date;
-    };
-    'bids.game_id'?: Types.ObjectId;
-    'bids.game_type'?: string;
-}
-
 // Helper function to convert time to 24-hour format and get current time in minutes
 function getCurrentTimeInMinutes(): number {
     const now = new Date();
@@ -58,10 +58,10 @@ function getCurrentTimeInMinutes(): number {
     return currentHours * 60 + currentMinutes;
 }
 
-// Improved helper function to parse game open time to minutes
+// Helper function to parse game open time to minutes
 function parseOpenTimeToMinutes(openTimeStr: string): number {
     // Remove any AM/PM indicators and trim
-    const timeStr = openTimeStr?.replace(/[AP]M/gi, '').trim();
+    const timeStr = openTimeStr.replace(/[AP]M/gi, '').trim();
     const [hours, minutes] = timeStr.split(':').map(Number);
     
     // Handle 12-hour format conversion if needed
@@ -82,7 +82,17 @@ function isBiddingAllowed(currentTimeInMinutes: number, gameOpenTimeInMinutes: n
     return currentTimeInMinutes < gameOpenTimeInMinutes;
 }
 
+// Helper function to get current day considering timezone
+function getCurrentDay(): string {
+    return new Date().toLocaleString('en-US', { 
+        weekday: 'long',
+        timeZone: 'Asia/Kolkata' // Adjust to your server's timezone
+    });
+}
+
 export async function POST(request: Request) {
+    const session = await mongoose.startSession();
+    session.startTransaction();
 
     try {
         await dbConnect();
@@ -101,6 +111,7 @@ export async function POST(request: Request) {
 
         // Get current time in minutes for comparison
         const currentTimeInMinutes = getCurrentTimeInMinutes();
+        const currentDay = getCurrentDay();
 
         // Get account settings for min/max bid validation
         const accountSettings = await AccountSetting.findOne();
@@ -166,7 +177,7 @@ export async function POST(request: Request) {
             }
 
             // Check if game exists and is active
-            const game = await StarlineGame.findById(bid.game_id);
+            const game = await StarlineGame.findById(bid.game_id).session(session) as unknown as StarlineGameDocument;
             if (!game) {
                 throw new ApiError(`Starline game not found for ID: ${bid.game_id}`);
             }
@@ -174,10 +185,7 @@ export async function POST(request: Request) {
                 throw new ApiError(`Starline game with ID ${bid.game_id} is inactive`);
             }
 
-            
-
             // ✅ Fix: Check market status based on current day
-            const currentDay = new Date().toLocaleString('en-US', { weekday: 'long' });
             const dayConfig = game.days.find((day: GameDay) => day.day === currentDay);
 
             if (!dayConfig) {
@@ -189,15 +197,15 @@ export async function POST(request: Request) {
             }
 
             // ✅ Check game time validation - bids cannot be placed after open time
-            const gameOpenTimeInMinutes = parseOpenTimeToMinutes(game.open_time);
+            const gameOpenTimeInMinutes = parseOpenTimeToMinutes(dayConfig.open_time);
 
             if (!isBiddingAllowed(currentTimeInMinutes, gameOpenTimeInMinutes)) {
-                throw new ApiError(`Bids cannot be placed after the game's open time (${game.open_time})`);
+                throw new ApiError(`Bids cannot be placed after the game's open time (${dayConfig.open_time})`);
             }
         }
 
         // Check if user exists and has sufficient balance
-        const user = await AppUser.findById(user_id);
+        const user = await AppUser.findById(user_id).session(session);
         if (!user) {
             throw new ApiError('User not found');
         }
@@ -217,7 +225,8 @@ export async function POST(request: Request) {
         const transactionIds: Types.ObjectId[] = [];
 
         for (const bid of bids) {
-            const game = await StarlineGame.findById(bid.game_id);
+            const game = await StarlineGame.findById(bid.game_id).session(session) as unknown as StarlineGameDocument;
+            const dayConfig = game.days.find((day: GameDay) => day.day === currentDay);
 
             // Build description for each bid
             const extraParts: string[] = [];
@@ -226,7 +235,7 @@ export async function POST(request: Request) {
 
             const extra = extraParts.join(' | ') || 'No extra details';
 
-            const description = `Starline bid placed for ${game.game_name} ( ${bid.game_type?.replace('-', ' ')} - ${extra} )`;
+            const description = `Starline bid placed for ${game.game_name} ( ${bid.game_type.replace('-', ' ')} - ${extra} )`;
 
             const transaction = new Transaction({
                 user_id,
@@ -237,13 +246,13 @@ export async function POST(request: Request) {
                 description
             });
 
-            await transaction.save();
+            await transaction.save({ session });
             transactionIds.push(transaction._id);
         }
 
         // Deduct total amount from user balance
         user.balance -= totalBidAmount;
-        await user.save();
+        await user.save({ session });
 
         // Transform bids to match schema format
         const transformedBids = bids.map(bid => ({
@@ -262,7 +271,14 @@ export async function POST(request: Request) {
             transaction: transactionIds
         });
 
-        await starlineBid.save();
+        await starlineBid.save({ session });
+
+        // If you have referral reward logic, add it here
+        // await checkAndRewardReferral(user_id, session);
+
+        // Commit transaction
+        await session.commitTransaction();
+        session.endSession();
 
         return NextResponse.json({
             status: true,
@@ -276,6 +292,9 @@ export async function POST(request: Request) {
         });
 
     } catch (error: unknown) {
+        // Abort transaction on error
+        await session.abortTransaction();
+        session.endSession();
 
         if (error instanceof ApiError) {
             return NextResponse.json({
