@@ -61,7 +61,7 @@ function getCurrentTimeInMinutes(): number {
 // Improved helper function to parse game open time to minutes
 function parseOpenTimeToMinutes(openTimeStr: string): number {
     // Remove any AM/PM indicators and trim
-    const timeStr = openTimeStr.replace(/[AP]M/gi, '').trim();
+    const timeStr = openTimeStr?.replace(/[AP]M/gi, '').trim();
     const [hours, minutes] = timeStr.split(':').map(Number);
     
     // Handle 12-hour format conversion if needed
@@ -176,6 +176,8 @@ export async function POST(request: Request) {
                 throw new ApiError(`Starline game with ID ${bid.game_id} is inactive`);
             }
 
+            
+
             // ✅ Fix: Check market status based on current day
             const currentDay = new Date().toLocaleString('en-US', { weekday: 'long' });
             const dayConfig = game.days.find((day: GameDay) => day.day === currentDay);
@@ -226,7 +228,7 @@ export async function POST(request: Request) {
 
             const extra = extraParts.join(' | ') || 'No extra details';
 
-            const description = `Starline bid placed for ${game.game_name} ( ${bid.game_type.replace('-', ' ')} - ${extra} )`;
+            const description = `Starline bid placed for ${game.game_name} ( ${bid.game_type?.replace('-', ' ')} - ${extra} )`;
 
             const transaction = new Transaction({
                 user_id,
