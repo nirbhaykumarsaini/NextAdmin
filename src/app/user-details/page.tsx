@@ -57,7 +57,7 @@ interface UserDetails {
   createdAt: string;
   updatedAt: string;
   mpin: string;
-  simplepassword:string;
+  password:string;
 }
 
 interface Fund {
@@ -530,7 +530,7 @@ function UserDetailsContent() {
               <div>
                 <p className="text-sm font-medium">Password</p>
                 <p className="text-sm">
-                  {user.simplepassword ? user.simplepassword : "N/A"}
+                  {user.password ? user.password : "N/A"}
                 </p>
               </div>
             </div>
