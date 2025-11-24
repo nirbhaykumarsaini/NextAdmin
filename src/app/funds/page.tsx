@@ -218,7 +218,7 @@ export default function Funds() {
                                 </Avatar>
                               </Link>
                               <Link className="text-blue-500 underline capitalize" href={`user-details/?userId=${fund?.user_id?._id}`}>
-                                <div className="font-medium">{fund.user_id?.name}</div>
+                                <div className="font-medium">{fund.user_id?.name || 'N/A'}</div>
                               </Link>
                             </div>
                           </TableCell>

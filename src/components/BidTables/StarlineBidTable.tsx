@@ -147,11 +147,11 @@ const StarlineTable = ({ bids, loading, formatGameType, formatCurrency, onEditBi
                   <div className="flex items-center gap-3">
                     <Avatar className="h-8 w-8">
                       <AvatarFallback className="text-xs">
-                        {bid.name.charAt(0).toUpperCase()}
+                        {bid.name?.charAt(0).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
                     <Link className='underline text-blue-500 capitalize' href={`/user-details?userId=${bid.user_id}`}>
-                      <div className="font-medium">{bid.name}</div>
+                      <div className="font-medium">{bid.name || "N/A"}</div>
                     </Link>
                   </div>
                 </TableCell>

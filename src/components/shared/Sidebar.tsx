@@ -60,25 +60,16 @@ export function Sidebar() {
       label: "Manage Users",
     },
     {
-      label: "Game Management",
-      icon: <FiTag className="h-5 w-5" />,
-      submenu: [
-        { href: "/mainmarket", label: "Main Market Game" },
-        { href: "/starline", label: "Starline Game" },
-        { href: "/galidisawar", label: "Galidisawar Game" },
-      ],
-    },
-    {
       href: "/withdrawal",
       icon: <FiDollarSign className="h-5 w-5" />,
       label: "Withdrawal",
     },
-     {
+    {
       href: "/funds",
       icon: <FiFileText className="h-5 w-5" />,
       label: "Auto Funds",
     },
-     {
+    {
       href: "/utr-funds",
       icon: <FiFileText className="h-5 w-5" />,
       label: "Manual Funds",
@@ -89,8 +80,17 @@ export function Sidebar() {
     //   label: "Total P&L",
     // },
     {
+      label: "Game Management",
+      icon: <FiTag className="h-5 w-5" />,
+      submenu: [
+        { href: "/mainmarket", label: "Main Market Game" },
+        { href: "/starline", label: "Starline Game" },
+        { href: "/galidisawar", label: "Galidisawar Game" },
+      ],
+    },
+    {
       label: "Game Rates",
-      icon: <FiBarChart2  className="h-5 w-5" />,
+      icon: <FiBarChart2 className="h-5 w-5" />,
       submenu: [
         { href: "/mainmarketrate", label: "Main Market Rate" },
         { href: "/starlinerate", label: "Starline Rate" },
@@ -108,7 +108,7 @@ export function Sidebar() {
     },
     {
       label: "Winner Report",
-      icon: <FiTrendingUp  className="h-5 w-5" />,
+      icon: <FiTrendingUp className="h-5 w-5" />,
       submenu: [
         { href: "/mainmarketwinner", label: "Main Market Winner" },
         { href: "/starlinewinner", label: "Starline Winner" },
@@ -117,7 +117,7 @@ export function Sidebar() {
     },
     {
       label: "Sale Report",
-      icon: <FiShoppingBag  className="h-5 w-5" />,
+      icon: <FiShoppingBag className="h-5 w-5" />,
       submenu: [
         { href: "/mainmarketsale", label: "Main Market Sale" },
         { href: "/starlinesale", label: "Starline Sale" },
@@ -133,21 +133,21 @@ export function Sidebar() {
         { href: "/galidisawarbidreports", label: "Galidisawar Bid Report" },
       ],
     },
-    {
-      href: "/deletereport",
-      icon: <FiZap className="h-5 w-5" />,
-      label: "Delete Report",
-    },
-     {
-      href: "/bid-reverts",
-      icon: <FiZap className="h-5 w-5" />,
-      label: "Bid Revert",
-    },
-     {
-      href: "/gametoggle",
-      icon: <FiZap className="h-5 w-5" />,
-      label: "Game ON/OFF",
-    },
+    // {
+    //   href: "/deletereport",
+    //   icon: <FiZap className="h-5 w-5" />,
+    //   label: "Delete Report",
+    // },
+    // {
+    //   href: "/bid-reverts",
+    //   icon: <FiZap className="h-5 w-5" />,
+    //   label: "Bid Revert",
+    // },
+    // {
+    //   href: "/gametoggle",
+    //   icon: <FiZap className="h-5 w-5" />,
+    //   label: "Game ON/OFF",
+    // },
     {
       label: "App Setting",
       icon: <FiSettings className="h-5 w-5" />,
@@ -181,6 +181,21 @@ export function Sidebar() {
         { href: "/notice", label: "Notice" },
         { href: "/howtoplay", label: "How to Play" },
         { href: "/maintenance", label: "Maintenance" },
+        {
+          href: "/deletereport",
+          icon: <FiZap className="h-5 w-5" />,
+          label: "Delete Report",
+        },
+        {
+          href: "/bid-reverts",
+          icon: <FiZap className="h-5 w-5" />,
+          label: "Bid Revert",
+        },
+        {
+          href: "/gametoggle",
+          icon: <FiZap className="h-5 w-5" />,
+          label: "Game ON/OFF",
+        },
       ],
     },
   ];

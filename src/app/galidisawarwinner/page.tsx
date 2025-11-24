@@ -21,6 +21,7 @@ import {
     PaginationNext,
 } from "@/components/ui/pagination";
 import { Skeleton } from "@/components/ui/skeleton";
+import Link from "next/link";
 
 interface Winner {
     id: string;
@@ -177,9 +178,9 @@ export default function MainMarketWinner() {
                                                     {winner.user.charAt(0).toUpperCase()}
                                                 </AvatarFallback>
                                             </Avatar>
-                                            <div>
+                                            <Link href={`user-details/?userId=${winner?.user}`} className="text-blue-500 underline capitalize">
                                                 <div className="font-medium">{winner.user}</div>
-                                            </div>
+                                            </Link>
                                         </div>
                                     </TableCell>
                                     <TableCell className="text-sm">

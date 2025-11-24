@@ -5,8 +5,8 @@ import ApiError from '@/lib/errors/APiError';
 
 interface ResetRequest {
   mobile_number: string;
-  newPassword: string;
-  newMPin: string;
+  new_password: string;
+  new_m_pin: string;
   type: 'password' | 'mpin';
 }
 
@@ -56,13 +56,13 @@ export async function POST(request: Request) {
     if (body.type === 'password') {
 
       // Check if new password is same as current password
-      const isSamePassword = await user.comparePassword(body.newPassword);
+      const isSamePassword = await user.comparePassword(body.new_password);
       if (isSamePassword) {
         throw new ApiError('New password cannot be the same as your current password');
       }
 
       // Update password and clear OTP
-      user.password = body.newPassword;
+      user.password = body.new_password;
       user.otp = '';
       await user.save();
 
@@ -74,11 +74,11 @@ export async function POST(request: Request) {
     } else if (body.type === 'mpin') {
 
       // Validate M-PIN format
-      if (!validateMPin(body.newMPin)) {
+      if (!validateMPin(body.new_m_pin)) {
         throw new ApiError('M-PIN must be exactly 4 digits');
       }
 
-      const newMPinNumber = parseInt(body.newMPin);
+      const newMPinNumber = parseInt(body.new_m_pin);
 
       // Check if new M-PIN is same as current M-PIN
       if (user.m_pin === newMPinNumber) {

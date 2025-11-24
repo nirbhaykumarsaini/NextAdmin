@@ -74,6 +74,7 @@ interface PopulatedMainMarketBid {
 
 interface WinnerItem {
     user: string;
+    user_id: Types.ObjectId;
     game_name: string;
     game_type: string;
     panna?: string;
@@ -480,6 +481,7 @@ export async function GET(request: Request) {
             id: item.winner._id?.toString() || new Types.ObjectId().toString(),
             result_date: item.result_date,
             user: item.winner.user,
+            user_id: item.winner.user_id,
             game_name: item.winner.game_name,
             game_type: item.winner.game_type,
             digit: item.winner.digit,

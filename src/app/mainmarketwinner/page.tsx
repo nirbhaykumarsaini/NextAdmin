@@ -21,11 +21,14 @@ import {
     PaginationNext,
 } from "@/components/ui/pagination";
 import { Skeleton } from "@/components/ui/skeleton";
+import Link from "next/link";
+import { Types } from "mongoose";
 
 interface Winner {
     id: string;
     result_date: string;
     user: string;
+    user_id: Types.ObjectId;
     game_name: string;
     game_type: string;
     digit: string;
@@ -190,9 +193,9 @@ export default function MainMarketWinner() {
                                                     {winner.user.charAt(0).toUpperCase()}
                                                 </AvatarFallback>
                                             </Avatar>
-                                            <div>
-                                                <div className="font-medium">{winner.user}</div>
-                                            </div>
+                                            <Link href={`user-details/?userId=${winner?.user_id}`} className="text-blue-500 underline capitalize">
+                                                <div className="font-medium">{winner.user || "N/A"}</div>
+                                            </Link>
                                         </div>
                                     </TableCell>
                                     <TableCell className="text-sm">

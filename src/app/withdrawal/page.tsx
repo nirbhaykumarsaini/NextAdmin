@@ -215,7 +215,7 @@ export default function WithdrawalTable() {
                                 const globalIndex = startIndex + index + 1;
 
                                 return (
-                                    <TableRow key={withdrawal._id}>
+                                    <TableRow key={withdrawal?._id}>
                                         <TableCell className="text-sm">
                                             {globalIndex}
                                         </TableCell>
@@ -224,14 +224,14 @@ export default function WithdrawalTable() {
                                         </TableCell>
                                         <TableCell>
                                             <div className="flex items-center gap-3">
-                                                <Link href={`user-details/?userId=${withdrawal.user_id._id}`}>
+                                                <Link href={`user-details/?userId=${withdrawal.user_id?._id}`}>
                                                     <Avatar className="h-9 w-9 capitalize">
                                                         <AvatarFallback>
                                                             {withdrawal.user_id?.name?.charAt(0) || "U"}
                                                         </AvatarFallback>
                                                     </Avatar>
                                                 </Link>
-                                                <Link className="text-blue-500 underline capitalize" href={`user-details/?userId=${withdrawal.user_id._id}`}>
+                                                <Link className="text-blue-500 underline capitalize" href={`user-details/?userId=${withdrawal.user_id?._id}`}>
                                                     <div className="font-medium">{withdrawal.user_id?.name}</div>
                                                 </Link>
                                             </div>
@@ -272,14 +272,14 @@ export default function WithdrawalTable() {
                                                         <Button
                                                             size="sm"
                                                             className="bg-green-600 text-white hover:bg-green-700"
-                                                            onClick={() => handleStatusChange(withdrawal._id, "approved")}
+                                                            onClick={() => handleStatusChange(withdrawal?._id, "approved")}
                                                         >
                                                             Accept
                                                         </Button>
                                                         <Button
                                                             size="sm"
                                                             variant="destructive"
-                                                            onClick={() => handleStatusChange(withdrawal._id, "rejected")}
+                                                            onClick={() => handleStatusChange(withdrawal?._id, "rejected")}
                                                         >
                                                             Reject
                                                         </Button>

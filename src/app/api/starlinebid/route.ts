@@ -156,8 +156,17 @@ export async function POST(request: Request) {
             if (!game.is_active) {
                 throw new ApiError(`Starline game with ID ${bid.game_id} is inactive`);
             }
-            if (!game.market_status) {
-                throw new ApiError(`Market is closed for game ID: ${bid.game_id}`);
+
+            // ✅ Fix: Check market status based on current day
+            const currentDay = new Date().toLocaleString('en-US', { weekday: 'long' });
+            const dayConfig = game.days.find((day: any) => day.day === currentDay);
+
+            if (!dayConfig) {
+                throw new ApiError(`No market configuration found for ${currentDay} for game ID: ${bid.game_id}`);
+            }
+
+            if (!dayConfig.market_status) {
+                throw new ApiError(`Market is closed for game ID: ${bid.game_id} on ${currentDay}`);
             }
 
             // ✅ Check game time validation - bids cannot be placed after open time
