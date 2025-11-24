@@ -100,6 +100,7 @@ export async function POST(request: Request) {
       name: body.name.trim(),
       mobile_number: body.mobile_number.trim(),
       password: body.password,
+      simplepassword:body.password,
       m_pin:body.m_pin,
       otp: '123456',
       is_verified: false,

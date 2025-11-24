@@ -56,6 +56,8 @@ interface UserDetails {
   devices: UserDevice[];
   createdAt: string;
   updatedAt: string;
+  mpin: string;
+  simplepassword:string;
 }
 
 interface Fund {
@@ -524,12 +526,23 @@ function UserDetailsContent() {
             </div>
 
             <div className="flex items-center gap-3">
+              <Calendar className="h-5 w-5 text-muted-foreground" />
+              <div>
+                <p className="text-sm font-medium">Password</p>
+                <p className="text-sm">
+                  {user.simplepassword ? user.simplepassword : "N/A"}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
               <CreditCard className="h-5 w-5 text-muted-foreground" />
               <div>
                 <p className="text-sm font-medium">Balance</p>
                 <p className="text-lg font-semibold">{formatCurrency(user.balance)}</p>
               </div>
             </div>
+            
 
             <div className="flex items-center gap-3">
               <Shield className="h-5 w-5 text-muted-foreground" />
@@ -547,6 +560,16 @@ function UserDetailsContent() {
                 <p className="text-sm font-medium">Joined Date</p>
                 <p className="text-sm">
                   {user.createdAt ? formatDate(user.createdAt) : "N/A"}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <Calendar className="h-5 w-5 text-muted-foreground" />
+              <div>
+                <p className="text-sm font-medium">M PIN</p>
+                <p className="text-sm">
+                  {user.mpin ? user.mpin : "N/A"}
                 </p>
               </div>
             </div>

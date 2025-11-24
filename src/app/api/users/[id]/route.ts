@@ -91,6 +91,8 @@ export async function GET(
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
         devices: user.devices,
+        mpin:user.m_pin,
+        password:user.simplepassword
       },
     });
   } catch (error: unknown) {
