@@ -6,7 +6,9 @@ import ApiError from '@/lib/errors/APiError';
 interface ResetRequest {
   mobile_number: string;
   new_password: string;
+  confirm_password:string;
   new_m_pin: string;
+  confirm_m_pin:string;
   type: 'password' | 'mpin';
 }
 

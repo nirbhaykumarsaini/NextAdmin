@@ -19,6 +19,23 @@ interface BidRequest {
     game_type: 'single-digit' | 'single-panna' | 'double-panna' | 'triple-panna';
 }
 
+interface GameDay {
+    day: string;
+    open_time: string;
+    market_status: boolean;
+    _id: Types.ObjectId;
+}
+
+interface StarlineGameDocument {
+    _id: Types.ObjectId;
+    game_name: string;
+    is_active: boolean;
+    days: GameDay[];
+    createdAt: Date;
+    updatedAt: Date;
+    __v: number;
+}
+
 interface StarlineBidRequest {
     user_id: string;
     bids: BidRequest[];
@@ -159,7 +176,7 @@ export async function POST(request: Request) {
 
             // ✅ Fix: Check market status based on current day
             const currentDay = new Date().toLocaleString('en-US', { weekday: 'long' });
-            const dayConfig = game.days.find((day: any) => day.day === currentDay);
+            const dayConfig = game.days.find((day: GameDay) => day.day === currentDay);
 
             if (!dayConfig) {
                 throw new ApiError(`No market configuration found for ${currentDay} for game ID: ${bid.game_id}`);
