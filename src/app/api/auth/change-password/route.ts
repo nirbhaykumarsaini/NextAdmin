@@ -2,7 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/config/db';
 import AppUser from '@/models/AppUser';
 import { verifyToken } from '@/lib/auth/jwt';
-import bcrypt from 'bcryptjs';
+import { JwtPayload } from 'jsonwebtoken';
+
+
+interface JWT{
+    id:string;
+    mobile_number:string;
+}
 
 // Ensure DB is connected
 await connectDB();
@@ -17,7 +23,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Verify JWT token
-        const decoded = verifyToken(token) as { sub: any }; // Change to 'any' to handle object
+        const decoded = verifyToken(token) as { sub: string | JwtPayload  }; // Change to 'any' to handle object
 
         console.log('Decoded token sub:', decoded.sub);
         console.log('Type of decoded.sub:', typeof decoded.sub);
