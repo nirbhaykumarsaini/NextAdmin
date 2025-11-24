@@ -7,7 +7,7 @@ import bcrypt from 'bcryptjs';
 // Ensure DB is connected
 await connectDB();
 
-export async function PUT(request: NextRequest) {
+export async function POST(request: NextRequest) {
     try {
         const token = request.headers.get('Authorization')?.replace('Bearer ', '');
 
@@ -17,11 +17,29 @@ export async function PUT(request: NextRequest) {
         }
 
         // Verify JWT token
-        const decoded = verifyToken(token) as { sub: string };
+        const decoded = verifyToken(token) as { sub: any }; // Change to 'any' to handle object
+
+        console.log('Decoded token sub:', decoded.sub);
+        console.log('Type of decoded.sub:', typeof decoded.sub);
 
         if (!decoded?.sub) {
             return NextResponse.json(
                 { status: false, message: 'Invalid token' });
+        }
+
+        // Extract user ID from the token payload
+        let userId: string;
+        
+        // Handle both cases: when sub is an object or a string
+        if (typeof decoded.sub === 'object' && decoded.sub.id) {
+            // If sub is an object with id property (from your current token format)
+            userId = decoded.sub.id;
+        } else if (typeof decoded.sub === 'string') {
+            // If sub is directly the user ID string
+            userId = decoded.sub;
+        } else {
+            return NextResponse.json(
+                { status: false, message: 'Invalid token format' });
         }
 
         // Parse request body
@@ -41,8 +59,8 @@ export async function PUT(request: NextRequest) {
                 { status: false, message: 'Type must be either "password" or "mpin"' });
         }
 
-        // Fetch user
-        const user = await AppUser.findById(decoded.sub).select('+password');
+        // Fetch user using the extracted userId
+        const user = await AppUser.findById(userId).select('+password');
         if (!user) {
             return NextResponse.json(
                 { status: false, message: 'User not found' });
