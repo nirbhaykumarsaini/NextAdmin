@@ -1,5 +1,7 @@
 // utils/otp.ts
 import twilio from "twilio";
+import type { MessageInstance } from "twilio/lib/rest/api/v2010/account/message";
+
 
 const client = twilio(
   process.env.TWILIO_SID!,
@@ -14,7 +16,7 @@ export function generateOtp(): string {
 // Send OTP SMS
 export async function sendOtp(mobile: string, otp: string): Promise<{
   success: boolean;
-  data?: any;
+  data?: MessageInstance;
   error?: string;
 }> {
   try {
