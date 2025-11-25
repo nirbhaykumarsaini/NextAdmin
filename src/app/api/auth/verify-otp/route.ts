@@ -28,9 +28,17 @@ export async function POST(request: Request) {
     }
 
     // Find user
-    const user = await AppUser.findOne({ mobile_number: body.mobile_number });
+    const user = await AppUser.findOne({ mobile_number: body.mobile_number.trim() });
     if (!user) {
       throw new ApiError('User not found');
+    }
+
+    if (!user.otp) {
+      throw new ApiError("OTP not generated for this user");
+    }
+
+    if (body.otp !== user.otp) {
+      throw new ApiError("Invalid OTP");
     }
 
     // Handle different types
@@ -40,13 +48,9 @@ export async function POST(request: Request) {
         throw new ApiError('User is already verified');
       }
 
-      // Verify OTP
-      if (body.otp !== '123456') {
-        throw new ApiError('Invalid OTP');
-      }
-
       // Update user as verified
       user.is_verified = true;
+      user.otp = null;
       await user.save();
 
       // Generate token
@@ -67,10 +71,9 @@ export async function POST(request: Request) {
       });
 
     } else if (body.type === 'forgot') {
-      // For forgot password: Verify OTP
-      if (body.otp !== '123456') {
-        throw new ApiError('Invalid OTP');
-      }
+
+      user.otp = null;
+      await user.save();
 
       return NextResponse.json({
         status: true,
@@ -79,10 +82,9 @@ export async function POST(request: Request) {
       });
 
     } else if (body.type === 'forgot-mpin') {
-      // For forgot M-PIN: Verify OTP
-      if (body.otp !== '123456') {
-        throw new ApiError('Invalid OTP');
-      }
+
+      user.otp = null;
+      await user.save();
 
       return NextResponse.json({
         status: true,

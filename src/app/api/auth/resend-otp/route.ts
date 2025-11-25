@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import dbConnect from '@/config/db';
 import AppUser from '@/models/AppUser';
 import ApiError from '@/lib/errors/APiError';
+import { generateOtp, sendOtp } from '@/services/otpService';
 
 export async function POST(request: Request) {
   try {
@@ -31,23 +32,28 @@ export async function POST(request: Request) {
       });
     }
 
-    // Generate and save new OTP (using dummy OTP 1234)
-    user.otp = '123456';
+    const otp = generateOtp();
+
+    const smsResponse = await sendOtp(body.mobile_number, otp);
+
+    if (!smsResponse.success) {
+      throw new ApiError("Failed to send OTP SMS: " + smsResponse.error);
+    }
+
+    user.otp = otp;
     await user.save();
 
-    // In a real app, you would send the OTP via SMS here
     // For now, we'll just return it in the response for testing
     return NextResponse.json({
       status: true,
       message: 'OTP sent successfully',
-      otp: '123456' // Only for development
     });
 
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message :  'Failed to send resent otp'
+    const errorMessage = error instanceof Error ? error.message : 'Failed to send resent otp'
     if (error instanceof ApiError) {
       return NextResponse.json(
-        { status: false, message:errorMessage }
+        { status: false, message: errorMessage }
       );
     }
 

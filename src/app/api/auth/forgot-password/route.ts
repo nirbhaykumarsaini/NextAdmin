@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server';
 import dbConnect from '@/config/db';
 import AppUser from '@/models/AppUser';
 import ApiError from '@/lib/errors/APiError';
+import { generateOtp, sendOtp } from '@/services/otpService';
 
 export async function POST(request: Request) {
   try {
@@ -25,20 +26,26 @@ export async function POST(request: Request) {
       });
     }
 
-    // Generate and save OTP (using dummy OTP 1234)
-    user.otp = '123456';
+    const otp = generateOtp();
+
+    const smsResponse = await sendOtp(body.mobile_number, otp);
+
+    if (!smsResponse.success) {
+      throw new ApiError("Failed to send OTP SMS: " + smsResponse.error);
+    }
+
+    user.otp = otp;
     await user.save();
 
     return NextResponse.json({
       status: true,
-      message: 'If the mobile number is registered, you will receive an OTP',
-      otp: '123456' // Only for development
+      message: 'If the mobile number is registered, you will receive an OTP'
     });
 
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'Failed to forget password'
-      return NextResponse.json(
-        { status: false, message: errorMessage }
-      );
+    return NextResponse.json(
+      { status: false, message: errorMessage }
+    );
   }
 }

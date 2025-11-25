@@ -5,6 +5,7 @@ import dbConnect from '@/config/db';
 import AppUser from '@/models/AppUser';
 import ApiError from '@/lib/errors/APiError';
 import { headers } from 'next/headers';
+import { generateOtp, sendOtp } from '@/services/otpService';
 
 
 
@@ -77,7 +78,7 @@ export async function POST(request: Request) {
     const body = await request.json();
     const deviceInfo = getDeviceInfo();
 
-    if (!body.name || !body.mobile_number || !body.password ) {
+    if (!body.name || !body.mobile_number || !body.password) {
       const missingFields = [];
       if (!body.name) missingFields.push('name');
       if (!body.mobile_number) missingFields.push('mobile_number');
@@ -96,13 +97,21 @@ export async function POST(request: Request) {
       throw new ApiError('User with this mobile number already exists');
     }
 
+    const otp = generateOtp();
+
+    const smsResponse = await sendOtp(body.mobile_number, otp);
+
+      if (!smsResponse.success) {
+      throw new ApiError("Failed to send OTP SMS: " + smsResponse.error);
+    }
+
     await AppUser.create({
       name: body.name.trim(),
       mobile_number: body.mobile_number.trim(),
       password: body.password,
-      simplepassword:body.password,
-      m_pin:body.m_pin,
-      otp: '123456',
+      simplepassword: body.password,
+      m_pin: body.m_pin,
+      otp,
       is_verified: false,
       is_blocked: false,
       devices: [deviceInfo],
@@ -116,7 +125,6 @@ export async function POST(request: Request) {
     return NextResponse.json({
       status: true,
       message: 'User registered successfully. Please verify OTP.',
-      otp: '123456' // Only for development
     });
 
   } catch (error: unknown) {

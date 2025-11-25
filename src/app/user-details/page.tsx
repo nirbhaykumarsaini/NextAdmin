@@ -14,7 +14,7 @@ import {
   Plus, Minus, Download, Filter, Search,
   MessageCircle, TrendingUp, TrendingDown, Activity
 } from "lucide-react";
-import { FaWhatsapp } from 'react-icons/fa'
+import { FaPassport, FaWhatsapp } from 'react-icons/fa'
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import {
@@ -526,7 +526,7 @@ function UserDetailsContent() {
             </div>
 
             <div className="flex items-center gap-3">
-              <Calendar className="h-5 w-5 text-muted-foreground" />
+              <FaPassport className="h-5 w-5 text-muted-foreground" />
               <div>
                 <p className="text-sm font-medium">Password</p>
                 <p className="text-sm">
