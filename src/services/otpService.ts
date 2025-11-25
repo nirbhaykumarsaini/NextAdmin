@@ -24,11 +24,13 @@ export async function sendOtp(mobile: string, otp: string) {
       success: true,
       twilioResponse: response
     };
-  } catch (error: any) {
-    return {
-      success: false,
-      error: error?.message || "Failed to send SMS"
-    };
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      return {
+        success: false,
+        error: error?.message || "Failed to send SMS"
+      };
+    }
   }
 }
 
