@@ -12,25 +12,28 @@ export function generateOtp(): string {
 }
 
 // Send OTP SMS
-export async function sendOtp(mobile: string, otp: string) {
+export async function sendOtp(mobile: string, otp: string): Promise<{
+  success: boolean;
+  data?: any;
+  error?: string;
+}> {
   try {
-    const response = await client.messages.create({
+    const res = await client.messages.create({
       body: `Your OTP is ${otp}`,
       from: process.env.TWILIO_PHONE!,
-      to: mobile.startsWith("+") ? mobile : `+91${mobile}`
+      to: mobile.startsWith("+") ? mobile : `+91${mobile}`,
     });
 
+    return { success: true, data: res };
+  } catch (err: unknown) {
+    // Handle ALL error types
+    const errorMessage =
+      err instanceof Error ? err.message : "Unknown Twilio SMS error";
+
     return {
-      success: true,
-      twilioResponse: response
+      success: false,
+      error: errorMessage,
     };
-  } catch (error: unknown) {
-    if (error instanceof Error) {
-      return {
-        success: false,
-        error: error?.message || "Failed to send SMS"
-      };
-    }
   }
 }
 
