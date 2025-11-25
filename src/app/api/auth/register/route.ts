@@ -44,7 +44,7 @@ export async function POST(request: Request) {
             throw new ApiError('Username and password cannot be empty');
         }
 
-        if (body.role && !['user', 'admin'].includes(body.role)) {
+        if (body.role && !['admin'].includes(body.role)) {
             throw new ApiError('Invalid role specified');
         }
 
