@@ -28,7 +28,7 @@ export async function sendOtp(mobile: string, otp: string): Promise<{
 
     return { success: true, data: res };
   } catch (err: unknown) {
-    // Handle ALL error types
+    // Handle ALL error type
     const errorMessage =
       err instanceof Error ? err.message : "Unknown Twilio SMS error";
 
