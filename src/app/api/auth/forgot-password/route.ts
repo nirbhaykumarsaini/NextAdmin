@@ -28,10 +28,10 @@ export async function POST(request: Request) {
 
     const otp = generateOtp();
 
-    const smsResponse = await sendOtp(body.mobile_number, otp);
+    const smsResponse = await sendOtp(body.mobile_number);
 
-    if (!smsResponse.success) {
-      throw new ApiError("Failed to send OTP SMS: " + smsResponse.error);
+    if (!smsResponse?.success) {
+      throw new ApiError("Failed to send OTP SMS: " + smsResponse?.error);
     }
 
     user.otp = otp;

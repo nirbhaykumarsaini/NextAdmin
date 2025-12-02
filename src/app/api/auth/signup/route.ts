@@ -100,8 +100,8 @@ export async function POST(request: Request) {
     const smsResponse = await sendOtp(body.mobile_number);
     console.log(smsResponse)
 
-      if (!smsResponse.success) {
-      throw new ApiError("Failed to send OTP SMS: " + smsResponse.error);
+      if (!smsResponse?.success) {
+      throw new ApiError("Failed to send OTP SMS: " + smsResponse?.error);
     }
 
     await AppUser.create({
