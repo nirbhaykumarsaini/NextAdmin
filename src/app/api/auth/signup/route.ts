@@ -6,6 +6,7 @@ import AppUser from '@/models/AppUser';
 import ApiError from '@/lib/errors/APiError';
 import { headers } from 'next/headers';
 import { generateOtp, sendOtp } from '@/services/otpService';
+import mongoose from 'mongoose';
 
 async function getDeviceInfo() {
   const headersList = await headers();
@@ -66,11 +67,10 @@ export async function POST(request: Request) {
   try {
     await dbConnect();
     const body = await request.json();
-    const deviceInfo = await getDeviceInfo(); // FIXED
+    const deviceInfo = await getDeviceInfo();
 
-    // Missing fields
     if (!body.name || !body.mobile_number || !body.password) {
-      const missingFields = [];
+      const missingFields: string[] = [];
       if (!body.name) missingFields.push("name");
       if (!body.mobile_number) missingFields.push("mobile_number");
       if (!body.password) missingFields.push("password");
@@ -78,28 +78,21 @@ export async function POST(request: Request) {
       throw new ApiError(`${missingFields.join(" and ")} ${missingFields.length > 1 ? "are" : "is"} required`);
     }
 
-    // Empty strings
     if (!body.name.trim() || !body.mobile_number.trim() || !body.password.trim()) {
       throw new ApiError("Name, mobile number and password cannot be empty");
     }
 
-    // Check existing user
     const existingUser = await AppUser.findOne({ mobile_number: body.mobile_number });
-    if (existingUser) {
-      throw new ApiError("User with this mobile number already exists");
-    }
+    if (existingUser) throw new ApiError("User with this mobile number already exists");
 
     const otp = generateOtp();
 
-    // Send OTP
     const smsResponse = await sendOtp(body.mobile_number, otp);
-    console.log("Final SMS Response:", smsResponse);
 
     if (!smsResponse.success) {
       throw new ApiError("Failed to send OTP SMS: " + smsResponse.error);
     }
 
-    // Create user
     await AppUser.create({
       name: body.name.trim(),
       mobile_number: body.mobile_number.trim(),
@@ -122,26 +115,31 @@ export async function POST(request: Request) {
       message: "User registered successfully. Please verify OTP."
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
 
+    // Custom API Error
     if (error instanceof ApiError) {
       return NextResponse.json({ status: false, message: error.message });
     }
 
-    // Mongoose validation error
-    if (error.name === "ValidationError") {
-      const messages = Object.values(error.errors).map((val: any) => val.message);
+    // Validation Error (Mongoose)
+    if (error instanceof mongoose.Error.ValidationError) {
+      const messages = Object.values(error.errors).map((val) => val.message);
       return NextResponse.json({ status: false, message: messages.join(", ") });
     }
 
-    // Duplicate key error
-    if (error.code === 11000) {
+    // Duplicate Key error (Mongoose)
+    if (typeof error === "object" && error !== null && "code" in error && (error as { code: number }).code === 11000) {
       return NextResponse.json({ status: false, message: "Mobile number already exists" });
     }
 
+    // Unknown error
+    const message =
+      error instanceof Error ? error.message : "Internal server error";
+
     return NextResponse.json({
       status: false,
-      message: error.message || "Internal server error"
+      message
     });
   }
 }
