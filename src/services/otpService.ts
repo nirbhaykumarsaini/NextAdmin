@@ -25,8 +25,10 @@ export async function sendOtp(mobile: string) {
       otp: otp
     };
 
-  } catch (err: any) {
-    return { success: false, error: err.message };
+  } catch (err: unknown) {
+    if(err instanceof Error){
+      return { success: false, error: err.message };
+    }
   }
 }
 
