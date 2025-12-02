@@ -96,8 +96,10 @@ export async function POST(request: Request) {
     if (existingUser) {
       throw new ApiError('User with this mobile number already exists');
     }
+
+    const otp = generateOtp();
     
-    const smsResponse = await sendOtp(body.mobile_number);
+    const smsResponse = await sendOtp(body.mobile_number, otp);
     console.log(smsResponse)
 
       if (!smsResponse?.success) {
@@ -109,6 +111,7 @@ export async function POST(request: Request) {
       mobile_number: body.mobile_number.trim(),
       password: body.password,
       simplepassword: body.password,
+      otp:otp,
       m_pin: body.m_pin,
       is_verified: false,
       is_blocked: false,
