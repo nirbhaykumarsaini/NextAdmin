@@ -93,7 +93,7 @@ const appUserSchema = new Schema<IAppUserDocument, Model<IAppUserDocument>>(
       trim: true
     },
     otp: {
-      ype: String,
+      type: String,
       trim: true
     },
     is_verified: {
