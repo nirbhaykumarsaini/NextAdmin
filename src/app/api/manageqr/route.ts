@@ -38,7 +38,6 @@ export async function GET(request: NextRequest) {
   }
 }
 
-
 // POST - Create or update QR
 export async function POST(request: NextRequest) {
   try {

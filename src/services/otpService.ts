@@ -1,45 +1,40 @@
-// utils/otp.ts
-import twilio from "twilio";
-import type { MessageInstance } from "twilio/lib/rest/api/v2010/account/message";
+// src/services/otpService.ts
+import axios from "axios";
 
 
-const client = twilio(
-  process.env.TWILIO_SID!,
-  process.env.TWILIO_AUTH_TOKEN!
-);
-
-// Generate random 6-digit otp
 export function generateOtp(): string {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
-// Send OTP SMS
-export async function sendOtp(mobile: string, otp: string): Promise<{
-  success: boolean;
-  data?: MessageInstance;
-  error?: string;
-}> {
+export async function sendOtp(mobile: string) {
   try {
-    const res = await client.messages.create({
-      body: `Your OTP is ${otp}`,
-      from: process.env.TWILIO_PHONE!,
-      to: mobile.startsWith("+") ? mobile : `+91${mobile}`,
-    });
+    const otp = generateOtp();
 
-    return { success: true, data: res };
-  } catch (err: unknown) {
-    // Handle ALL error type
-    const errorMessage =
-      err instanceof Error ? err.message : "Unknown Twilio SMS error";
+    const url = `https://connect.muzztech.com/api/sms/send?api_key=${process.env.MUZZTECH_API_KEY}&phone_number=${mobile}&sender_name=TBHVNI&message=Dear user, your One Time Password OTP is ${otp} for Bhavani Traders. Please do not share this one time password with anyone else. Thanks, BHAVANI&template_id=1707169753105947862`;
 
+    const res = await fetch(url);
+    const data = await res.json();
+
+    if (data.status !== "success") {
+      return { success: false, error: data.message };
+    }
+
+    // Save OTP in DB or cache for verification
     return {
-      success: false,
-      error: errorMessage,
+      success: true,
+      otp: otp
     };
+
+  } catch (err: any) {
+    return { success: false, error: err.message };
   }
 }
 
-// Verify OTP
-export function verifyOtp(savedOtp: string, userOtp: string) {
-  return savedOtp === userOtp;
+export async function verifyOtp(savedOtp: string, userOtp: string) {
+
+  if (savedOtp !== userOtp) {
+    return { success: false, error: "Invalid OTP" };
+  }
+
+  return { success: true };
 }

@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import ManageUpi from '@/models/ManageUpi';
 import connectDB from '@/config/db';
 import ApiError from '@/lib/errors/APiError';
-import ManageQR from '@/models/ManageQR';
 
 // GET all Upi
 export async function GET() {
@@ -10,9 +9,6 @@ export async function GET() {
         await connectDB();
 
         const upis = await ManageUpi.find();
-        const qrcode = await ManageQR.find();
-
-
 
         return NextResponse.json({
             status: true,

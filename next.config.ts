@@ -13,9 +13,7 @@ const nextConfig: NextConfig = {
     CLOUDINARY_CLOUD_NAME: process.env.CLOUDINARY_CLOUD_NAME,
     CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY,
     CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET,
-    TWILIO_SID: process.env.TWILIO_SID,
-    TWILIO_AUTH_TOKEN: process.env.TWILIO_AUTH_TOKEN,
-    TWILIO_PHONE: process.env.TWILIO_PHONE,
+    MUZZTECH_API_KEY: process.env.MUZZTECH_API_KEY,
   },
 
   images: {
